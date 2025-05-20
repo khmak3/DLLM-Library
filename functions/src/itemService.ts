@@ -1,18 +1,18 @@
 import { db, LoginUser } from "./platform";
-import { UserService } from "./userService";
 import {
   Item,
-  ContactMethod,
-  ContactMethodInput,
   Location,
   LocationInput,
   ItemCondition,
   ItemStatus,
   Language,
+  User,
 } from "./generated/graphql";
+import * as geofire from "geofire-common";
+
 
 export class ItemService {
-  constructor(private userService: UserService) {}
+  constructor() {}
 
   async itemsByLocation(
     loginUser: LoginUser | null,
@@ -94,7 +94,7 @@ export class ItemService {
   }
 
   async createItem(
-    loginUser: LoginUser | null,
+    owner: User,
     name: string,
     description: string,
     condition: ItemCondition,
@@ -104,11 +104,8 @@ export class ItemService {
     publishedYear: number,
     language: Language
   ): Promise<Item> {
-    if (!loginUser) throw new Error("Not authenticated");
-    let owner = await this.userService.me(loginUser);
-    const itemData: Item = {
-      id: "",
-      ownerId: loginUser.uid,
+    const itemData = {
+      ownerId: owner.id,
       name: name,
       description: description || undefined,
       condition: condition,
@@ -122,7 +119,11 @@ export class ItemService {
       location: owner?.location || undefined,
     };
     const docRef = await db.collection("items").add(itemData);
-    itemData.id = docRef.id; // Set the ID after adding to Firestore
-    return { ...itemData };
+    if (owner?.location) {
+      const hash = geofire.geohashForLocation([owner.location.latitude, owner.location.longitude]);
+      await docRef.set({ geohash: hash }, { merge: true });
+    }
+    const rv = {id: docRef.id, ...itemData } as Item; // Set the ID after adding to Firestore
+    return rv
   }
 }

@@ -12,8 +12,8 @@ interface Context {
   loginUser: LoginUser | null;
 }
 
-const userService = new UserService();
-const itemService = new ItemService(userService);
+const itemService = new ItemService();
+const userService = new UserService(itemService);
 
 export const resolvers: Resolvers = {
   Query: {
@@ -105,8 +105,11 @@ export const resolvers: Resolvers = {
       args: any,
       { loginUser }: Context
     ): Promise<Item> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      const owner = await userService.me(loginUser);
+      if (!owner) throw new Error("Owner not found");
       return itemService.createItem(
-        loginUser,
+        owner,
         args.name,
         args.description,
         args.condition,
