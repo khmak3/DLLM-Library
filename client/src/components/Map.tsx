@@ -22,20 +22,13 @@ interface MapProps {
 const Map: React.FC<MapProps> = ({ open, closeEvent, location }) => {
   const [error, setError] = useState<string | null>(null);
 
-  const [mapDialogOpen, setMapDialogOpen] = useState(open);
-
-  useEffect(() => {
-    setMapDialogOpen(open);
-  }, [open]);
-
   const handleCloseMapDialog = () => {
-    setMapDialogOpen(false);
     closeEvent({}, "escapeKeyDown"); // Or "backdropClick" depending on how you want to signal
   };
 
 
   return (
-    <Dialog open={mapDialogOpen} onClose={closeEvent}>
+    <Dialog open={open} onClose={closeEvent}>
         <DialogTitle>My Location</DialogTitle>
             <DialogContent sx={{ height: '60vh', width: '60vw', padding: 0 }}> {/* Adjust height as needed */}
             {location ? (

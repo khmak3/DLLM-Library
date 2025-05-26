@@ -116,12 +116,12 @@ const App: React.FC<AppProps> = ({ user }) => {
       {meOutput.data && meOutput.data.me ? (
         <>
           <Typography>Welcome, {meOutput.data.me.nickname}</Typography>
-          <Button onClick={getLocation}>Display near by item</Button>
+          <Button onClick={getLocation}>Display nearby items</Button>
           {location && (
             <>
               <Map
                 open={location != null}
-                closeEvent={() => setLocation(null)}
+                closeEvent={(event, reason) => setLocation(null)}
                 location={location}
               />
               <Box mt={2}>
