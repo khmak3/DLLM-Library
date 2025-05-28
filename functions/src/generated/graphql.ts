@@ -81,11 +81,14 @@ export type Mutation = {
   __typename?: 'Mutation';
   cancelTransaction: Scalars['Boolean']['output'];
   createItem: Item;
+  createNewsPost: NewsPost;
   createTransaction: Transaction;
   createUser: User;
   deleteItem: Scalars['Boolean']['output'];
   deleteUser: Scalars['Boolean']['output'];
+  hideNewsPost: Scalars['Boolean']['output'];
   updateItem: Item;
+  updateNewsPost: NewsPost;
   updateTransaction: Transaction;
   updateUser: User;
 };
@@ -105,6 +108,15 @@ export type MutationCreateItemArgs = {
   name: Scalars['String']['input'];
   publishedYear?: InputMaybe<Scalars['Int']['input']>;
   status: ItemStatus;
+};
+
+
+export type MutationCreateNewsPostArgs = {
+  content: Scalars['String']['input'];
+  images?: InputMaybe<Array<Scalars['String']['input']>>;
+  relatedItemIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  tags?: InputMaybe<Array<Scalars['String']['input']>>;
+  title: Scalars['String']['input'];
 };
 
 
@@ -131,6 +143,11 @@ export type MutationDeleteUserArgs = {
 };
 
 
+export type MutationHideNewsPostArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationUpdateItemArgs = {
   category?: InputMaybe<Array<Scalars['String']['input']>>;
   condition?: InputMaybe<ItemCondition>;
@@ -140,6 +157,16 @@ export type MutationUpdateItemArgs = {
   name?: InputMaybe<Scalars['String']['input']>;
   publishedYear?: InputMaybe<Scalars['Int']['input']>;
   status?: InputMaybe<ItemStatus>;
+};
+
+
+export type MutationUpdateNewsPostArgs = {
+  content?: InputMaybe<Scalars['String']['input']>;
+  id: Scalars['ID']['input'];
+  images?: InputMaybe<Array<Scalars['String']['input']>>;
+  relatedItemIds?: InputMaybe<Array<Scalars['ID']['input']>>;
+  tags?: InputMaybe<Array<Scalars['String']['input']>>;
+  title?: InputMaybe<Scalars['String']['input']>;
 };
 
 
@@ -155,6 +182,20 @@ export type MutationUpdateUserArgs = {
   nickname?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type NewsPost = {
+  __typename?: 'NewsPost';
+  content: Scalars['String']['output'];
+  createdAt: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  images?: Maybe<Array<Scalars['String']['output']>>;
+  isVisible: Scalars['Boolean']['output'];
+  relatedItems?: Maybe<Array<Item>>;
+  tags?: Maybe<Array<Scalars['String']['output']>>;
+  title: Scalars['String']['output'];
+  updatedAt: Scalars['String']['output'];
+  user: User;
+};
+
 export type Query = {
   __typename?: 'Query';
   item?: Maybe<Item>;
@@ -162,6 +203,9 @@ export type Query = {
   itemsByLocation: Array<Item>;
   itemsByUser: Array<Item>;
   me?: Maybe<User>;
+  newsPost?: Maybe<NewsPost>;
+  newsRecentPosts: Array<NewsPost>;
+  recentAddedItems: Array<Item>;
   transaction?: Maybe<Transaction>;
   transactions: Array<Transaction>;
   user?: Maybe<User>;
@@ -206,6 +250,25 @@ export type QueryItemsByUserArgs = {
 };
 
 
+export type QueryNewsPostArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryNewsRecentPostsArgs = {
+  keyword?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  tags?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+export type QueryRecentAddedItemsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
 export type QueryTransactionArgs = {
   id: Scalars['ID']['input'];
 };
@@ -227,6 +290,12 @@ export type QueryUsersArgs = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
+
+export enum Role {
+  Admin = 'ADMIN',
+  Moderator = 'MODERATOR',
+  User = 'USER'
+}
 
 export type Transaction = {
   __typename?: 'Transaction';
@@ -252,8 +321,11 @@ export type User = {
   createdAt: Scalars['String']['output'];
   email: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  isVerified: Scalars['Boolean']['output'];
   location?: Maybe<Location>;
   nickname?: Maybe<Scalars['String']['output']>;
+  role: Role;
 };
 
 
@@ -340,7 +412,9 @@ export type ResolversTypes = {
   Location: ResolverTypeWrapper<Location>;
   LocationInput: LocationInput;
   Mutation: ResolverTypeWrapper<{}>;
+  NewsPost: ResolverTypeWrapper<NewsPost>;
   Query: ResolverTypeWrapper<{}>;
+  Role: Role;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Transaction: ResolverTypeWrapper<Transaction>;
   TransactionStatus: TransactionStatus;
@@ -359,6 +433,7 @@ export type ResolversParentTypes = {
   Location: Location;
   LocationInput: LocationInput;
   Mutation: {};
+  NewsPost: NewsPost;
   Query: {};
   String: Scalars['String']['output'];
   Transaction: Transaction;
@@ -398,13 +473,30 @@ export type LocationResolvers<ContextType = any, ParentType extends ResolversPar
 export type MutationResolvers<ContextType = any, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   cancelTransaction?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationCancelTransactionArgs, 'id'>>;
   createItem?: Resolver<ResolversTypes['Item'], ParentType, ContextType, RequireFields<MutationCreateItemArgs, 'category' | 'condition' | 'language' | 'name' | 'status'>>;
+  createNewsPost?: Resolver<ResolversTypes['NewsPost'], ParentType, ContextType, RequireFields<MutationCreateNewsPostArgs, 'content' | 'title'>>;
   createTransaction?: Resolver<ResolversTypes['Transaction'], ParentType, ContextType, RequireFields<MutationCreateTransactionArgs, 'itemId' | 'status'>>;
   createUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationCreateUserArgs, 'email'>>;
   deleteItem?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteItemArgs, 'id'>>;
   deleteUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteUserArgs, 'id'>>;
+  hideNewsPost?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationHideNewsPostArgs, 'id'>>;
   updateItem?: Resolver<ResolversTypes['Item'], ParentType, ContextType, RequireFields<MutationUpdateItemArgs, 'id'>>;
+  updateNewsPost?: Resolver<ResolversTypes['NewsPost'], ParentType, ContextType, RequireFields<MutationUpdateNewsPostArgs, 'id'>>;
   updateTransaction?: Resolver<ResolversTypes['Transaction'], ParentType, ContextType, RequireFields<MutationUpdateTransactionArgs, 'id' | 'status'>>;
   updateUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, Partial<MutationUpdateUserArgs>>;
+};
+
+export type NewsPostResolvers<ContextType = any, ParentType extends ResolversParentTypes['NewsPost'] = ResolversParentTypes['NewsPost']> = {
+  content?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  images?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  isVisible?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  relatedItems?: Resolver<Maybe<Array<ResolversTypes['Item']>>, ParentType, ContextType>;
+  tags?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type QueryResolvers<ContextType = any, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
@@ -413,6 +505,9 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   itemsByLocation?: Resolver<Array<ResolversTypes['Item']>, ParentType, ContextType, RequireFields<QueryItemsByLocationArgs, 'latitude' | 'longitude' | 'radiusKm'>>;
   itemsByUser?: Resolver<Array<ResolversTypes['Item']>, ParentType, ContextType, RequireFields<QueryItemsByUserArgs, 'userId'>>;
   me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
+  newsPost?: Resolver<Maybe<ResolversTypes['NewsPost']>, ParentType, ContextType, RequireFields<QueryNewsPostArgs, 'id'>>;
+  newsRecentPosts?: Resolver<Array<ResolversTypes['NewsPost']>, ParentType, ContextType, Partial<QueryNewsRecentPostsArgs>>;
+  recentAddedItems?: Resolver<Array<ResolversTypes['Item']>, ParentType, ContextType, Partial<QueryRecentAddedItemsArgs>>;
   transaction?: Resolver<Maybe<ResolversTypes['Transaction']>, ParentType, ContextType, RequireFields<QueryTransactionArgs, 'id'>>;
   transactions?: Resolver<Array<ResolversTypes['Transaction']>, ParentType, ContextType, Partial<QueryTransactionsArgs>>;
   user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryUserArgs, 'id'>>;
@@ -435,8 +530,11 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isActive?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  isVerified?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   location?: Resolver<Maybe<ResolversTypes['Location']>, ParentType, ContextType>;
   nickname?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  role?: Resolver<ResolversTypes['Role'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -445,6 +543,7 @@ export type Resolvers<ContextType = any> = {
   Item?: ItemResolvers<ContextType>;
   Location?: LocationResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  NewsPost?: NewsPostResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Transaction?: TransactionResolvers<ContextType>;
   User?: UserResolvers<ContextType>;

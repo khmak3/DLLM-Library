@@ -3,6 +3,7 @@ import {
   User,
   ContactMethod,
   Location,
+  Role,
 } from "./generated/graphql";
 import { ItemService } from "./itemService";
 import { MapService } from "./mapService";
@@ -18,10 +19,14 @@ export class UserService {
 
   async me(loginUser: LoginUser | null): Promise<User | null> {
     if (!loginUser) throw new Error("Not authenticated");
+    // check if user's email is verified
     const userDoc = await db.collection("users").doc(loginUser.uid).get();
     if (!userDoc.exists) return null;
-
     const data = userDoc.data() as User;
+    if (!data.isVerified && loginUser.emailVerified) {
+      // update user to verified if email is verified
+      await db.collection("users").doc(loginUser.uid).update({ isVerified: true });
+    }
     return { ...data };
   }
 
@@ -60,6 +65,9 @@ export class UserService {
       nickname: nickname || undefined,
       location: location, // require to resolve from google map base on address
       address: address || undefined,
+      role: Role.User,
+      isActive: true,
+      isVerified: false,
       createdAt: new Date().toISOString(),
       geohash: g || undefined,
     };

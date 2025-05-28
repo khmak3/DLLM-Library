@@ -10,6 +10,7 @@ import {
 } from "./generated/graphql";
 import * as geofire from "geofire-common";
 import { MapService } from "./mapService";
+import firebase from "firebase-admin"; 
 import { p } from "graphql-ws/dist/common-DY-PBNYy";
 
 type ItemModel = Omit<Item, 'id'> & {
@@ -25,7 +26,6 @@ export class ItemService {
   }
 
   async itemsByLocation(
-    loginUser: LoginUser | null,
     latitude: number,
     longitude: number,
     radiusKm: number,
@@ -51,62 +51,47 @@ export class ItemService {
     return filteredItems;
   }
 
-  async itemsByLocation1(
-    loginUser: LoginUser | null,
-    latitude: number,
-    longitude: number,
-    radiusKm: number,
-    category: string[],
-    status: string,
-    keyword: string,
-    limit: number = 20,
-    offset: number = 0
-  ): Promise<Item[]> {
-    let query = db.collection("items").orderBy("createdAt", "desc");
-    if (category)
-      query = query.where("category", "array-contains-any", category);
-    if (status) query = query.where("status", "==", status);
-    if (keyword)
-      query = query
-        .where("name", ">=", keyword)
-        .where("name", "<=", keyword + "\uf8ff");
-    const snapshot = await query.limit(limit).offset(offset).get();
-    const items = snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as Item)
-    );
-    // Haversine formula for radius filtering (Firestore lacks native geospatial)
-    const filteredItems = items.filter((item) => {
-      if (!item.location) return false;
-      const R = 6371; // Earth's radius in km
-      const dLat = ((item.location.latitude - latitude) * Math.PI) / 180;
-      const dLon = ((item.location.longitude - longitude) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((latitude * Math.PI) / 180) *
-          Math.cos((item.location.latitude * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c;
-      console.log(`distance:` + distance + " " + item.location.latitude + " " + item.location.longitude);
-      return distance <= radiusKm;
-    });
-    return filteredItems;
-  }
-
 
   async itemById(
-    loginUser: LoginUser | null,
     itemId: string
   ): Promise<Item | null> {
     const itemDoc = await db.collection("items").doc(itemId).get();
     if (!itemDoc.exists) return null;
-    const data = itemDoc.data() as Item;
-    return { ...data };
+    const data = itemDoc.data() as ItemModel;
+    return { id: itemId, ...data } as Item;
   }
 
+  // this function should be limited to internal use only
+  async itemsByIds(itemIds: string[]): Promise<Item[]> {
+    if (!itemIds || itemIds.length === 0) {
+      return [];
+    }
+
+    // Firestore 'in' queries are limited (currently 30 clauses).
+    // If you expect more IDs, you'll need to batch the requests.
+    const MAX_IDS_PER_QUERY = 30;
+    const results: Item[] = [];
+
+    for (let i = 0; i < itemIds.length; i += MAX_IDS_PER_QUERY) {
+      const batchIds = itemIds.slice(i, i + MAX_IDS_PER_QUERY);
+      if (batchIds.length > 0) {
+        const snapshot = await db
+          .collection("items")
+          .where(firebase.firestore.FieldPath.documentId(), "in", batchIds)
+          .get();
+        
+        const items = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        } as Item));
+        results.push(...items);
+      }
+    }
+    return results;
+  }
+
+
   async itemsByUser(
-    loginUser: LoginUser | null,
     userId: string,
     category: string[],
     status: string,
@@ -158,7 +143,6 @@ export class ItemService {
       images: images || [],
       publishedYear: publishedYear || undefined,
       language: language,
-      //location: undefined,  // require to get from user service 's location
       createdAt: new Date().toISOString(),
       location: owner?.location || undefined,
       geohash: hash || undefined,

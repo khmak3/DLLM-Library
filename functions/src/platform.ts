@@ -13,6 +13,7 @@ admin.initializeApp({
 interface LoginUser {
     uid: string; 
     email: string;
+    emailVerified?: boolean; // Optional, if you want to check email verification
 }
 
 const db = admin.firestore();
@@ -27,6 +28,7 @@ function getLoginUserFromToken(token: string): Promise<LoginUser | null> {
                 const loginUser: LoginUser = {
                     uid: decodedToken.uid,
                     email: decodedToken.email || '',
+                    emailVerified: decodedToken.email_verified || false // Optional, if you want to check email verification
                 };
                 resolve(loginUser);
             }

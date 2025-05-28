@@ -25,6 +25,12 @@ type Location {
   longitude: Float!
 }
 
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
 # 用戶個人檔案
 type User {
   id: ID!
@@ -32,6 +38,9 @@ type User {
   nickname: String # 可選暱稱
   location: Location # 可選經緯度，用於搜尋
   address: String # 可選地區，如 "London, UK"
+  role: Role! # 用戶角色
+  isActive: Boolean! # 是否啟用帳號
+  isVerified: Boolean! # 是否已驗證電子郵件
   contactMethods: [ContactMethod!] # 其他聯繫方式
   createdAt: String!
 }
@@ -57,6 +66,19 @@ type Item {
   location: Location # 藏品所在地（繼承自擁有者）
   createdAt: String!
   transactions: [Transaction!] # 相關交易紀錄
+}
+
+type NewsPost {
+  id: ID!
+  title: String!
+  content: String!
+  images: [String!] # 圖片URL列表
+  relatedItems: [Item!] # 相關藏品
+  createdAt: String!
+  updatedAt: String!
+  isVisible: Boolean! # 是否公開顯示
+  user: User! # 發布者
+  tags: [String!] # 標籤列表
 }
 
 # 虛擬所有權轉移
@@ -111,10 +133,24 @@ type Query {
     limit: Int,
     offset: Int
   ): [Item!]! # 基於User的搜尋  
+  recentAddedItems(
+    limit: Int,
+    offset: Int
+  ): [Item!]! # 最近新增的藏品
+
 
   # 交易相關
   transaction(id: ID!): Transaction
   transactions(userId: ID, itemId: ID): [Transaction!]!
+
+  # 新聞相關
+  newsPost(id: ID!): NewsPost
+  newsRecentPosts(
+    keyword: String,
+    tags: [String!],
+    limit: Int,
+    offset: Int
+  ): [NewsPost!]! # 按關鍵字和標籤搜尋新聞
 }
 
 # 變更
@@ -159,6 +195,24 @@ type Mutation {
   createTransaction(itemId: ID!, status: TransactionStatus!): Transaction!
   updateTransaction(id: ID!, status: TransactionStatus!): Transaction!
   cancelTransaction(id: ID!): Boolean!
+
+  # 新聞管理 Only for Admin/Moderator
+  createNewsPost(
+    title: String!,
+    content: String!,
+    images: [String!],
+    relatedItemIds: [ID!],
+    tags: [String!]
+  ): NewsPost!
+  updateNewsPost(
+    id: ID!,
+    title: String,
+    content: String,
+    images: [String!],
+    relatedItemIds: [ID!],
+    tags: [String!]
+  ): NewsPost!
+  hideNewsPost(id: ID!): Boolean!
 }
 
 # 輸入類型
