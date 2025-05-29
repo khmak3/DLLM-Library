@@ -1,6 +1,7 @@
 import {Location} from "./generated/graphql";
 import * as geofire from "geofire-common";
 import {Client, GeocodeRequest, GeocodeResponseData} from "@googlemaps/google-maps-services-js";
+import { googleMapsApiKey } from "./platform";
 
 // Interface for external map API services
 export interface IExternalMapAPI {
@@ -14,7 +15,7 @@ export class GoogleMapsAPI implements IExternalMapAPI {
 
   constructor(apiKey: string) {
     if (!apiKey) {
-      throw new Error("Google Maps API key is required for GoogleMapsAPI service.");
+      console.warn("Google Maps API key is required for GoogleMapsAPI service.");
     }
     this.apiKey = apiKey;
     this.client = new Client({});
@@ -54,13 +55,13 @@ export class MapService {
 
       if (!this.isValidGeocodeResult(geocodeResult)) {
         console.warn(`Could not resolve address "${address}" to a valid location (no results in response).`);
-        return null;
+        throw new Error(`Could not resolve address "${address}" to a valid location (no results in response).`);
       }
 
       return this.createLocationFromGeocodeResult(geocodeResult);
     } catch (error) {
       console.error(`Geocoding failed for address "${address}" in resolveLocationAndGeohash.`);
-      return null; 
+      throw error;
     }
   }
 
@@ -128,10 +129,10 @@ export class MapService {
 
 // Factory function to create MapService with Google Maps
 export const createMapService = (): MapService => {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+   const apiKey = googleMapsApiKey;
+
   if (!apiKey) {
-    console.error("CRITICAL: GOOGLE_MAPS_API_KEY environment variable is not set. MapService geocoding will fail.");
-    throw new Error("GOOGLE_MAPS_API_KEY is required to create MapService with geocoding capabilities.");
+    console.warn("CRITICAL: googleMapsApiKey not found in platform.ts. MapService geocoding will fail.");
   }
   const googleMapsApi = new GoogleMapsAPI(apiKey);
   return new MapService(googleMapsApi);

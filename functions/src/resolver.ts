@@ -104,21 +104,10 @@ export const resolvers: Resolvers = {
     ): Promise<Location | null> => {
       if (!address || address.trim() === "") {
         console.warn("geocodeAddress called with empty address.");
-        return null;
+        throw new Error("geocodeAddress called with empty address.");
       }
-      try {
-        const mapService = createMapService();
-        const result = await mapService.resolveLocationAndGeohash(address);
-
-        if (result) {
-          return result;
-        }
-        console.warn(`No geocoding result for address: ${address}`);
-        return null;
-      } catch (error) {
-        console.error(`Error in geocodeAddress resolver for address "${address}":`, error);
-        return null;
-      }
+      const mapService = createMapService();
+      return await mapService.resolveLocationAndGeohash(address);
     },
   },
   Mutation: {
