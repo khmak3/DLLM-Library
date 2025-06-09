@@ -29,6 +29,9 @@ const BaseApp: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => 
+    (e: React.ChangeEvent<HTMLInputElement>) => setter(e.target.value);
+
   const signInSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (email && password) {
@@ -68,21 +71,43 @@ const BaseApp: React.FC = () => {
     }
   };
 
+  const handleShowForm = (form: "signIn" | "signUp" | "reset") => {
+    setShowSignInForm(form === "signIn");
+    setShowSignUpForm(form === "signUp");
+    setShowResetForm(form === "reset");
+    if (form === "signIn" || form === "signUp") {
+      setEmail('');
+      setPassword('');
+    }
+    if (form === "reset") {
+      setResetEmail('');
+    }
+  };
+
+  const handleShowSignIn = () => handleShowForm("signIn");
+  const handleShowSignUp = () => handleShowForm("signUp");
+  const handleShowReset = () => handleShowForm("reset");
+
   return (
     <Box p={4}>
-      <Typography variant="h4">無大台香港典藏館</Typography>
+      <Typography variant="h4" mb={2}>無大台香港典藏館</Typography>
       {!user && (
         <>
-          <Button 
-           variant="outlined"
-           onClick={() => { setShowSignUpForm(true); setShowSignInForm(false); }}>
-            Sign up 
-          </Button>
-          <Button 
-           variant="outlined"
-           onClick={() => { setShowSignInForm(true); setShowSignUpForm(false); }}>
-            Sign In
-          </Button>
+          <Box mb={2}>
+            <Button 
+              variant="outlined"
+              sx={{ mr: 1 }}
+              onClick={handleShowSignUp}
+            >
+              Sign up
+            </Button>
+            <Button 
+              variant="outlined"
+              onClick={handleShowSignIn}
+            >
+              Confirm
+            </Button>
+          </Box>
           {showSignInForm && (
             <Container maxWidth="xs">
               <Box
@@ -105,7 +130,7 @@ const BaseApp: React.FC = () => {
                     margin="normal"
                     required
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={handleInputChange(setEmail)}
                   />
                   <TextField
                     label="Password"
@@ -114,7 +139,7 @@ const BaseApp: React.FC = () => {
                     margin="normal"
                     required
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={handleInputChange(setPassword)}
                   />
                   <Button
                     type="submit"
@@ -122,20 +147,16 @@ const BaseApp: React.FC = () => {
                     variant="contained"
                     sx={{ mt: 2 }}
                   >
-                    Submit
+                    Sign In
                   </Button>
-                    <Button
+                  <Button
                     fullWidth
                     variant="text"
                     sx={{ mt: 2 }}
-                    onClick={() => {
-                      setShowSignInForm(false);
-                      setShowSignUpForm(false);
-                      setShowResetForm(true);
-                    }}
-                    >
+                    onClick={handleShowReset}
+                  >
                     Forgot Password?
-                    </Button>
+                  </Button>
                 </form>
               </Box>
             </Container>
@@ -162,7 +183,7 @@ const BaseApp: React.FC = () => {
                     margin="normal"
                     required
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={handleInputChange(setEmail)}
                   />
                   <TextField
                     label="Password"
@@ -171,7 +192,7 @@ const BaseApp: React.FC = () => {
                     margin="normal"
                     required
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={handleInputChange(setPassword)}
                   />
                   <Button
                     type="submit"
@@ -179,7 +200,7 @@ const BaseApp: React.FC = () => {
                     variant="contained"
                     sx={{ mt: 2 }}
                   >
-                    Sign Up
+                    Submit
                   </Button>
                 </form>
               </Box>
@@ -207,7 +228,7 @@ const BaseApp: React.FC = () => {
                     margin="normal"
                     required
                     value={resetEmail}
-                    onChange={e => setResetEmail(e.target.value)}
+                    onChange={handleInputChange(setResetEmail)}
                   />
                   <Button
                     type="submit"
@@ -215,7 +236,7 @@ const BaseApp: React.FC = () => {
                     variant="contained"
                     sx={{ mt: 2 }}
                   >
-                    Send Reset Email
+                    Send
                   </Button>
                   <Button
                     fullWidth
