@@ -11,8 +11,6 @@ import {
   Typography,
   CircularProgress,
   Alert,
-  IconButton,
-  Grid
 } from "@mui/material";
 import { CreateUserMutation, CreateUserMutationVariables } from "../generated/graphql";
 
@@ -35,15 +33,94 @@ interface UserProps {
   onUserCreated?: (data: CreateUserMutation) => void;
 }
 
-const UserProfile: React.FC<UserProps> = ({ onUserCreated }) => {
-  const [createNewsPost, { data, loading, error: mutationError }] = useMutation<
+const CreateUser: React.FC<UserProps> = ({ onUserCreated }) => {
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [error, setError] = useState<Error | null>(null);
+
+  const [createUser, { data, loading, error: mutationError }] = useMutation<
     CreateUserMutation,
     CreateUserMutationVariables
-  >(CREATE_USER_MUTATION);
+  >(CREATE_USER_MUTATION, {
+    onCompleted: (data) => {
+      if (onUserCreated) onUserCreated(data);
+      setOpen(false);
+      setEmail("");
+      setAddress("");
+      setNickname("");
+    },
+  });
+  
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createUser({
+      variables: {
+        email,
+        address: address || undefined,
+        nickname: nickname || undefined,
+      },
+    });
+  };
 
+
+  
   return (
-    <></>
+    <Box>
+      <Button variant="contained" onClick={() => setOpen(true)}>
+        Create User
+      </Button>
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle sx={{ textAlign: "center" }}>Create User</DialogTitle>
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              margin="normal"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
+            <TextField
+              label="Address"
+              type="text"
+              fullWidth
+              margin="normal"
+              value={address}
+              onChange={e => setAddress(e.target.value)}
+            />
+            <TextField
+              label="Nickname"
+              type="text"
+              fullWidth
+              margin="normal"
+              value={nickname}
+              onChange={e => setNickname(e.target.value)}
+            />
+            {error && <Alert severity="error">{error.message}</Alert>}
+            {loading && <CircularProgress sx={{ display: "block", mx: "auto", my: 2 }} />}
+          </DialogContent>
+          <DialogActions sx={{ flexDirection: "column", alignItems: "stretch", gap: 1 }}>
+            <Button onClick={() => setOpen(false)} fullWidth>
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained" fullWidth disabled={loading}>
+              Submit
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+      {data && (
+        <Alert severity="success" sx={{ mt: 2 }}>
+          User created successfully!
+        </Alert>
+      )}
+    </Box>
   );
 };
 
-export default UserProfile;
+export default CreateUser;

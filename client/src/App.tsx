@@ -6,6 +6,8 @@ import { User as fireUser } from "firebase/auth";
 import { User, Item } from "./generated/graphql"; // Adjust the import path as necessary
 import Map from "./components/Map";
 import News from "./News";
+import CreateUser from "./components/UserProfile";
+
 
 const ITEMS_QUERY = gql`
   query ItemsByLocation(
@@ -95,6 +97,7 @@ const App: React.FC<AppProps> = ({ user }) => {
     }
   };
 
+  const [userFormOpen, setUserFormOpen] = useState(false);
   const signOut = async () => {
     await auth.signOut();
   };
@@ -112,7 +115,12 @@ const App: React.FC<AppProps> = ({ user }) => {
                 </>
             ) : (
               <>
-                <Typography>TODO: Please add a box to create user</Typography>
+                {/* <Typography>TODO: Please add a box to create user</Typography> */}
+                <Button onClick={() => setUserFormOpen(!userFormOpen)}>
+                  Create User
+                </Button>
+                {userFormOpen && <CreateUser onUserCreated={() => {}} />}
+
                 <Button onClick={signOut}>Sign Out</Button>
               </>
             )}
