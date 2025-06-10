@@ -136,6 +136,12 @@ export type MutationCreateUserArgs = {
   nickname?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type CreateUserMutationVariables = Exact<{
+  email: Scalars['String']['input'];
+  address?: InputMaybe<Scalars['String']['input']>;
+  nickname?: InputMaybe<Scalars['String']['input']>;
+}>;
+export type CreateUserMutation = { __typename?: 'Mutation', createUser: { __typename?: 'UserProfile', id: string, email: string, address?: string | null, nickname?: string | null, createdAt: any, isActive: boolean, isVerified: boolean, role: Role } };
 
 export type MutationDeleteItemArgs = {
   id: Scalars['ID']['input'];
