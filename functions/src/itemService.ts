@@ -51,9 +51,11 @@ export class ItemService {
       radiusKm
     );
     const filteredItems = (await items).map((item) => {
-      item = { ...item, id: item.id,
-          createdAt: item.created.seconds * 1000,
-          updatedAt: item.updated.seconds * 1000,
+      item = {
+        ...item,
+        id: item.id,
+        createdAt: item.created.seconds * 1000,
+        updatedAt: item.updated.seconds * 1000,
       };
       return item as Item;
     });
@@ -192,7 +194,9 @@ export class ItemService {
     }
 
     if (!location) {
-      console.debug(`Skipping location update for user ${userId}: No location provided`);
+      console.debug(
+        `Skipping location update for user ${userId}: No location provided`
+      );
       return;
     }
 
@@ -210,7 +214,7 @@ export class ItemService {
       geohash: geofire.geohashForLocation([
         location.latitude,
         location.longitude,
-      ])
+      ]),
     };
 
     const batch = db.batch();
@@ -218,6 +222,30 @@ export class ItemService {
       batch.update(doc.ref, updateData);
     });
     await batch.commit();
-    console.log(`Updated location for ${itemsSnapshot.size} items belonging to user ${userId}`);
+    console.log(
+      `Updated location for ${itemsSnapshot.size} items belonging to user ${userId}`
+    );
+  }
+
+  async recentAddedItems(
+    limit: number = 20,
+    offset: number = 0,
+    category?: string[]
+  ): Promise<Item[]> {
+    let query = db.collection("items").orderBy("created", "desc");
+    if (category && category.length > 0) {
+      query = query.where("category", "array-contains-any", category);
+    }
+    const snapshot = await query.limit(limit).offset(offset).get();
+    const items = snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          createdAt: doc.data().created.seconds * 1000,
+          updatedAt: doc.data().updated.seconds * 1000,
+          ...doc.data(),
+        } as Item)
+    );
+    return items;
   }
 }

@@ -15,7 +15,6 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
-  Date: { input: any; output: any; }
 };
 
 export type ContactMethod = {
@@ -35,7 +34,7 @@ export type Item = {
   __typename?: 'Item';
   category: Array<Scalars['String']['output']>;
   condition: ItemCondition;
-  createdAt: Scalars['Date']['output'];
+  createdAt: Scalars['String']['output'];
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   images?: Maybe<Array<Scalars['String']['output']>>;
@@ -46,7 +45,6 @@ export type Item = {
   publishedYear?: Maybe<Scalars['Int']['output']>;
   status: ItemStatus;
   transactions?: Maybe<Array<Transaction>>;
-  updatedAt: Scalars['Date']['output'];
 };
 
 export enum ItemCondition {
@@ -189,14 +187,14 @@ export type MutationUpdateUserArgs = {
 export type NewsPost = {
   __typename?: 'NewsPost';
   content: Scalars['String']['output'];
-  createdAt: Scalars['Date']['output'];
+  createdAt: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   images?: Maybe<Array<Scalars['String']['output']>>;
   isVisible: Scalars['Boolean']['output'];
   relatedItems?: Maybe<Array<Item>>;
   tags?: Maybe<Array<Scalars['String']['output']>>;
   title: Scalars['String']['output'];
-  updatedAt: Scalars['Date']['output'];
+  updatedAt: Scalars['String']['output'];
   user: User;
 };
 
@@ -274,6 +272,7 @@ export type QueryNewsRecentPostsArgs = {
 
 
 export type QueryRecentAddedItemsArgs = {
+  category?: InputMaybe<Array<Scalars['String']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
@@ -310,11 +309,11 @@ export enum Role {
 export type Transaction = {
   __typename?: 'Transaction';
   borrower?: Maybe<User>;
-  createdAt: Scalars['Date']['output'];
+  createdAt: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   item: Item;
   status: TransactionStatus;
-  updatedAt: Scalars['Date']['output'];
+  updatedAt: Scalars['String']['output'];
 };
 
 export enum TransactionStatus {
@@ -328,7 +327,7 @@ export type User = {
   __typename?: 'User';
   address?: Maybe<Scalars['String']['output']>;
   contactMethods?: Maybe<Array<ContactMethod>>;
-  createdAt: Scalars['Date']['output'];
+  createdAt: Scalars['String']['output'];
   email: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   isActive: Scalars['Boolean']['output'];
@@ -338,26 +337,24 @@ export type User = {
   role: Role;
 };
 
-export type ItemsByLocationQueryVariables = Exact<{
-  latitude: Scalars['Float']['input'];
-  longitude: Scalars['Float']['input'];
-  radiusKm: Scalars['Float']['input'];
-}>;
-
-
-export type ItemsByLocationQuery = { __typename?: 'Query', itemsByLocation: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, category: Array<string> }> };
-
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', address?: string | null, createdAt: any, email: string, id: string, isVerified: boolean, isActive: boolean, role: Role, nickname?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', address?: string | null, createdAt: string, email: string, id: string, isVerified: boolean, isActive: boolean, role: Role, nickname?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+
+export type ItemQueryVariables = Exact<{
+  itemId: Scalars['ID']['input'];
+}>;
+
+
+export type ItemQuery = { __typename?: 'Query', item?: { __typename?: 'Item', id: string, name: string, description?: string | null, condition: ItemCondition, category: Array<string>, status: ItemStatus, images?: Array<string> | null, publishedYear?: number | null, language: Language, createdAt: string, ownerId: string } | null };
 
 export type NewsPostQueryVariables = Exact<{
   newsPostId: Scalars['ID']['input'];
 }>;
 
 
-export type NewsPostQuery = { __typename?: 'Query', newsPost?: { __typename?: 'NewsPost', id: string, title: string, content: string, images?: Array<string> | null, createdAt: any, updatedAt: any, tags?: Array<string> | null, relatedItems?: Array<{ __typename?: 'Item', id: string, name: string, category: Array<string>, status: ItemStatus }> | null, user: { __typename?: 'User', id: string, nickname?: string | null } } | null };
+export type NewsPostQuery = { __typename?: 'Query', newsPost?: { __typename?: 'NewsPost', id: string, title: string, content: string, images?: Array<string> | null, createdAt: string, updatedAt: string, tags?: Array<string> | null, relatedItems?: Array<{ __typename?: 'Item', id: string, name: string, category: Array<string>, status: ItemStatus }> | null, user: { __typename?: 'User', id: string, nickname?: string | null } } | null };
 
 export type CreateNewsPostMutationVariables = Exact<{
   title: Scalars['String']['input'];
@@ -368,7 +365,16 @@ export type CreateNewsPostMutationVariables = Exact<{
 }>;
 
 
-export type CreateNewsPostMutation = { __typename?: 'Mutation', createNewsPost: { __typename?: 'NewsPost', content: string, createdAt: any, id: string, images?: Array<string> | null, isVisible: boolean, tags?: Array<string> | null, title: string, relatedItems?: Array<{ __typename?: 'Item', id: string, description?: string | null, name: string, ownerId: string }> | null } };
+export type CreateNewsPostMutation = { __typename?: 'Mutation', createNewsPost: { __typename?: 'NewsPost', content: string, createdAt: string, id: string, images?: Array<string> | null, isVisible: boolean, tags?: Array<string> | null, title: string, relatedItems?: Array<{ __typename?: 'Item', id: string, description?: string | null, name: string, ownerId: string }> | null } };
+
+export type RecentAddedItemsQueryVariables = Exact<{
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  category?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+}>;
+
+
+export type RecentAddedItemsQuery = { __typename?: 'Query', recentAddedItems: Array<{ __typename?: 'Item', id: string, name: string, description?: string | null, condition: ItemCondition, category: Array<string>, status: ItemStatus, images?: Array<string> | null, publishedYear?: number | null, language: Language, createdAt: string }> };
 
 export type NewsRecentPostsQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -376,7 +382,7 @@ export type NewsRecentPostsQueryVariables = Exact<{
 }>;
 
 
-export type NewsRecentPostsQuery = { __typename?: 'Query', newsRecentPosts: Array<{ __typename?: 'NewsPost', id: string, title: string, images?: Array<string> | null, createdAt: any, tags?: Array<string> | null }> };
+export type NewsRecentPostsQuery = { __typename?: 'Query', newsRecentPosts: Array<{ __typename?: 'NewsPost', id: string, title: string, images?: Array<string> | null, createdAt: string, tags?: Array<string> | null }> };
 
 export type CreateUserMutationVariables = Exact<{
   email: Scalars['String']['input'];
@@ -385,55 +391,18 @@ export type CreateUserMutationVariables = Exact<{
 }>;
 
 
-export type CreateUserMutation = { __typename?: 'Mutation', createUser: { __typename?: 'User', id: string, email: string, address?: string | null, nickname?: string | null, createdAt: any, isActive: boolean, isVerified: boolean, role: Role } };
+export type CreateUserMutation = { __typename?: 'Mutation', createUser: { __typename?: 'User', id: string, email: string, address?: string | null, nickname?: string | null, createdAt: string, isActive: boolean, isVerified: boolean, role: Role } };
+
+export type ItemsByLocationQueryVariables = Exact<{
+  latitude: Scalars['Float']['input'];
+  longitude: Scalars['Float']['input'];
+  radiusKm: Scalars['Float']['input'];
+}>;
 
 
-export const ItemsByLocationDocument = gql`
-    query ItemsByLocation($latitude: Float!, $longitude: Float!, $radiusKm: Float!) {
-  itemsByLocation(latitude: $latitude, longitude: $longitude, radiusKm: $radiusKm) {
-    id
-    name
-    condition
-    status
-    category
-  }
-}
-    `;
+export type ItemsByLocationQuery = { __typename?: 'Query', itemsByLocation: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, category: Array<string> }> };
 
-/**
- * __useItemsByLocationQuery__
- *
- * To run a query within a React component, call `useItemsByLocationQuery` and pass it any options that fit your needs.
- * When your component renders, `useItemsByLocationQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useItemsByLocationQuery({
- *   variables: {
- *      latitude: // value for 'latitude'
- *      longitude: // value for 'longitude'
- *      radiusKm: // value for 'radiusKm'
- *   },
- * });
- */
-export function useItemsByLocationQuery(baseOptions: Apollo.QueryHookOptions<ItemsByLocationQuery, ItemsByLocationQueryVariables> & ({ variables: ItemsByLocationQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<ItemsByLocationQuery, ItemsByLocationQueryVariables>(ItemsByLocationDocument, options);
-      }
-export function useItemsByLocationLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ItemsByLocationQuery, ItemsByLocationQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<ItemsByLocationQuery, ItemsByLocationQueryVariables>(ItemsByLocationDocument, options);
-        }
-export function useItemsByLocationSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ItemsByLocationQuery, ItemsByLocationQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<ItemsByLocationQuery, ItemsByLocationQueryVariables>(ItemsByLocationDocument, options);
-        }
-export type ItemsByLocationQueryHookResult = ReturnType<typeof useItemsByLocationQuery>;
-export type ItemsByLocationLazyQueryHookResult = ReturnType<typeof useItemsByLocationLazyQuery>;
-export type ItemsByLocationSuspenseQueryHookResult = ReturnType<typeof useItemsByLocationSuspenseQuery>;
-export type ItemsByLocationQueryResult = Apollo.QueryResult<ItemsByLocationQuery, ItemsByLocationQueryVariables>;
+
 export const MeDocument = gql`
     query Me {
   me {
@@ -484,6 +453,56 @@ export type MeQueryHookResult = ReturnType<typeof useMeQuery>;
 export type MeLazyQueryHookResult = ReturnType<typeof useMeLazyQuery>;
 export type MeSuspenseQueryHookResult = ReturnType<typeof useMeSuspenseQuery>;
 export type MeQueryResult = Apollo.QueryResult<MeQuery, MeQueryVariables>;
+export const ItemDocument = gql`
+    query Item($itemId: ID!) {
+  item(id: $itemId) {
+    id
+    name
+    description
+    condition
+    category
+    status
+    images
+    publishedYear
+    language
+    createdAt
+    ownerId
+  }
+}
+    `;
+
+/**
+ * __useItemQuery__
+ *
+ * To run a query within a React component, call `useItemQuery` and pass it any options that fit your needs.
+ * When your component renders, `useItemQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useItemQuery({
+ *   variables: {
+ *      itemId: // value for 'itemId'
+ *   },
+ * });
+ */
+export function useItemQuery(baseOptions: Apollo.QueryHookOptions<ItemQuery, ItemQueryVariables> & ({ variables: ItemQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ItemQuery, ItemQueryVariables>(ItemDocument, options);
+      }
+export function useItemLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ItemQuery, ItemQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ItemQuery, ItemQueryVariables>(ItemDocument, options);
+        }
+export function useItemSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ItemQuery, ItemQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ItemQuery, ItemQueryVariables>(ItemDocument, options);
+        }
+export type ItemQueryHookResult = ReturnType<typeof useItemQuery>;
+export type ItemLazyQueryHookResult = ReturnType<typeof useItemLazyQuery>;
+export type ItemSuspenseQueryHookResult = ReturnType<typeof useItemSuspenseQuery>;
+export type ItemQueryResult = Apollo.QueryResult<ItemQuery, ItemQueryVariables>;
 export const NewsPostDocument = gql`
     query NewsPost($newsPostId: ID!) {
   newsPost(id: $newsPostId) {
@@ -595,6 +614,57 @@ export function useCreateNewsPostMutation(baseOptions?: Apollo.MutationHookOptio
 export type CreateNewsPostMutationHookResult = ReturnType<typeof useCreateNewsPostMutation>;
 export type CreateNewsPostMutationResult = Apollo.MutationResult<CreateNewsPostMutation>;
 export type CreateNewsPostMutationOptions = Apollo.BaseMutationOptions<CreateNewsPostMutation, CreateNewsPostMutationVariables>;
+export const RecentAddedItemsDocument = gql`
+    query RecentAddedItems($limit: Int, $offset: Int, $category: [String!]) {
+  recentAddedItems(limit: $limit, offset: $offset, category: $category) {
+    id
+    name
+    description
+    condition
+    category
+    status
+    images
+    publishedYear
+    language
+    createdAt
+  }
+}
+    `;
+
+/**
+ * __useRecentAddedItemsQuery__
+ *
+ * To run a query within a React component, call `useRecentAddedItemsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRecentAddedItemsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRecentAddedItemsQuery({
+ *   variables: {
+ *      limit: // value for 'limit'
+ *      offset: // value for 'offset'
+ *      category: // value for 'category'
+ *   },
+ * });
+ */
+export function useRecentAddedItemsQuery(baseOptions?: Apollo.QueryHookOptions<RecentAddedItemsQuery, RecentAddedItemsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<RecentAddedItemsQuery, RecentAddedItemsQueryVariables>(RecentAddedItemsDocument, options);
+      }
+export function useRecentAddedItemsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RecentAddedItemsQuery, RecentAddedItemsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<RecentAddedItemsQuery, RecentAddedItemsQueryVariables>(RecentAddedItemsDocument, options);
+        }
+export function useRecentAddedItemsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RecentAddedItemsQuery, RecentAddedItemsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<RecentAddedItemsQuery, RecentAddedItemsQueryVariables>(RecentAddedItemsDocument, options);
+        }
+export type RecentAddedItemsQueryHookResult = ReturnType<typeof useRecentAddedItemsQuery>;
+export type RecentAddedItemsLazyQueryHookResult = ReturnType<typeof useRecentAddedItemsLazyQuery>;
+export type RecentAddedItemsSuspenseQueryHookResult = ReturnType<typeof useRecentAddedItemsSuspenseQuery>;
+export type RecentAddedItemsQueryResult = Apollo.QueryResult<RecentAddedItemsQuery, RecentAddedItemsQueryVariables>;
 export const NewsRecentPostsDocument = gql`
     query NewsRecentPosts($limit: Int, $offset: Int) {
   newsRecentPosts(limit: $limit, offset: $offset) {
@@ -682,3 +752,49 @@ export function useCreateUserMutation(baseOptions?: Apollo.MutationHookOptions<C
 export type CreateUserMutationHookResult = ReturnType<typeof useCreateUserMutation>;
 export type CreateUserMutationResult = Apollo.MutationResult<CreateUserMutation>;
 export type CreateUserMutationOptions = Apollo.BaseMutationOptions<CreateUserMutation, CreateUserMutationVariables>;
+export const ItemsByLocationDocument = gql`
+    query ItemsByLocation($latitude: Float!, $longitude: Float!, $radiusKm: Float!) {
+  itemsByLocation(latitude: $latitude, longitude: $longitude, radiusKm: $radiusKm) {
+    id
+    name
+    condition
+    status
+    category
+  }
+}
+    `;
+
+/**
+ * __useItemsByLocationQuery__
+ *
+ * To run a query within a React component, call `useItemsByLocationQuery` and pass it any options that fit your needs.
+ * When your component renders, `useItemsByLocationQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useItemsByLocationQuery({
+ *   variables: {
+ *      latitude: // value for 'latitude'
+ *      longitude: // value for 'longitude'
+ *      radiusKm: // value for 'radiusKm'
+ *   },
+ * });
+ */
+export function useItemsByLocationQuery(baseOptions: Apollo.QueryHookOptions<ItemsByLocationQuery, ItemsByLocationQueryVariables> & ({ variables: ItemsByLocationQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ItemsByLocationQuery, ItemsByLocationQueryVariables>(ItemsByLocationDocument, options);
+      }
+export function useItemsByLocationLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ItemsByLocationQuery, ItemsByLocationQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ItemsByLocationQuery, ItemsByLocationQueryVariables>(ItemsByLocationDocument, options);
+        }
+export function useItemsByLocationSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ItemsByLocationQuery, ItemsByLocationQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ItemsByLocationQuery, ItemsByLocationQueryVariables>(ItemsByLocationDocument, options);
+        }
+export type ItemsByLocationQueryHookResult = ReturnType<typeof useItemsByLocationQuery>;
+export type ItemsByLocationLazyQueryHookResult = ReturnType<typeof useItemsByLocationLazyQuery>;
+export type ItemsByLocationSuspenseQueryHookResult = ReturnType<typeof useItemsByLocationSuspenseQuery>;
+export type ItemsByLocationQueryResult = Apollo.QueryResult<ItemsByLocationQuery, ItemsByLocationQueryVariables>;

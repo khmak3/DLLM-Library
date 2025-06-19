@@ -42,6 +42,9 @@
     "create": "Create News",
     "viewAll": "View All News"
   },
+  "item": {
+    "recentlyAdded": "Recently Added {{category}}"
+  },
   "languages": {
     "en": "English",
     "zh-TW": "繁體中文"

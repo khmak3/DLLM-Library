@@ -42,6 +42,9 @@
     "viewAll": "查看所有新聞",
     "create": "創建新聞"
   },
+  "item": {
+    "recentlyAdded": "新番 {{category}}"
+  },  
   "languages": {
     "en": "English",
     "zh-TW": "繁體中文"

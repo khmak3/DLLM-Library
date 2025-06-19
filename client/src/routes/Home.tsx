@@ -4,6 +4,7 @@ import { auth } from "../firebase";
 import { Button, Box, Typography, List, ListItem } from "@mui/material";
 import { User, Item } from "../generated/graphql";
 import RecentNewsBanner from "../components/RecentNewsBanner";
+import RecentItemBanner from "../components/RecentItemBanner";
 import Map from "../components/Map";
 import { useOutletContext } from "react-router-dom";
 import CreateUser from "../components/UserProfile";
@@ -103,6 +104,10 @@ const HomePage: React.FC = () => {
       </ListItem>
       <ListItem>
         <RecentNewsBanner user={user} />
+      </ListItem>
+
+      <ListItem>
+        <RecentItemBanner user={user} category="" />
       </ListItem>
       <ListItem>
         <Button variant="contained" onClick={getLocation}>
