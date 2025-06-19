@@ -83,68 +83,66 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Box p={2}>
-      <List>
-        <ListItem>
-          {user ? (
+    <List>
+      <ListItem>
+        {user ? (
+          <>
+            <Typography>
+              {t("home.welcome", { nickname: user.nickname })}
+            </Typography>
+            <Button onClick={signOut}>{t("auth.signOut")}</Button>
+          </>
+        ) : (
+          email && (
             <>
-              <Typography>
-                {t("home.welcome", { nickname: user.nickname })}
-              </Typography>
+              <CreateUser onUserCreated={() => {}} />
               <Button onClick={signOut}>{t("auth.signOut")}</Button>
             </>
-          ) : (
-            email && (
-              <>
-                <CreateUser onUserCreated={() => {}} />
-                <Button onClick={signOut}>{t("auth.signOut")}</Button>
-              </>
-            )
-          )}
-        </ListItem>
+          )
+        )}
+      </ListItem>
+      <ListItem>
+        <RecentNewsBanner user={user} />
+      </ListItem>
+      <ListItem>
+        <Button variant="contained" onClick={getLocation}>
+          {t("home.displayNearbyItems")}
+        </Button>
+        {location && (
+          <>
+            <Map
+              open={maplocation != null}
+              closeEvent={() => setMapLocation(null)}
+              location={maplocation}
+            />
+          </>
+        )}
+      </ListItem>
+      {itemsByLocationOutput.data && (
+        <Box mt={2}>
+          <Typography variant="h6">{t("home.itemsWithinRadius")}</Typography>
+          <List>
+            {itemsByLocationOutput.data.itemsByLocation.map((item) => (
+              <ListItem key={item.id}>
+                {item.name} ({item.condition}, {item.status})
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      )}
+      {itemsByLocationOutput.loading && (
+        <Typography>{t("common.loading")}</Typography>
+      )}
+      {itemsByLocationOutput.error && (
         <ListItem>
-          <RecentNewsBanner user={user} />
+          <Typography>
+            {t("common.error", {
+              message: itemsByLocationOutput.error.message,
+            })}
+          </Typography>
         </ListItem>
-        <ListItem>
-          <Button variant="contained" onClick={getLocation}>
-            {t("home.displayNearbyItems")}
-          </Button>
-          {location && (
-            <>
-              <Map
-                open={maplocation != null}
-                closeEvent={() => setMapLocation(null)}
-                location={maplocation}
-              />
-            </>
-          )}
-        </ListItem>
-        {itemsByLocationOutput.data && (
-          <Box mt={2}>
-            <Typography variant="h6">{t("home.itemsWithinRadius")}</Typography>
-            <List>
-              {itemsByLocationOutput.data.itemsByLocation.map((item) => (
-                <ListItem key={item.id}>
-                  {item.name} ({item.condition}, {item.status})
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        )}
-        {itemsByLocationOutput.loading && (
-          <Typography>{t("common.loading")}</Typography>
-        )}
-        {itemsByLocationOutput.error && (
-          <ListItem>
-            <Typography>
-              {t("common.error", {
-                message: itemsByLocationOutput.error.message,
-              })}
-            </Typography>
-          </ListItem>
-        )}
-      </List>
-    </Box>
+      )}
+    </List>
   );
 };
 

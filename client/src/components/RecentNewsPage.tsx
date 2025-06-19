@@ -38,7 +38,7 @@ const RecentNewsPage: React.FC<RecentNewsPageProps> = ({
   const navigate = useNavigate();
   const { data, loading, error, refetch } = useNewsRecentPostsQuery({
     variables: {
-      tags: ["Testing"],
+      tags: [],
       limit: 20,
       offset: 0,
     } as NewsRecentPostsQueryVariables,

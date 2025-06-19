@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ email, user }) => {
   const { t } = useTranslation();
 
   return (
-    <Box>
+    <>
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -23,10 +23,8 @@ const Layout: React.FC<LayoutProps> = ({ email, user }) => {
           <LanguageSwitcher />
         </Toolbar>
       </AppBar>
-      <Box p={4}>
-        <Outlet context={{ email, user }} />
-      </Box>
-    </Box>
+      <Outlet context={{ email, user }} />
+    </>
   );
 };
 

@@ -85,7 +85,7 @@ const BaseApp: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
+    <>
       {!user && (
         <>
           <Box sx={{ display: "flex", gap: 2, mb: 4 }}>
@@ -234,7 +234,7 @@ const BaseApp: React.FC = () => {
       <ApolloProvider client={client}>
         <App user={user} />
       </ApolloProvider>
-    </Box>
+    </>
   );
 };
 
