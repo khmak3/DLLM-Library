@@ -20,14 +20,15 @@ import {
   Language,
 } from "../generated/graphql";
 
+
 const CREATE_ITEM_MUTATION = gql`
   mutation CreateItem(
+    $name: String!
     $category: [String!]!
     $condition: ItemCondition!
     $description: String
     $images: [String!]
     $language: Language!
-    $name: String!
     $publishedYear: Int
     $status: ItemStatus!
   ) {
@@ -50,8 +51,14 @@ const CREATE_ITEM_MUTATION = gql`
       images
       publishedYear
       language
+      location {
+        geohash
+        latitude
+        longitude
+      }
       createdAt
       ownerId
+      updatedAt
     }
   }
 `;
@@ -110,10 +117,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
         name,
         category: category.split(",").map((c) => c.trim()).filter(Boolean),
         condition,
-        description: description || undefined,
-        images: images.length > 0 ? images : undefined,
+        description: description || null,
+        images: images.length > 0 ? images : null,
         language,
-        publishedYear: publishedYear === "" ? undefined : Number(publishedYear),
+        publishedYear: publishedYear === "" ? null : Number(publishedYear),
         status,
       },
     });
