@@ -188,7 +188,7 @@ export class ItemService {
     }
 
     // Build itemData object, only including fields with valid values
-    const itemData: any = {
+    const itemData: ItemModel = {
       ownerId: owner.id,
       name: name,
       condition: condition,
