@@ -10,15 +10,13 @@ import {
   Box,
   CircularProgress,
   Alert,
+  Typography,
 } from "@mui/material";
 import {
   CreateUserMutation,
   CreateUserMutationVariables,
 } from "../generated/graphql";
-import { googleMapsApiKey } from "../../../functions/src/platform";
-// import { LoadScript, Autocomplete as GoogleAutocomplete } from "@react-google-maps/api";
 import Map from "../components/Map";
-
 
 export const CREATE_USER_MUTATION = gql`
   mutation CreateUser($email: String!, $address: String, $nickname: String) {
@@ -31,6 +29,11 @@ export const CREATE_USER_MUTATION = gql`
       isActive
       isVerified
       role
+      location {
+        latitude
+        longitude
+        geohash
+      }
     }
   }
 `;
@@ -44,8 +47,13 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated }) => {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [nickname, setNickname] = useState("");
-  const [error, setError] = useState<Error | null>(null);
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const [resolvedLocation, setResolvedLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    formattedAddress: string;
+  } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
 
   const [createUser, { data, loading, error: mutationError }] = useMutation<
     CreateUserMutation,
@@ -57,33 +65,89 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated }) => {
       setEmail("");
       setAddress("");
       setNickname("");
+      setResolvedLocation(null);
     },
   });
 
+  const handleAddressChange = async (newAddress: string) => {
+    setAddress(newAddress);
+    setLocationError(null);
+
+    if (!newAddress.trim()) {
+      setResolvedLocation(null);
+      return;
+    }
+
+    // Debounce geocoding requests
+    const timeoutId = setTimeout(async () => {
+      try {
+        setIsGeocodingAddress(true);
+
+        // Call your backend to resolve the address
+        // This could be a GraphQL query or REST API call
+        const response = await fetch('/api/geocode', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ address: newAddress }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to geocode address');
+        }
+
+        const locationData = await response.json();
+
+        setResolvedLocation({
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+          formattedAddress: locationData.formattedAddress,
+        });
+
+      } catch (error) {
+        console.error('Geocoding error:', error);
+        setLocationError('Failed to resolve address location');
+        setResolvedLocation(null);
+      } finally {
+        setIsGeocodingAddress(false);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Use the resolved/formatted address if available
+    const finalAddress = resolvedLocation?.formattedAddress || address;
+
     createUser({
       variables: {
         email,
-        address: address || undefined,
+        address: finalAddress || undefined,
         nickname: nickname || undefined,
       },
     });
   };
 
-  const handlePlaceChanged = () => {
-    if (autocomplete) {
-      const place = autocomplete.getPlace();
-      setAddress(place.formatted_address || "");
-    }
-  };
-
   return (
     <Box>
-      <Dialog open={open} onClose={() => setOpen(false)}>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ textAlign: "center" }}>Create User</DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>
+            <TextField
+              label="Email"
+              type="email"
+              fullWidth
+              margin="normal"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
             <TextField
               label="Nickname"
               type="text"
@@ -92,22 +156,60 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated }) => {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
             />
+
             <TextField
               label="Address"
               type="text"
               fullWidth
               margin="normal"
               value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              onChange={(e) => handleAddressChange(e.target.value)}
               placeholder="Search address"
+              disabled={isGeocodingAddress}
             />
-            {/* <Map open={true} closeEvent={() => setOpen(true)} location={address} /> */}
 
-            {error && <Alert severity="error">{error.message}</Alert>}
-            {loading && (
-              <CircularProgress sx={{ display: "block", mx: "auto", my: 2 }} />
+            {isGeocodingAddress && (
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                <CircularProgress size={16} sx={{ mr: 1 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Resolving address...
+                </Typography>
+              </Box>
+            )}
+
+            {locationError && (
+              <Alert severity="warning" sx={{ mt: 1 }}>
+                {locationError}
+              </Alert>
+            )}
+
+            {resolvedLocation && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Resolved Address: {resolvedLocation.formattedAddress}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Coordinates: {resolvedLocation.latitude.toFixed(6)}, {resolvedLocation.longitude.toFixed(6)}
+                </Typography>
+
+                <Box sx={{ height: 300, mt: 2 }}>
+                  <Map
+                    open={true}
+                    closeEvent={() => { }}
+                    location={resolvedLocation.formattedAddress}
+                    coordinates={{
+                      lat: resolvedLocation.latitude,
+                      lng: resolvedLocation.longitude
+                    }}
+                  />
+                </Box>
+              </Box>
             )}
           </DialogContent>
+          {mutationError && <Alert severity="error">{mutationError.message}</Alert>}
+          {loading && (
+            <CircularProgress sx={{ display: "block", mx: "auto", my: 2 }} />
+          )}
           <DialogActions
             sx={{ flexDirection: "column", alignItems: "stretch", gap: 1 }}
           >
@@ -124,7 +226,6 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated }) => {
             </Button>
           </DialogActions>
         </form>
-
       </Dialog>
       {data && (
         <Alert severity="success" sx={{ mt: 2 }}>
