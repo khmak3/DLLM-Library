@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { gql, useMutation } from "@apollo/client";
+import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { gql, useLazyQuery, useMutation } from "@apollo/client";
 import {
   Button,
   TextField,
@@ -13,39 +14,58 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  CreateUserMutation,
-  CreateUserMutationVariables,
+  UpdateUserMutation,
+  UpdateUserMutationVariables,
 } from "../generated/graphql";
-import Map from "../components/Map";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
-export const CREATE_USER_MUTATION = gql`
-  mutation CreateUser($email: String!, $address: String, $nickname: String) {
-    createUser(email: $email, address: $address, nickname: $nickname) {
+// Create a custom icon using Leaflet's default marker
+const customIcon = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/512/535/535239.png',
+  iconSize: [41, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 23]
+});
+
+export const GET_GEO_DETAILS = gql`
+  query GeocodeAddress($address: String!) {
+    geocodeAddress(address: $address) {
+      latitude
+      longitude
+      geohash
+    }
+  }
+`;
+
+export const UPDATE_USER_MUTATION = gql`
+  mutation UpdateUser($address: String, $nickname: String) {
+    updateUser(address: $address, nickname: $nickname) {
       id
-      email
       address
       nickname
       createdAt
-      isActive
-      isVerified
-      role
       location {
         latitude
         longitude
         geohash
       }
-    }
+      isVerified
+      isActive
   }
-`;
+}`;
+
 
 interface UserProps {
-  onUserCreated?: (data: CreateUserMutation) => void;
+  onUserCreated?: (data: UpdateUserMutation) => void;
   open?: boolean;
   onClose?: () => void;
 }
 
 
-const CreateUser: React.FC<UserProps> = ({ onUserCreated,
+const UpdateUser: React.FC<UserProps> = ({ onUserCreated,
   open = true,
   onClose
 }) => {
@@ -55,78 +75,78 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated,
     setInternalOpen(false);
     onClose?.();
   };
-  const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [nickname, setNickname] = useState("");
-  const [showCreateUser, setShowCreateUser] = useState(false);
+  // const [showUpdateUser, setShowUpdateUser] = useState(false);
   const [resolvedLocation, setResolvedLocation] = useState<{
     latitude: number;
     longitude: number;
     formattedAddress: string;
   } | null>(null);
+
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  const [createUser, { data, loading, error: mutationError }] = useMutation<
-    CreateUserMutation,
-    CreateUserMutationVariables
-  >(CREATE_USER_MUTATION, {
+  const [UpdateUser, { data, loading, error: mutationError }] = useMutation<
+    UpdateUserMutation,
+    UpdateUserMutationVariables
+  >(UPDATE_USER_MUTATION, {
     onCompleted: (data) => {
       if (onUserCreated) onUserCreated(data);
       setInternalOpen(false);
-      setEmail("");
       setAddress("");
       setNickname("");
       setResolvedLocation(null);
     },
   });
 
-  const handleAddressChange = async (newAddress: string) => {
+  const [geocodeAddress, { loading: geocodeLoading }] = useLazyQuery(GET_GEO_DETAILS, {
+    onCompleted: (data) => {
+      if (data && data.geocodeAddress) {
+        setResolvedLocation({
+          latitude: data.geocodeAddress.latitude,
+          longitude: data.geocodeAddress.longitude,
+          formattedAddress: address.trim(),
+        });
+      } else {
+        setLocationError("Could not find location for the address.");
+        setResolvedLocation(null);
+      }
+      setIsGeocodingAddress(false);
+    },
+    onError: (error) => {
+      console.error('Geocoding error:', error);
+      setLocationError('Failed to resolve address location');
+      setResolvedLocation(null);
+      setIsGeocodingAddress(false);
+    }
+  });
+
+  const handleAddressChange = (newAddress: string) => {
     setAddress(newAddress);
     setLocationError(null);
+
+    // Clear previous timeout
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
 
     if (!newAddress.trim()) {
       setResolvedLocation(null);
       return;
     }
 
-    // Debounce geocoding requests
-    const timeoutId = setTimeout(async () => {
-      try {
-        setIsGeocodingAddress(true);
+    // Set new timeout
+    const timeoutId = setTimeout(() => {
+      setIsGeocodingAddress(true);
 
-        // Call your backend to resolve the address
-        // This could be a GraphQL query or REST API call
-        const response = await fetch('/api/geocode', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ address: newAddress }),
-        });
+      geocodeAddress({
+        variables: { address: newAddress.trim() }
+      });
+    }, 1500);
 
-        if (!response.ok) {
-          throw new Error('Failed to geocode address');
-        }
-
-        const locationData = await response.json();
-
-        setResolvedLocation({
-          latitude: locationData.latitude,
-          longitude: locationData.longitude,
-          formattedAddress: locationData.formattedAddress,
-        });
-
-      } catch (error) {
-        console.error('Geocoding error:', error);
-        setLocationError('Failed to resolve address location');
-        setResolvedLocation(null);
-      } finally {
-        setIsGeocodingAddress(false);
-      }
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(timeoutId);
+    setDebounceTimeout(timeoutId);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -135,11 +155,10 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated,
     // Use the resolved/formatted address if available
     const finalAddress = resolvedLocation?.formattedAddress || address;
 
-    createUser({
+    UpdateUser({
       variables: {
-        email,
-        address: finalAddress || undefined,
-        nickname: nickname || undefined,
+        address: finalAddress,
+        nickname: nickname,
       },
     });
   };
@@ -155,15 +174,6 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated,
         <DialogTitle sx={{ textAlign: "center" }}>Create User</DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              margin="normal"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
 
             <TextField
               label="Nickname"
@@ -200,28 +210,40 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated,
               </Alert>
             )}
 
-            {resolvedLocation && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Resolved Address: {resolvedLocation.formattedAddress}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  Coordinates: {resolvedLocation.latitude.toFixed(6)}, {resolvedLocation.longitude.toFixed(6)}
-                </Typography>
+            {resolvedLocation &&
+              typeof resolvedLocation.latitude === "number" &&
+              typeof resolvedLocation.longitude === "number" &&
+              !isNaN(resolvedLocation.latitude) &&
+              !isNaN(resolvedLocation.longitude) && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Current Address: {resolvedLocation.formattedAddress}
+                  </Typography>
+                  <Box sx={{ height: 300, mt: 2 }}>
+                    {location ? (
+                      <MapContainer
+                        center={[resolvedLocation.latitude, resolvedLocation.longitude]}
+                        zoom={13}
+                        style={{ height: "100%", width: "100%" }}
+                      >
+                        <TileLayer
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                        />
 
-                <Box sx={{ height: 300, mt: 2 }}>
-                  <Map
-                    open={true}
-                    closeEvent={() => { }}
-                    location={resolvedLocation.formattedAddress}
-                    coordinates={{
-                      lat: resolvedLocation.latitude,
-                      lng: resolvedLocation.longitude
-                    }}
-                  />
+                        <Marker position={[resolvedLocation.latitude, resolvedLocation.longitude]} icon={customIcon}>
+                          <Popup>
+                            You are here. <br /> Latitude: {resolvedLocation.latitude}, Longitude:{" "}
+                            {resolvedLocation.longitude}
+                          </Popup>
+                        </Marker>
+                      </MapContainer>
+                    ) : (
+                      <Typography>Location not available.</Typography>
+                    )}
+                  </Box>
                 </Box>
-              </Box>
-            )}
+              )}
           </DialogContent>
           {mutationError && <Alert severity="error">{mutationError.message}</Alert>}
           {loading && (
@@ -253,4 +275,4 @@ const CreateUser: React.FC<UserProps> = ({ onUserCreated,
   );
 };
 
-export default CreateUser;
+export default UpdateUser;
