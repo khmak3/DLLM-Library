@@ -94,7 +94,7 @@ export type Mutation = {
   deleteUser: Scalars['Boolean']['output'];
   generateSignedUrl: SignedUrlResponse;
   hideNewsPost: Scalars['Boolean']['output'];
-  receveTransaction: Transaction;
+  receiveTransaction: Transaction;
   transferTransaction: Transaction;
   updateItem: Item;
   updateNewsPost: NewsPost;
@@ -167,7 +167,7 @@ export type MutationHideNewsPostArgs = {
 };
 
 
-export type MutationReceveTransactionArgs = {
+export type MutationReceiveTransactionArgs = {
   id: Scalars['ID']['input'];
 };
 
