@@ -2,6 +2,7 @@ import { LoginUser, GenerateSignedUrlForUpload } from "./platform";
 import { UserService } from "./userService";
 import { ItemService } from "./itemService";
 import { NewsService } from "./newsService";
+import { TransactionService } from "./transactionService";
 import { createMapService } from "./mapService";
 import {
   Resolvers,
@@ -10,6 +11,7 @@ import {
   NewsPost,
   Location,
   SignedUrlResponse,
+  Transaction,
 } from "./generated/graphql";
 import { GraphQLScalarType, GraphQLError } from "graphql";
 import { Kind } from "graphql/language";
@@ -21,6 +23,7 @@ interface Context {
 const itemService = new ItemService();
 const userService = new UserService(itemService);
 const newsService = new NewsService(itemService, userService);
+const transactionService = new TransactionService();
 
 export const DateScalar = new GraphQLScalarType({
   name: "Date",
@@ -233,5 +236,47 @@ export const resolvers: Resolvers = {
         gsUrl: rv.gsUrl,
       };
     },
+    createTransaction: async (
+      _: any,
+      { itemId }: any,
+      { loginUser }: Context
+    ): Promise<Transaction> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      return transactionService.createTransaction(itemId);
+    },
+    approveTransaction: async (
+      _: any,
+      { id  }: any,
+      { loginUser }: Context
+    ): Promise<Transaction> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      return transactionService.approveTransaction(id);
+    },
+    transferTransaction: async (
+      _: any,
+      { id }: any,
+      { loginUser }: Context
+    ): Promise<Transaction> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      return transactionService.transferTransaction(id);
+    },
+
+    receiveTransaction: async (
+      _: any,
+      { id }: any,
+      { loginUser }: Context
+    ): Promise<Transaction> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      return transactionService.receiveTransaction(id);
+    },
+    cancelTransaction: async (
+      _: any,
+      { id }: any,
+      { loginUser }: Context
+    ): Promise<boolean> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      return transactionService.cancelTransaction(id);
+    },
+
   },
 };
