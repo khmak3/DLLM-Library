@@ -76,7 +76,17 @@
     "approvedOn": "Approved on",
     "transferInstructions": "Please meet with the requestor in person to complete the transfer. Click 'Complete Transfer' once you have handed over the item.",
     "completeTransfer": "Complete Transfer",
-    "actionSuccess": "Action completed successfully!"
+    "actionSuccess": "Action completed successfully!",
+    "readyToReceive": "Ready to Receive",
+    "itemTransferred": "The item has been transferred and is ready for you to receive.",
+    "transferredOn": "Transferred on",
+    "importantReminder": "Important Reminder",
+    "receiveInstructions": "After clicking 'Received', you will become the new holder of this item. The item location will be updated to your address, and you will be responsible for:",
+    "responsibility1": "Responding to future requests from other users",
+    "responsibility2": "Handing over the item to the next requestor when needed", 
+    "responsibility3": "Returning the item to the original owner if requested",
+    "confirmReceiptInstructions": "Please only click 'Received' after you have physically received the item from the current holder.",
+    "received": "Received"    
   },
   "languages": {
     "en": "English",

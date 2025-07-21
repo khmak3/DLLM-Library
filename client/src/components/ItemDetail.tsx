@@ -23,6 +23,8 @@ import {
   Cancel as RejectIcon,
   Schedule as ScheduleIcon,
   SwapHoriz as TransferIcon,
+  GetApp as ReceiveIcon,
+  Home as NewHolderIcon,
 } from "@mui/icons-material";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import {
@@ -243,6 +245,21 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     }
   );
 
+  // Add the receive transaction mutation
+  const [receiveTransaction, { loading: receiveLoading }] = useMutation(
+    RECEIVE_TRANSACTION_MUTATION,
+    {
+      onCompleted: () => {
+        setSuccessSnackbarOpen(true);
+        refetchTransactions();
+      },
+      onError: (error) => {
+        setErrorMessage(error.message);
+        setErrorSnackbarOpen(true);
+      },
+    }
+  );
+
   const isOwner = user && data?.item.ownerId === user.id;
   const isHolder =
     user &&
@@ -257,6 +274,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     openTransactions && openTransactions.length > 0
       ? openTransactions[0]
       : null;
+
+  const isRequestor = user && oldestTransaction?.requestor?.id === user.id;
 
   // Calculate distance between user and item owner
   const getDistanceToOwner = (): string | null => {
@@ -334,6 +353,15 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     }
   };
 
+  const handleReceiveItem = async (transactionId: string) => {
+    try {
+      await receiveTransaction({
+        variables: { transactionId },
+      });
+    } catch (error) {
+      console.error("Error receiving item:", error);
+    }
+  };
   const handleCloseRequestDialog = () => {
     setRequestDialogOpen(false);
   };
@@ -573,6 +601,102 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                       <CircularProgress size={20} />
                     ) : (
                       t("item.completeTransfer", "Complete Transfer")
+                    )}
+                  </Button>
+                </CardActions>
+              </Card>
+            )}
+
+          {/* Transferred Transaction Alert for Requestor */}
+          {isRequestor &&
+            oldestTransaction?.status === TransactionStatus.Transfered && (
+              <Card
+                sx={{ mb: 4, border: "2px solid", borderColor: "info.main" }}
+              >
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <ReceiveIcon color="info" sx={{ mr: 1 }} />
+                    <Typography variant="h6" color="info.dark">
+                      {t("item.readyToReceive", "Ready to Receive")}
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {t(
+                      "item.itemTransferred",
+                      "The item has been transferred and is ready for you to receive."
+                    )}
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    {t("item.transferredOn", "Transferred on")}:{" "}
+                    {formatDate(oldestTransaction?.updatedAt)}
+                  </Typography>
+
+                  <Alert
+                    severity="warning"
+                    icon={<NewHolderIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: "bold", mb: 1 }}
+                    >
+                      {t("item.importantReminder", "Important Reminder")}
+                    </Typography>
+                    <Typography variant="body2">
+                      {t(
+                        "item.receiveInstructions",
+                        "After clicking 'Received', you will become the new holder of this item. The item location will be updated to your address, and you will be responsible for:"
+                      )}
+                    </Typography>
+                    <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                      <Typography component="li" variant="body2">
+                        {t(
+                          "item.responsibility1",
+                          "Responding to future requests from other users"
+                        )}
+                      </Typography>
+                      <Typography component="li" variant="body2">
+                        {t(
+                          "item.responsibility2",
+                          "Handing over the item to the next requestor when needed"
+                        )}
+                      </Typography>
+                      <Typography component="li" variant="body2">
+                        {t(
+                          "item.responsibility3",
+                          "Returning the item to the original owner if requested"
+                        )}
+                      </Typography>
+                    </Box>
+                  </Alert>
+
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    {t(
+                      "item.confirmReceiptInstructions",
+                      "Please only click 'Received' after you have physically received the item from the current holder."
+                    )}
+                  </Alert>
+                </CardContent>
+
+                <CardActions sx={{ justifyContent: "flex-end", p: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="info"
+                    startIcon={<ReceiveIcon />}
+                    onClick={() => handleReceiveItem(oldestTransaction?.id)}
+                    disabled={receiveLoading}
+                    size="large"
+                  >
+                    {receiveLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      t("item.received", "Received")
                     )}
                   </Button>
                 </CardActions>

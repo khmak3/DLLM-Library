@@ -97,7 +97,17 @@
     "exchangeableDescription": "您可以提供另一個物品來交換這個物品。",
     "gift": "這個物品可作為禮物！",
     "giftDescription": "擁有者免費贈送這個物品。",
-    "editItem": "編輯物品"
+    "editItem": "編輯物品",
+    "readyToReceive": "準備接收",
+    "itemTransferred": "物品已轉移，準備供您接收。",
+    "transferredOn": "轉移於",
+    "importantReminder": "重要提醒",
+    "receiveInstructions": "點擊「已接收」後，您將成為這個物品的新持有者。物品位置將更新為您的地址，您將負責：",
+    "responsibility1": "回應其他用戶的未來請求",
+    "responsibility2": "在需要時將物品交給下一個請求者",
+    "responsibility3": "如有要求，將物品歸還給原始擁有者",
+    "confirmReceiptInstructions": "請只有在您實際從當前持有者手中收到物品後，才點擊「已接收」。",
+    "received": "已接收"    
   },
   "languages": {
     "en": "English",
