@@ -252,12 +252,12 @@ export class ItemService {
     }
     const MAX_UPDATE_ITERATIONS = 2;
     let updateTime = 0;
-    while (updateTime != MAX_UPDATE_ITERATIONS) {
+    while (updateTime !== MAX_UPDATE_ITERATIONS) {
       let query = db
         .collection("items")
         .where("ownerId", "==", userId)
         .where("holderId", "==", null);
-      if (updateTime == 1) {
+      if (updateTime === 1) {
         query = db.collection("items").where("holderId", "==", userId);
       }
       let itemsSnapshot = await query.get();

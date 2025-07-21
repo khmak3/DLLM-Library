@@ -20,7 +20,7 @@ type TransactionModel = Omit<
   updated: Timestamp;
 };
 
-type emailDetails = {
+type EmailDetail = {
   subject: string;
   body: string;
 };
@@ -194,7 +194,7 @@ export class TransactionService {
       );
     }
 
-    const emailDetails: emailDetails = {
+    const emailDetail: EmailDetail = {
       subject: `Transaction Approved for Item: ${item.name}`,
       body: `Your transaction request for item ${item.name} has been approved by ${owner.nickname}. Please proceed with the next steps.`,
     };
@@ -204,7 +204,7 @@ export class TransactionService {
       owner,
       item,
       data,
-      emailDetails
+      emailDetail
     );
     return rv;
   }
@@ -242,7 +242,7 @@ export class TransactionService {
       owner = ownerRv;
     }
 
-    const emailDetails: emailDetails = {
+    const emailDetail: EmailDetail = {
       subject: `Transaction Cancelled for Item: ${item.name}`,
       body: `Your transaction request for item ${item.name} has been cancelled by ${user.nickname}.`,
     };
@@ -252,7 +252,7 @@ export class TransactionService {
       owner,
       item,
       data,
-      emailDetails
+      emailDetail
     );
     if (!rv) {
       throw new Error(`Failed to cancel transaction with id ${id}`);
@@ -266,7 +266,7 @@ export class TransactionService {
     owner: User,
     item: Item,
     data: TransactionModel,
-    emailDetails: emailDetails
+    emailDetail: EmailDetail
   ): Promise<Transaction> {
     // Save the updated transaction to the database
 
@@ -290,8 +290,8 @@ export class TransactionService {
     sendNotificationViaEmail(
       toList,
       ccList,
-      emailDetails.subject,
-      emailDetails.body
+      emailDetail.subject,
+      emailDetail.body
     );
     let rv: Transaction = {
       id: id,
@@ -334,7 +334,7 @@ export class TransactionService {
       owner = ownerRv;
     }
 
-    const emailDetails: emailDetails = {
+    const emailDetail: EmailDetail = {
       subject: `Transaction Transferred for Item: ${item.name}`,
       body: `Your transaction request for item ${item.name} has been transferred by ${user.nickname}.`,
     };
@@ -344,7 +344,7 @@ export class TransactionService {
       owner,
       item,
       data,
-      emailDetails
+      emailDetail
     );
     if (!rv) {
       throw new Error(`Failed to transfer transaction with id ${id}`);
@@ -383,7 +383,7 @@ export class TransactionService {
         `Failed to update item holder for item with id ${item.id}`
       );
     }
-    const emailDetails: emailDetails = {
+    const emailDetail: EmailDetail = {
       subject: `Transaction Received for Item: ${item.name}`,
       body: `Your transaction request for item ${item.name} has been received.`,
     };
@@ -401,7 +401,7 @@ export class TransactionService {
       owner,
       item,
       data,
-      emailDetails
+      emailDetail
     );
     if (!rv) {
       throw new Error(`Failed to complete transaction with id ${id}`);
