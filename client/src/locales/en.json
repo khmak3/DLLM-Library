@@ -11,6 +11,8 @@
     "forgotPassword": "Forgot Password?",
     "resetPassword": "Reset Password",
     "sendResetEmail": "Send Reset Email",
+    "createProfile": "Create Profile",
+    "editProfile": "Edit Profile",
     "cancel": "Cancel",
     "submit": "Submit"
   },
@@ -19,6 +21,7 @@
     "news": "News",
     "viewNews": "View News",
     "viewAllNews": "View All News",
+    "viewAllItems": "View All Items",
     "allNews": "All News"
   },
   "home": {
@@ -28,6 +31,7 @@
     "createUserPrompt": "Please create your user profile"
   },
   "common": {
+    "tags": "Tags",
     "loading": "Loading...",
     "processing": "Processing...",
     "uploading": "Uploading...",
@@ -39,20 +43,39 @@
     "language": "Language",
     "images": "Images...",
     "processingImages": "Processing Images...",
-    "addImages": "Add Images"
+    "addImages": "Add Images",
+    "by": "By",
+    "unknown": "Unknown",
+    "updated": "Updated",
+    "created": "Created"
+  },
+  "location": {
+    "latitude": "Latitude",
+    "longtitude": "Longitude",
+    "myLocation": "My Location",
+    "notAvailable": "Location not available.",
+    "here": "You are here."
   },
   "news": {
     "title": "News",
+    "trending": "Trending News",
     "content": "Content",
     "author": "Author",
     "publishedAt": "Published At",
     "create": "Create News",
     "createPost": "Create Post",
-    "viewAll": "View All News"
+    "viewAll": "View All News",
+    "readMore": "Read More",
+    "loadNews": "Loading all news...",
+    "newsDetails": "News Details",
+    "error": "Error loading news details: {{message}}"
   },
   "item": {
     "recentlyAdded": "Recently Added {{category}}",
     "create": "Create Item",
+    "viewDetails": "View Details",
+    "relatedItems": "Related Items",
+    "loadItems": "Loading item...",
     "request": "Request",
     "confirmRequest": "Confirm Request",
     "confirmRequestMessage": "Are you sure you want to request this item? This will create a transaction between you and the owner.",
@@ -79,6 +102,9 @@
     "contact": "Contact",
     "approve": "Approve",
     "reject": "Reject",
+    "category": "Categories",
+    "condition": "Condition",
+    "status": "Status",
     "approvedTransfer": "Ready for Transfer",
     "approvedForTransfer": "'s request has been approved",
     "approvedOn": "Approved on",

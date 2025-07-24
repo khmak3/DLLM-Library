@@ -350,7 +350,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
   return (
     <Box>
       <Button variant="contained" onClick={handleClickOpen}>
-        t("item.create")
+        {t("item.create")}
       </Button>
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle sx={{ textAlign: "center" }}>Create New Item</DialogTitle>

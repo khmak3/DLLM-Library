@@ -11,6 +11,8 @@
     "forgotPassword": "忘記密碼？",
     "resetPassword": "重設密碼",
     "sendResetEmail": "發送重設郵件",
+    "createProfile": "編輯個人檔案",
+    "editProfile": "編輯個人檔案",
     "cancel": "取消",
     "submit": "提交"
   },
@@ -19,6 +21,7 @@
     "news": "新聞",
     "viewNews": "查看新聞",
     "viewAllNews": "查看所有新聞",
+    "viewAllItems": "查看所有物品",
     "allNews": "新聞列表"
   },
   "home": {
@@ -28,6 +31,7 @@
     "createUserPrompt": "請填寫您的個人檔案"
   },
   "common": {
+    "tags": "標籤",
     "loading": "加載中...",
     "processing": "載入中...",
     "uploading": "上載中...",
@@ -39,7 +43,18 @@
     "language": "語言",
     "images": "圖片...",
     "processingImages": "載入圖像中...",
-    "addImages": "加入圖像"
+    "addImages": "加入圖像",
+    "by": "來自",
+    "unknown": "未知",
+    "updated": "改造",
+    "created": "發佈"
+  },
+  "location": {
+    "latitude": "緯度",
+    "longtitude": "經度",
+    "myLocation": "我的位置",
+    "notAvailable": "位置不可獲取。",
+    "here": "您在這裡。"
   },
   "news": {
     "title": "新聞",
@@ -49,11 +64,18 @@
     "publishedAt": "發佈時間",
     "create": "發佈文章",
     "createPost": "發佈報道",
-    "viewAll": "查看所有新聞"
+    "viewAll": "查看所有新聞",
+    "readMore": "再看",
+    "loadNews": "載入新聞中...",
+    "newsDetails": "新聞詳情",
+    "error": "載入新聞詳情出錯: {{message}}"
   },
   "item": {
     "recentlyAdded": "新番 {{category}}",
     "create": "發佈新番",
+    "viewDetails": "查看詳情",
+    "relatedItems": "相關物品",
+    "loadItems": "載入物品中...",
     "request": "交易請求",
     "confirmRequest": "確認提交請求",
     "confirmRequestMessage": "您確定要對這件物品提交交易請求嗎？我們將向物主提供交易通知。",
@@ -92,6 +114,7 @@
     "holder": "持有者",
     "detailsloading": "資料加載中",
     "errorLoading": "載入物品資料時出現錯誤",
+    "category": "類別",
     "condition": "狀態",
     "status": "情況",
     "language": "語言",
