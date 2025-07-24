@@ -107,7 +107,32 @@ async function GetPublicUrlForGSFile(gsFileUrl: string): Promise<string> {
   return publicUrl;
 }
 
+async function sendNotificationViaEmail(
+  to: string[],
+  cc: string[],
+  subject: string,
+  body: string
+): Promise<void> {
+  const mailOptions = {
+    to,
+    cc,
+    subject,
+    text: body,
+  };
+  try {
+    await admin.firestore().collection("mail").add(mailOptions);
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw new Error("Failed to send email");
+  }
+  // Note: This is a placeholder function. In a real application, you would use a mail service like SendGrid, Mailgun, or similar
+  // to send the email. The above code assumes you have a Firestore collection named "mail" where email messages are queued
+  // for processing. Replace this implementation with a proper email-sending service for production use.
+}
+
 export {
+  sendNotificationViaEmail,
   getLoginUserFromToken,
   LoginUser,
   db,

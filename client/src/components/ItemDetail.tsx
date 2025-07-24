@@ -22,9 +22,17 @@ import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
   Schedule as ScheduleIcon,
+  SwapHoriz as TransferIcon,
+  GetApp as ReceiveIcon,
+  Home as NewHolderIcon,
 } from "@mui/icons-material";
 import { gql, useQuery, useMutation } from "@apollo/client";
-import { Item, User } from "../generated/graphql";
+import {
+  Item,
+  Transaction,
+  User,
+  TransactionStatus,
+} from "../generated/graphql";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { calculateDistance, formatDistance } from "../utils/geoProcessor";
@@ -111,6 +119,26 @@ const APPROVE_TRANSACTION_MUTATION = gql`
 const CANCEL_TRANSACTION_MUTATION = gql`
   mutation CancelTransaction($transactionId: ID!) {
     cancelTransaction(id: $transactionId)
+  }
+`;
+
+const TRANSFER_TRANSACTION_MUTATION = gql`
+  mutation TransferTransaction($transactionId: ID!) {
+    transferTransaction(id: $transactionId) {
+      id
+      status
+      updatedAt
+    }
+  }
+`;
+
+const RECEIVE_TRANSACTION_MUTATION = gql`
+  mutation ReceiveTransaction($transactionId: ID!) {
+    receiveTransaction(id: $transactionId) {
+      id
+      status
+      updatedAt
+    }
   }
 `;
 
@@ -202,6 +230,36 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     }
   );
 
+  // Add the transfer mutation
+  const [transferTransaction, { loading: transferLoading }] = useMutation(
+    TRANSFER_TRANSACTION_MUTATION,
+    {
+      onCompleted: () => {
+        setSuccessSnackbarOpen(true);
+        refetchTransactions();
+      },
+      onError: (error) => {
+        setErrorMessage(error.message);
+        setErrorSnackbarOpen(true);
+      },
+    }
+  );
+
+  // Add the receive transaction mutation
+  const [receiveTransaction, { loading: receiveLoading }] = useMutation(
+    RECEIVE_TRANSACTION_MUTATION,
+    {
+      onCompleted: () => {
+        setSuccessSnackbarOpen(true);
+        refetchTransactions();
+      },
+      onError: (error) => {
+        setErrorMessage(error.message);
+        setErrorSnackbarOpen(true);
+      },
+    }
+  );
+
   const isOwner = user && data?.item.ownerId === user.id;
   const isHolder =
     user &&
@@ -209,22 +267,24 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
       (isOwner && data?.item.holderId === null));
   const canCreateTransaction = user && !isHolder;
 
-  // Get open transactions and find oldest pending one
-  const openTransactions = transactionsData?.openTransactionsByItem || [];
-  const oldestPendingTransaction = openTransactions
-    .filter((t: any) => t.status === "PENDING")
-    .sort(
-      (a: any, b: any) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    )[0];
+  // Get open transactions and find oldest one
+  const openTransactions: Transaction[] =
+    transactionsData?.openTransactionsByItem || [];
+  const oldestTransaction =
+    openTransactions && openTransactions.length > 0
+      ? openTransactions[0]
+      : null;
+
+  const isRequestor = user && oldestTransaction?.requestor?.id === user.id;
 
   // Calculate distance between user and item owner
   const getDistanceToOwner = (): string | null => {
+    const holder = holderData || ownerData;
     if (
       !user?.location?.latitude ||
       !user?.location?.longitude ||
-      !holderData?.user?.location?.latitude ||
-      !holderData?.user?.location?.longitude
+      !holder?.user?.location?.latitude ||
+      !holder?.user?.location?.longitude
     ) {
       return null;
     }
@@ -232,8 +292,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     const distance = calculateDistance(
       user.location.latitude,
       user.location.longitude,
-      holderData.user.location.latitude,
-      holderData.user.location.longitude
+      holder.user.location.latitude,
+      holder.user.location.longitude
     );
 
     return formatDistance(distance);
@@ -283,6 +343,25 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     }
   };
 
+  const handleCompleteTransfer = async (transactionId: string) => {
+    try {
+      await transferTransaction({
+        variables: { transactionId },
+      });
+    } catch (error) {
+      console.error("Error completing transfer:", error);
+    }
+  };
+
+  const handleReceiveItem = async (transactionId: string) => {
+    try {
+      await receiveTransaction({
+        variables: { transactionId },
+      });
+    } catch (error) {
+      console.error("Error receiving item:", error);
+    }
+  };
   const handleCloseRequestDialog = () => {
     setRequestDialogOpen(false);
   };
@@ -380,81 +459,249 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
       {data?.item && (
         <Paper elevation={1} sx={{ p: 4 }}>
           {/* Pending Transaction Alert for Owner */}
-          {isOwner && oldestPendingTransaction && (
-            <Card
-              sx={{ mb: 4, border: "2px solid", borderColor: "warning.main" }}
-            >
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <ScheduleIcon color="warning" sx={{ mr: 1 }} />
-                  <Typography variant="h6" color="warning.dark">
-                    {t("item.pendingRequest", "Pending Request")}
+          {isOwner &&
+            oldestTransaction?.status === TransactionStatus.Pending && (
+              <Card
+                sx={{ mb: 4, border: "2px solid", borderColor: "warning.main" }}
+              >
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <ScheduleIcon color="warning" sx={{ mr: 1 }} />
+                    <Typography variant="h6" color="warning.dark">
+                      {t("item.pendingRequest", "Pending Request")}
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    <strong>{oldestTransaction?.requestor?.nickname}</strong>
+                    {t("item.hasRequested", " has requested this item")}
                   </Typography>
-                </Box>
 
-                <Typography variant="body1" sx={{ mb: 1 }}>
-                  <strong>{oldestPendingTransaction.requestor.nickname}</strong>
-                  {t("item.hasRequested", " has requested this item")}
-                </Typography>
-
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 2 }}
-                >
-                  {t("item.requestedOn", "Requested on")}:{" "}
-                  {formatDate(oldestPendingTransaction.createdAt)}
-                </Typography>
-
-                {oldestPendingTransaction.requestor.email && (
                   <Typography
                     variant="body2"
                     color="text.secondary"
                     sx={{ mb: 2 }}
                   >
-                    {t("item.contact", "Contact")}:{" "}
-                    {oldestPendingTransaction.requestor.email}
+                    {t("item.requestedOn", "Requested on")}:{" "}
+                    {formatDate(oldestTransaction?.createdAt)}
                   </Typography>
-                )}
-              </CardContent>
 
-              <CardActions sx={{ justifyContent: "flex-end", p: 2 }}>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<RejectIcon />}
-                  onClick={() =>
-                    handleRejectTransaction(oldestPendingTransaction.id)
-                  }
-                  disabled={cancelLoading || approveLoading}
-                  size="large"
-                >
-                  {cancelLoading ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    t("item.reject", "Reject")
+                  {oldestTransaction?.requestor?.email && (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      {t("item.contact", "Contact")}:{" "}
+                      {oldestTransaction?.requestor?.email}
+                    </Typography>
                   )}
-                </Button>
+                </CardContent>
 
-                <Button
-                  variant="contained"
-                  color="success"
-                  startIcon={<ApproveIcon />}
-                  onClick={() =>
-                    handleApproveTransaction(oldestPendingTransaction.id)
-                  }
-                  disabled={approveLoading || cancelLoading}
-                  size="large"
-                >
-                  {approveLoading ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    t("item.approve", "Approve")
+                <CardActions sx={{ justifyContent: "flex-end", p: 2 }}>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<RejectIcon />}
+                    onClick={() =>
+                      handleRejectTransaction(oldestTransaction?.id)
+                    }
+                    disabled={cancelLoading || approveLoading}
+                    size="large"
+                  >
+                    {cancelLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      t("item.reject", "Reject")
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<ApproveIcon />}
+                    onClick={() =>
+                      handleApproveTransaction(oldestTransaction?.id)
+                    }
+                    disabled={approveLoading || cancelLoading}
+                    size="large"
+                  >
+                    {approveLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      t("item.approve", "Approve")
+                    )}
+                  </Button>
+                </CardActions>
+              </Card>
+            )}
+
+          {/* Approved Transaction Alert for Holder */}
+          {isHolder &&
+            oldestTransaction?.status === TransactionStatus.Approved && (
+              <Card
+                sx={{ mb: 4, border: "2px solid", borderColor: "success.main" }}
+              >
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <TransferIcon color="success" sx={{ mr: 1 }} />
+                    <Typography variant="h6" color="success.dark">
+                      {t("item.approvedTransfer", "Ready for Transfer")}
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="body1" sx={{ mb: 1 }}>
+                    <strong>{oldestTransaction?.requestor?.nickname}</strong>
+                    {t(
+                      "item.approvedForTransfer",
+                      "'s request has been approved"
+                    )}
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    {t("item.approvedOn", "Approved on")}:{" "}
+                    {formatDate(oldestTransaction?.updatedAt)}
+                  </Typography>
+
+                  {oldestTransaction?.requestor?.email && (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      {t("item.contact", "Contact")}:{" "}
+                      {oldestTransaction?.requestor?.email}
+                    </Typography>
                   )}
-                </Button>
-              </CardActions>
-            </Card>
-          )}
+
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    {t(
+                      "item.transferInstructions",
+                      "Please meet with the requestor in person to complete the transfer. Click 'Complete Transfer' once you have handed over the item."
+                    )}
+                  </Alert>
+                </CardContent>
+
+                <CardActions sx={{ justifyContent: "flex-end", p: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<TransferIcon />}
+                    onClick={() =>
+                      handleCompleteTransfer(oldestTransaction?.id)
+                    }
+                    disabled={transferLoading}
+                    size="large"
+                  >
+                    {transferLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      t("item.completeTransfer", "Complete Transfer")
+                    )}
+                  </Button>
+                </CardActions>
+              </Card>
+            )}
+
+          {/* Transferred Transaction Alert for Requestor */}
+          {isRequestor &&
+            oldestTransaction?.status === TransactionStatus.Transfered && (
+              <Card
+                sx={{ mb: 4, border: "2px solid", borderColor: "info.main" }}
+              >
+                <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                    <ReceiveIcon color="info" sx={{ mr: 1 }} />
+                    <Typography variant="h6" color="info.dark">
+                      {t("item.readyToReceive", "Ready to Receive")}
+                    </Typography>
+                  </Box>
+
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {t(
+                      "item.itemTransferred",
+                      "The item has been transferred and is ready for you to receive."
+                    )}
+                  </Typography>
+
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    {t("item.transferredOn", "Transferred on")}:{" "}
+                    {formatDate(oldestTransaction?.updatedAt)}
+                  </Typography>
+
+                  <Alert
+                    severity="warning"
+                    icon={<NewHolderIcon />}
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: "bold", mb: 1 }}
+                    >
+                      {t("item.importantReminder", "Important Reminder")}
+                    </Typography>
+                    <Typography variant="body2">
+                      {t(
+                        "item.receiveInstructions",
+                        "After clicking 'Received', you will become the new holder of this item. The item location will be updated to your address, and you will be responsible for:"
+                      )}
+                    </Typography>
+                    <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                      <Typography component="li" variant="body2">
+                        {t(
+                          "item.responsibility1",
+                          "Responding to future requests from other users"
+                        )}
+                      </Typography>
+                      <Typography component="li" variant="body2">
+                        {t(
+                          "item.responsibility2",
+                          "Handing over the item to the next requestor when needed"
+                        )}
+                      </Typography>
+                      <Typography component="li" variant="body2">
+                        {t(
+                          "item.responsibility3",
+                          "Returning the item to the original owner if requested"
+                        )}
+                      </Typography>
+                    </Box>
+                  </Alert>
+
+                  <Alert severity="info" sx={{ mt: 2 }}>
+                    {t(
+                      "item.confirmReceiptInstructions",
+                      "Please only click 'Received' after you have physically received the item from the current holder."
+                    )}
+                  </Alert>
+                </CardContent>
+
+                <CardActions sx={{ justifyContent: "flex-end", p: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="info"
+                    startIcon={<ReceiveIcon />}
+                    onClick={() => handleReceiveItem(oldestTransaction?.id)}
+                    disabled={receiveLoading}
+                    size="large"
+                  >
+                    {receiveLoading ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      t("item.received", "Received")
+                    )}
+                  </Button>
+                </CardActions>
+              </Card>
+            )}
 
           {/* Categories */}
           {data.item.category && data.item.category.length > 0 && (
@@ -505,7 +752,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                 {data.item.images.map((image, index) => (
                   <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
                     <Paper elevation={2} sx={{ overflow: "hidden" }}>
-                      <SafeImage
+                      <img
                         src={image}
                         alt={`${data.item.name} - Image ${index + 1}`}
                         style={{
