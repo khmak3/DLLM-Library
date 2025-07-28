@@ -99,8 +99,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
   initialAddress = "",
 }) => {
   const [internalOpen, setInternalOpen] = useState(open);
-  const [address, setAddress] = useState(initialAddress);
-  const [nickname, setNickname] = useState(initialNickname);
+  const [address, setAddress] = useState(initialAddress || "");
+  const [nickname, setNickname] = useState(initialNickname || "");
   const [resolvedLocation, setResolvedLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -154,8 +154,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
   };
 
   const resetForm = () => {
-    setAddress(initialAddress);
-    setNickname(initialNickname);
+    setAddress(initialAddress || "");
+    setNickname(initialNickname || "");
     setResolvedLocation(null);
     setLocationError(null);
   };
@@ -166,8 +166,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
   }, [open]);
 
   useEffect(() => {
-    setAddress(initialAddress);
-    setNickname(initialNickname);
+    setAddress(initialAddress || "");
+    setNickname(initialNickname || "");
   }, [initialAddress, initialNickname]);
 
   const [geocodeAddress, { loading: geocodeLoading }] = useLazyQuery(

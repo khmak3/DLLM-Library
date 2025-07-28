@@ -5,6 +5,7 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
+  List,
 } from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 import { Link } from "react-router";
@@ -16,7 +17,8 @@ import {
 } from "../generated/graphql";
 import NewsForm from "./NewsForm";
 import NewsDetail from "./NewsDetail";
-import NewsPost from "./NewsPost";
+import NewsSummary from "./NewsSummary";
+
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
@@ -41,7 +43,7 @@ const RecentNewsBanner: React.FC<RecentNewsBannerProps> = ({ user }) => {
   const { data, loading, error, refetch } = useNewsRecentPostsQuery({
     variables: {
       tags: [],
-      limit: 10,
+      limit: 2,
       offset: 0,
     } as NewsRecentPostsQueryVariables,
   });
@@ -160,15 +162,10 @@ const RecentNewsBanner: React.FC<RecentNewsBannerProps> = ({ user }) => {
         >
           <Typography
             variant={isMobile ? "h6" : "h5"}
-            component={Link}
-            to="/news/all"
             sx={{
               textDecoration: "none",
               color: "primary.main",
               fontWeight: "bold",
-              "&:hover": {
-                textDecoration: "underline",
-              },
             }}
           >
             {t("news.trending")}
@@ -178,146 +175,16 @@ const RecentNewsBanner: React.FC<RecentNewsBannerProps> = ({ user }) => {
           )}
         </Box>
 
-        {/* Scrollable News Container */}
-        {data && data.newsRecentPosts.length > 0 && (
-          <Box
-            sx={{
-              position: "relative",
-              width: "100%",
-              height: `${containerHeight}px`,
-              overflow: "hidden",
-            }}
-          >
-            {/* Left Arrow */}
-            {canScrollLeft && (
-              <IconButton
-                onClick={scrollLeft}
-                sx={{
-                  position: "absolute",
-                  left: 4,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  zIndex: 2,
-                  backgroundColor: "background.paper",
-                  boxShadow: 2,
-                  width: 32,
-                  height: 32,
-                  "&:hover": {
-                    backgroundColor: "background.paper",
-                    boxShadow: 4,
-                  },
-                }}
-              >
-                <ArrowBackIos fontSize="small" />
-              </IconButton>
-            )}
-
-            {/* News Cards Container */}
-            <Box
-              ref={scrollContainerRef}
-              sx={{
-                display: "flex",
-                overflowX: "hidden",
-                scrollBehavior: "smooth",
-                gap: 1,
-                px: canScrollLeft || canScrollRight ? 5 : 1,
-                width: "100%",
-                height: "100%",
-              }}
-            >
-              {data.newsRecentPosts.map(
-                (news, index) =>
-                  index >= currentIndex &&
-                  index < currentIndex + cardsPerView && (
-                    <Box
-                      key={news.id}
-                      sx={{
-                        opacity:
-                          index >= currentIndex &&
-                            index < currentIndex + cardsPerView
-                            ? 1
-                            : 0,
-                        visibility:
-                          index >= currentIndex &&
-                            index < currentIndex + cardsPerView
-                            ? "visible"
-                            : "hidden",
-                        transition: "opacity 0.3s ease-in-out",
-                      }}
-                    >
-                      <NewsPost
-                        news={{
-                          id: news.id,
-                          title: news.title,
-                          images: news.images,
-                          createdAt: news.createdAt,
-                          tags: news.tags,
-                        }}
-                        width={cardDimensions.width}
-                        height={cardDimensions.height}
-                        showImage={true}
-                        onClick={handleNewsItemClick}
-                        isPortrait={isMobile && isPortrait}
-                      />
-                    </Box>
-                  )
-              )}
-            </Box>
-
-            {/* Right Arrow */}
-            {canScrollRight && (
-              <IconButton
-                onClick={scrollRight}
-                sx={{
-                  position: "absolute",
-                  right: 4,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  zIndex: 2,
-                  backgroundColor: "background.paper",
-                  boxShadow: 2,
-                  width: 32,
-                  height: 32,
-                  "&:hover": {
-                    backgroundColor: "background.paper",
-                    boxShadow: 4,
-                  },
-                }}
-              >
-                <ArrowForwardIos fontSize="small" />
-              </IconButton>
-            )}
-          </Box>
-        )}
-
-        {/* Pagination Dots */}
-        {data && data.newsRecentPosts.length > cardsPerView && (
-          <Box
-            sx={{ display: "flex", justifyContent: "center", mt: 2, gap: 1 }}
-          >
-            {Array.from({
-              length: Math.ceil(data.newsRecentPosts.length / cardsPerView),
-            }).map((_, index) => (
-              <Box
-                key={index}
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  backgroundColor:
-                    Math.floor(currentIndex / cardsPerView) === index
-                      ? "primary.main"
-                      : "grey.300",
-                  cursor: "pointer",
-                  transition: "background-color 0.2s",
-                }}
-                onClick={() => {
-                  const newIndex = index * cardsPerView;
-                  setCurrentIndex(newIndex);
-                }}
+        {data && (
+          <List>
+            {data.newsRecentPosts.map((news) => (
+              <NewsSummary
+                key={news.id}
+                news={news}
+                onClick={handleNewsItemClick}
               />
             ))}
-          </Box>
+          </List>
         )}
 
         {/* See All Link */}

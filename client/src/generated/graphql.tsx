@@ -531,7 +531,7 @@ export type ItemsByLocationQueryVariables = Exact<{
 }>;
 
 
-export type ItemsByLocationQuery = { __typename?: 'Query', itemsByLocation: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, category: Array<string> }> };
+export type ItemsByLocationQuery = { __typename?: 'Query', itemsByLocation: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, images?: Array<string> | null, category: Array<string>, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }> };
 
 export type GenerateSignedUrlMutationVariables = Exact<{
   fileName: Scalars['String']['input'];
@@ -1323,6 +1323,11 @@ export const ItemsByLocationDocument = gql`
     name
     condition
     status
+    location {
+      latitude
+      longitude
+    }
+    images
     category
   }
 }
