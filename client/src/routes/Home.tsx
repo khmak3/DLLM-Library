@@ -7,8 +7,12 @@ import RecentNewsBanner from "../components/RecentNewsBanner";
 import RecentItemBanner from "../components/RecentItemBanner";
 import Map from "../components/Map";
 import { useOutletContext } from "react-router-dom";
-import CreateUser from "../components/UserProfile";
+import UpdateUser from "../components/UserProfile";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
+
+import ItemSummary from "../components/ItemSummary";
+import { calculateDistance } from "../utils/geoProcessor";
 
 const ITEMS_QUERY = gql`
   query ItemsByLocation(
@@ -25,6 +29,11 @@ const ITEMS_QUERY = gql`
       name
       condition
       status
+      location {
+        latitude
+        longitude
+      }
+      images
       category
     }
   }
@@ -38,16 +47,19 @@ interface OutletContext {
 const HomePage: React.FC = () => {
   const { t } = useTranslation();
   const { user, email } = useOutletContext<OutletContext>();
+  const navigate = useNavigate();
 
   // State for controlling CreateUser dialog
   const [showCreateUser, setShowCreateUser] = useState(false);
 
-  const [location, setLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
+  // State for controlling UpdateUser dialog
+  const [showUpdateUser, setShowUpdateUser] = useState(false);
 
-  const [maplocation, setMapLocation] = useState<{
+  const handleItemClick = (itemId: string) => {
+    navigate(`/items/${itemId}`);
+  };
+
+  const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
@@ -63,10 +75,6 @@ const HomePage: React.FC = () => {
   const getLocation = () => {
     if (user?.location?.latitude) {
       setLocation({
-        latitude: user?.location.latitude,
-        longitude: user?.location.longitude,
-      });
-      setMapLocation({
         latitude: user?.location.latitude,
         longitude: user?.location.longitude,
       });
@@ -96,26 +104,34 @@ const HomePage: React.FC = () => {
     <List>
       <ListItem>
         {user ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              width: "100%",
+            }}
+          >
             <Typography sx={{ flex: 1 }}>
               {t("home.welcome", { nickname: user.nickname })}
             </Typography>
-            <Button
-              variant="outlined"
-              onClick={() => setShowCreateUser(true)}
-            >
+            <Button variant="outlined" onClick={() => setShowUpdateUser(true)}>
               {t("auth.editProfile")}
             </Button>
-            <Button
-              variant="contained"
-              onClick={signOut}
-            >
+            <Button variant="contained" onClick={signOut}>
               {t("auth.signOut")}
             </Button>
           </Box>
         ) : (
           email && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                width: "100%",
+              }}
+            >
               <Typography sx={{ flex: 1 }}>
                 {t("home.welcome")} {email}
               </Typography>
@@ -125,10 +141,7 @@ const HomePage: React.FC = () => {
               >
                 {t("auth.createProfile")}
               </Button>
-              <Button
-                variant="outlined"
-                onClick={signOut}
-              >
+              <Button variant="outlined" onClick={signOut}>
                 {t("auth.signOut")}
               </Button>
             </Box>
@@ -148,15 +161,6 @@ const HomePage: React.FC = () => {
         <Button variant="contained" onClick={getLocation}>
           {t("home.displayNearbyItems")}
         </Button>
-        {location && (
-          <>
-            <Map
-              open={maplocation != null}
-              closeEvent={() => setMapLocation(null)}
-              location={maplocation}
-            />
-          </>
-        )}
       </ListItem>
 
       {itemsByLocationOutput.data && (
@@ -164,9 +168,26 @@ const HomePage: React.FC = () => {
           <Typography variant="h6">{t("home.itemsWithinRadius")}</Typography>
           <List>
             {itemsByLocationOutput.data.itemsByLocation.map((item) => (
-              <ListItem key={item.id}>
-                {item.name} ({item.condition}, {item.status})
-              </ListItem>
+              <ItemSummary
+                key={item.id}
+                item={{
+                  id: item.id,
+                  name: item.name,
+                  distance:
+                    item.location && location
+                      ? calculateDistance(
+                          item.location?.latitude,
+                          item.location?.longitude,
+                          location.latitude,
+                          location.longitude
+                        )
+                      : 0,
+                  status: item.status,
+                  images: item.images,
+                  tags: item.category,
+                }}
+                onClick={handleItemClick}
+              />
             ))}
           </List>
         </Box>
@@ -186,11 +207,25 @@ const HomePage: React.FC = () => {
         </ListItem>
       )}
 
-      {/* CreateUser Dialog - Only render when needed */}
+      {/* UpdateUser Dialog - Only render when needed */}
+      {showUpdateUser && (
+        <UpdateUser
+          email={email}
+          onUserCreated={handleUserCreated}
+          open={showUpdateUser}
+          isCreateUser={false}
+          initialNickname={user?.nickname}
+          initialAddress={user?.address}
+          onClose={() => setShowUpdateUser(false)}
+        />
+      )}
+
       {showCreateUser && (
-        <CreateUser
+        <UpdateUser
+          email={email}
           onUserCreated={handleUserCreated}
           open={showCreateUser}
+          isCreateUser={true}
           onClose={() => setShowCreateUser(false)}
         />
       )}

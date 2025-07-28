@@ -1,18 +1,19 @@
 import React from "react";
 import { Box, Typography, ListItem } from "@mui/material";
 
-interface NewsSummaryProps {
-  news: {
+interface ItemSummaryProps {
+  item: {
     id: string;
-    title: string;
-    createdAt: string;
+    name: string;
+    distance: number;
+    status: string;
     images?: string[] | null;
     tags?: string[] | null;
   };
   onClick: (newsId: string) => void;
 }
 
-const NewsSummary: React.FC<NewsSummaryProps> = ({ news, onClick }) => {
+const ItemSummary: React.FC<ItemSummaryProps> = ({ item, onClick }) => {
   return (
     <ListItem
       sx={{
@@ -20,7 +21,7 @@ const NewsSummary: React.FC<NewsSummaryProps> = ({ news, onClick }) => {
         cursor: "pointer",
         "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
       }}
-      onClick={() => onClick(news.id)}
+      onClick={() => onClick(item.id)}
     >
       <Box sx={{ width: "100%" }}>
         {/* Date and Title on the same horizontal level */}
@@ -40,7 +41,7 @@ const NewsSummary: React.FC<NewsSummaryProps> = ({ news, onClick }) => {
               minWidth: "fit-content",
             }}
           >
-            {new Date(news.createdAt).toLocaleDateString()}
+            {item.distance.toFixed(2)} km
           </Typography>
 
           <Typography
@@ -53,13 +54,13 @@ const NewsSummary: React.FC<NewsSummaryProps> = ({ news, onClick }) => {
               minWidth: 0, // Important for flex items to shrink properly
             }}
           >
-            {news.title}
+            {item.name}
           </Typography>
 
           {/* Images */}
-          {news.images && news.images.length > 0 && (
+          {item.images && item.images.length > 0 && (
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
-              {news.images.map((image, index) => (
+              {item.images.map((image, index) => (
                 <img
                   key={index}
                   src={image}
@@ -77,9 +78,9 @@ const NewsSummary: React.FC<NewsSummaryProps> = ({ news, onClick }) => {
         </Box>
 
         {/* Tags */}
-        {news.tags && news.tags.length > 0 && (
+        {item.tags && item.tags.length > 0 && (
           <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-            {news.tags.map((tag, index) => (
+            {item.tags.map((tag, index) => (
               <Typography
                 key={index}
                 variant="caption"
@@ -101,4 +102,4 @@ const NewsSummary: React.FC<NewsSummaryProps> = ({ news, onClick }) => {
   );
 };
 
-export default NewsSummary;
+export default ItemSummary;
