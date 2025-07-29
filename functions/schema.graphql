@@ -163,6 +163,11 @@ type Query {
   ): [NewsPost!]! # 按關鍵字和標籤搜尋新聞
   # 地理編碼相關
   geocodeAddress(address: String!): Location
+
+  # 分類相關
+  recentUpdateCategories(limit: Int): [String!]! # 最近更新的分類列表
+  hotCategories(limit: Int): [String!]! # 熱門分類列表
+  defaultCategories: [String!]! # 預設分類列表
 }
 
 # 變更

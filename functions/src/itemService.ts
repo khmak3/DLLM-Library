@@ -10,6 +10,7 @@ import {
 } from "./generated/graphql";
 import * as geofire from "geofire-common";
 import { MapService, createMapService } from "./mapService";
+import { CategoryService } from "./categoryService";
 import firebase from "firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
 import { p } from "graphql-ws/dist/common-DY-PBNYy";
@@ -23,9 +24,11 @@ type ItemModel = Omit<Item, "id" | "createdAt" | "updatedAt"> & {
 
 export class ItemService {
   private mapService: MapService;
+  private categoryService: CategoryService;
 
-  constructor() {
+  constructor(categoryService: CategoryService) {
     this.mapService = createMapService();
+    this.categoryService = categoryService;
   }
 
   async itemsByLocation(
@@ -231,6 +234,11 @@ export class ItemService {
       updatedAt: itemData.updated.seconds * 1000,
       ...itemData,
     } as Item;
+
+    // Update category counts
+    if (category && category.length > 0) {
+      await this.categoryService.upsertCategories(category);
+    }
 
     return rv;
   }
