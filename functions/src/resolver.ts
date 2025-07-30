@@ -16,12 +16,14 @@ import {
 } from "./generated/graphql";
 import { GraphQLScalarType, GraphQLError } from "graphql";
 import { Kind } from "graphql/language";
+import { CategoryService } from "./categoryService";
 
 interface Context {
   loginUser: LoginUser | null;
 }
 
-const itemService = new ItemService();
+const categoryService = new CategoryService();
+const itemService = new ItemService(categoryService);
 const userService = new UserService(itemService);
 const newsService = new NewsService(itemService, userService);
 const transactionService = new TransactionService(itemService, userService);
@@ -184,6 +186,24 @@ export const resolvers: Resolvers = {
       __: any
     ): Promise<Transaction | null> => {
       return transactionService.transactionById(id);
+    },
+    // Categories
+    recentUpdateCategories: async (
+      _: any,
+      { limit = 10 }: any,
+      __: any
+    ): Promise<string[]> => {
+      return categoryService.getRecentUpdateCategories(limit);
+    },
+    hotCategories: async (
+      _: any,
+      { limit = 10 }: any,
+      __: any
+    ): Promise<string[]> => {
+      return categoryService.getHotCategories(limit);
+    },
+    defaultCategories: async (_: any, __: any): Promise<string[]> => {
+      return categoryService.getDefaultCategories();
     },
   },
   Mutation: {

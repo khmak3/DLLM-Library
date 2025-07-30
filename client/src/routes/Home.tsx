@@ -39,6 +39,18 @@ const ITEMS_QUERY = gql`
   }
 `;
 
+const RecentCategoriesQuery = gql`
+  query RecentCategories($limit: Int!) {
+    recentUpdateCategories(limit: $limit)
+  }
+`;
+
+const HotCategoriesQuery = gql`
+  query HotCategories($limit: Int!) {
+    hotCategories(limit: $limit)
+  }
+`;
+
 interface OutletContext {
   email?: string | undefined | null;
   user?: User;
@@ -63,6 +75,14 @@ const HomePage: React.FC = () => {
     latitude: number;
     longitude: number;
   } | null>(null);
+
+  // Query for recent categories
+  const { data: recentCategoriesData, loading: recentCategoriesLoading } =
+    useQuery<{
+      recentUpdateCategories: string[];
+    }>(RecentCategoriesQuery, {
+      variables: { limit: 3 },
+    });
 
   const itemsByLocationOutput = useQuery<{ itemsByLocation: Item[] }>(
     ITEMS_QUERY,
@@ -153,9 +173,25 @@ const HomePage: React.FC = () => {
         <RecentNewsBanner user={user} />
       </ListItem>
 
-      <ListItem>
-        <RecentItemBanner user={user} category="" />
-      </ListItem>
+      {/* Recent Categories Section */}
+      {recentCategoriesData?.recentUpdateCategories && (
+        <>
+          {recentCategoriesData.recentUpdateCategories.map(
+            (category, index) => (
+              <ListItem key={`recent-category-${index}`}>
+                <RecentItemBanner user={user} category={category} />
+              </ListItem>
+            )
+          )}
+        </>
+      )}
+
+      {/* Loading state for recent categories */}
+      {recentCategoriesLoading && (
+        <ListItem>
+          <Typography>{t("common.loading")}</Typography>
+        </ListItem>
+      )}
 
       <ListItem>
         <Button variant="contained" onClick={getLocation}>

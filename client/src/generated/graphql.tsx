@@ -221,7 +221,9 @@ export type NewsPost = {
 
 export type Query = {
   __typename?: 'Query';
+  defaultCategories: Array<Scalars['String']['output']>;
   geocodeAddress?: Maybe<Location>;
+  hotCategories: Array<Scalars['String']['output']>;
   item?: Maybe<Item>;
   items: Array<Item>;
   itemsByLocation: Array<Item>;
@@ -232,6 +234,7 @@ export type Query = {
   openTransactionsByItem: Array<Transaction>;
   openTransactionsByUser: Array<Transaction>;
   recentAddedItems: Array<Item>;
+  recentUpdateCategories: Array<Scalars['String']['output']>;
   transaction?: Maybe<Transaction>;
   transactions: Array<Transaction>;
   transactionsByItem: Array<Transaction>;
@@ -243,6 +246,11 @@ export type Query = {
 
 export type QueryGeocodeAddressArgs = {
   address: Scalars['String']['input'];
+};
+
+
+export type QueryHotCategoriesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -310,6 +318,11 @@ export type QueryRecentAddedItemsArgs = {
   category?: InputMaybe<Array<Scalars['String']['input']>>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryRecentUpdateCategoriesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -532,6 +545,20 @@ export type ItemsByLocationQueryVariables = Exact<{
 
 
 export type ItemsByLocationQuery = { __typename?: 'Query', itemsByLocation: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, images?: Array<string> | null, category: Array<string>, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }> };
+
+export type RecentCategoriesQueryVariables = Exact<{
+  limit: Scalars['Int']['input'];
+}>;
+
+
+export type RecentCategoriesQuery = { __typename?: 'Query', recentUpdateCategories: Array<string> };
+
+export type HotCategoriesQueryVariables = Exact<{
+  limit: Scalars['Int']['input'];
+}>;
+
+
+export type HotCategoriesQuery = { __typename?: 'Query', hotCategories: Array<string> };
 
 export type GenerateSignedUrlMutationVariables = Exact<{
   fileName: Scalars['String']['input'];
@@ -1367,6 +1394,82 @@ export type ItemsByLocationQueryHookResult = ReturnType<typeof useItemsByLocatio
 export type ItemsByLocationLazyQueryHookResult = ReturnType<typeof useItemsByLocationLazyQuery>;
 export type ItemsByLocationSuspenseQueryHookResult = ReturnType<typeof useItemsByLocationSuspenseQuery>;
 export type ItemsByLocationQueryResult = Apollo.QueryResult<ItemsByLocationQuery, ItemsByLocationQueryVariables>;
+export const RecentCategoriesDocument = gql`
+    query RecentCategories($limit: Int!) {
+  recentUpdateCategories(limit: $limit)
+}
+    `;
+
+/**
+ * __useRecentCategoriesQuery__
+ *
+ * To run a query within a React component, call `useRecentCategoriesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRecentCategoriesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRecentCategoriesQuery({
+ *   variables: {
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useRecentCategoriesQuery(baseOptions: Apollo.QueryHookOptions<RecentCategoriesQuery, RecentCategoriesQueryVariables> & ({ variables: RecentCategoriesQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<RecentCategoriesQuery, RecentCategoriesQueryVariables>(RecentCategoriesDocument, options);
+      }
+export function useRecentCategoriesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<RecentCategoriesQuery, RecentCategoriesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<RecentCategoriesQuery, RecentCategoriesQueryVariables>(RecentCategoriesDocument, options);
+        }
+export function useRecentCategoriesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<RecentCategoriesQuery, RecentCategoriesQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<RecentCategoriesQuery, RecentCategoriesQueryVariables>(RecentCategoriesDocument, options);
+        }
+export type RecentCategoriesQueryHookResult = ReturnType<typeof useRecentCategoriesQuery>;
+export type RecentCategoriesLazyQueryHookResult = ReturnType<typeof useRecentCategoriesLazyQuery>;
+export type RecentCategoriesSuspenseQueryHookResult = ReturnType<typeof useRecentCategoriesSuspenseQuery>;
+export type RecentCategoriesQueryResult = Apollo.QueryResult<RecentCategoriesQuery, RecentCategoriesQueryVariables>;
+export const HotCategoriesDocument = gql`
+    query HotCategories($limit: Int!) {
+  hotCategories(limit: $limit)
+}
+    `;
+
+/**
+ * __useHotCategoriesQuery__
+ *
+ * To run a query within a React component, call `useHotCategoriesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHotCategoriesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHotCategoriesQuery({
+ *   variables: {
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useHotCategoriesQuery(baseOptions: Apollo.QueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables> & ({ variables: HotCategoriesQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
+      }
+export function useHotCategoriesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
+        }
+export function useHotCategoriesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
+        }
+export type HotCategoriesQueryHookResult = ReturnType<typeof useHotCategoriesQuery>;
+export type HotCategoriesLazyQueryHookResult = ReturnType<typeof useHotCategoriesLazyQuery>;
+export type HotCategoriesSuspenseQueryHookResult = ReturnType<typeof useHotCategoriesSuspenseQuery>;
+export type HotCategoriesQueryResult = Apollo.QueryResult<HotCategoriesQuery, HotCategoriesQueryVariables>;
 export const GenerateSignedUrlDocument = gql`
     mutation GenerateSignedUrl($fileName: String!, $contentType: String!, $folder: String) {
   generateSignedUrl(
