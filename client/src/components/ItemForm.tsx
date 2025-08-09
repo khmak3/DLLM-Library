@@ -178,8 +178,13 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
       // Process images
       const processedImages = await batchProcessImages(
         validFiles,
-        maxImageSize,
-        imageQuality,
+        {
+          maxSize: maxImageSize,
+          maxFileSizeKB: 500,
+          initialQuality: imageQuality,
+          minQuality: 0.3,
+          preferJPEG: true,
+        },
         (processed, total) => {
           setProcessingProgress(Math.round((processed / total) * 100));
         }
