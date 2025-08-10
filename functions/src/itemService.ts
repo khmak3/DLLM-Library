@@ -13,7 +13,6 @@ import { MapService, createMapService } from "./mapService";
 import { CategoryService } from "./categoryService";
 import firebase from "firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
-import { p } from "graphql-ws/dist/common-DY-PBNYy";
 
 type ItemModel = Omit<Item, "id" | "createdAt" | "updatedAt"> & {
   geohash?: string;
