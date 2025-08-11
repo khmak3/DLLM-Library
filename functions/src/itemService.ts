@@ -12,6 +12,7 @@ import * as geofire from "geofire-common";
 import { MapService, createMapService } from "./mapService";
 import { CategoryService } from "./categoryService";
 import firebase from "firebase-admin";
+import { UploadBufferToGCS } from "./platform";
 import { Timestamp } from "firebase-admin/firestore";
 import sharp from "sharp";
 import axios from "axios";
@@ -495,7 +496,6 @@ export class ItemService {
         // Use same bucket and path structure as original
         const gsPath = imageUrl.replace("gs://", "");
         const pathParts = gsPath.split("/");
-        const bucketName = pathParts[0];
         const originalPath = pathParts.slice(1).join("/");
         const pathDir = originalPath.substring(
           0,
@@ -503,45 +503,16 @@ export class ItemService {
         );
         uploadPath = `${pathDir}/${thumbnailFileName}`;
 
-        // Upload to the same bucket
-        const bucket = firebase.storage().bucket(bucketName);
-        const thumbnailFile = bucket.file(uploadPath);
-
-        await thumbnailFile.save(thumbnailBuffer, {
-          metadata: {
-            contentType: "image/jpeg",
-            metadata: {
-              originalImage: imageUrl,
-              thumbnailGenerated: new Date().toISOString(),
-            },
-          },
-        });
-
-        const gsUrl = `gs://${bucketName}/${uploadPath}`;
+        const gsUrl = await UploadBufferToGCS(uploadPath, thumbnailBuffer, "image/jpeg");
         const publicUrl = await GetPublicUrlForGSFile(gsUrl);
 
         console.log(`Thumbnail generated successfully: ${gsUrl}`);
         return { gs: gsUrl, url: publicUrl };
       } else {
-        // For HTTP URLs, upload to default bucket
-        const serviceAccount = require("./dllm-libray-firebase-adminsdk.json");
-        const bucket = firebase.storage().bucket(serviceAccount.bucket_name);
 
         // Create upload path: thumbnails/{generated_filename}
         uploadPath = `thumbnails/${thumbnailFileName}`;
-        const thumbnailFile = bucket.file(uploadPath);
-
-        await thumbnailFile.save(thumbnailBuffer, {
-          metadata: {
-            contentType: "image/jpeg",
-            metadata: {
-              originalImage: imageUrl,
-              thumbnailGenerated: new Date().toISOString(),
-            },
-          },
-        });
-
-        const gsUrl = `gs://${serviceAccount.bucket_name}/${uploadPath}`;
+        const gsUrl = await UploadBufferToGCS(uploadPath, thumbnailBuffer, "image/jpeg");
         const publicUrl = await GetPublicUrlForGSFile(gsUrl);
 
         console.log(`Thumbnail generated successfully: ${gsUrl}`);
