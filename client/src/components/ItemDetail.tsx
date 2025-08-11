@@ -70,7 +70,7 @@ const CREATE_TRANSACTION_MUTATION = gql`
 `;
 
 const USER_QUERY = gql`
-  query User($userId: ID!) {
+  query GetUserForItem($userId: ID!) {
     user(id: $userId) {
       createdAt
       email
