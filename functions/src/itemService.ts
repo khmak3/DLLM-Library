@@ -169,7 +169,7 @@ export class ItemService {
       data.thumbnails = [];
       data.gsThumbnailUrls = [];
 
-      let images = data.images
+      let images = data.images;
 
       if (data.gsImageUrls && data.gsImageUrls.length > 0) {
         images = data.gsImageUrls;
@@ -479,7 +479,7 @@ export class ItemService {
           fit: "inside",
           withoutEnlargement: true,
         })
-        .jpeg({ quality: 40 }) // Convert to JPEG with 80% quality for smaller file size
+        .jpeg({ quality: 40 }) // Convert to JPEG with 40% quality for smaller file size
         .toBuffer();
 
       // Generate thumbnail filename
@@ -504,10 +504,9 @@ export class ItemService {
         const gsUrl = await UploadBufferToGCS(uploadPath, thumbnailBuffer, "image/jpeg");
         const publicUrl = await GetPublicUrlForGSFile(gsUrl);
 
-        console.log(`Thumbnail generated successfully: ${gsUrl}`);
         return { gs: gsUrl, url: publicUrl };
-      } else {
 
+      } else {
         // Create upload path: thumbnails/{generated_filename}
         uploadPath = `thumbnails/${thumbnailFileName}`;
         const gsUrl = await UploadBufferToGCS(uploadPath, thumbnailBuffer, "image/jpeg");
