@@ -107,6 +107,18 @@ async function GetPublicUrlForGSFile(gsFileUrl: string): Promise<string> {
   return publicUrl;
 }
 
+async function UploadBufferToGCS(uploadPath: string, buffer: Buffer, contentType: string): Promise<string> {
+  const bucket = admin.storage().bucket(serviceAccount.bucket_name);
+  const uploadFile = bucket.file(uploadPath);
+  await uploadFile.save(buffer, {
+    metadata: {
+      contentType: contentType
+    },
+  });
+  await uploadFile.makePublic();
+  return `gs://${serviceAccount.bucket_name}/${uploadPath}`;
+}
+
 async function sendNotificationViaEmail(
   to: string[],
   cc: string[],
@@ -138,4 +150,5 @@ export {
   db,
   GenerateSignedUrlForUpload,
   GetPublicUrlForGSFile,
+  UploadBufferToGCS,
 };

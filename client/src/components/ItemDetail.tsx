@@ -15,6 +15,9 @@ import {
   Card,
   CardContent,
   CardActions,
+  Modal,
+  Backdrop,
+  Fade,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -25,6 +28,9 @@ import {
   SwapHoriz as TransferIcon,
   GetApp as ReceiveIcon,
   Home as NewHolderIcon,
+  Close as CloseIcon,
+  NavigateBefore as PrevIcon,
+  NavigateNext as NextIcon,
 } from "@mui/icons-material";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import {
@@ -52,6 +58,7 @@ const ITEM_DETAIL_QUERY = gql`
       category
       status
       images
+      thumbnails
       publishedYear
       language
       createdAt
@@ -73,7 +80,7 @@ const CREATE_TRANSACTION_MUTATION = gql`
 `;
 
 const USER_QUERY = gql`
-  query User($userId: ID!) {
+  query GetUserForItem($userId: ID!) {
     user(id: $userId) {
       createdAt
       email
@@ -167,6 +174,9 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
 
   // Add edit dialog state
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // State for image popup
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const { data, loading, error } = useQuery<{ item: Item }>(ITEM_DETAIL_QUERY, {
     variables: { itemId: itemId! },
@@ -308,6 +318,10 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     return formatDistance(distance);
   };
 
+  const handleUserClick = (userId: string) => {
+    navigate(`/user/${userId}`);
+  };
+
   const handleBack = () => {
     if (onBack) {
       onBack();
@@ -384,6 +398,34 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     setErrorMessage("");
   };
 
+  // Image handlers
+  const handleThumbnailClick = (index: number) => {
+    setSelectedImageIndex(index);
+    setImageModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setImageModalOpen(false);
+  };
+
+  const handlePrevImage = () => {
+    const images = data?.item?.images || [];
+    if (images.length > 0) {
+      setSelectedImageIndex((prev) =>
+        prev === 0 ? images.length - 1 : prev - 1
+      );
+    }
+  };
+
+  const handleNextImage = () => {
+    const images = data?.item?.images || [];
+    if (images.length > 0) {
+      setSelectedImageIndex((prev) =>
+        prev === images.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
   // Format date for display
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString(undefined, {
@@ -443,14 +485,40 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                 sx={{ ml: 2 }}
               />
             ) : (
-              isHolder && (
-                <Chip
-                  label={t("item.holder", "Holder")}
-                  color="secondary"
-                  size="small"
-                  sx={{ ml: 2 }}
-                />
-              )
+              <>
+                {/* Show owner name if user is not the owner */}
+                {ownerData?.user && (
+                  <Chip
+                    label={`${t("item.owner", "Owner")}: ${ownerData.user.nickname || ownerData.user.email
+                      }`}
+                    color="primary"
+                    size="small"
+                    sx={{ ml: 2, cursor: "pointer" }}
+                    onClick={() => handleUserClick(ownerData.user.id)}
+                  />
+                )}
+                {/* Show holder name if user is not the holder and holder is different from owner */}
+                {isHolder && (
+                  <Chip
+                    label={t("item.holder", "Holder")}
+                    color="secondary"
+                    size="small"
+                    sx={{ ml: 2 }}
+                  />
+                )}
+                {!isHolder &&
+                  holderData?.user &&
+                  data.item.holderId !== data.item.ownerId && (
+                    <Chip
+                      label={`${t("item.holder", "Holder")}: ${holderData.user.nickname || holderData.user.email
+                        }`}
+                      color="secondary"
+                      size="small"
+                      sx={{ ml: 2, cursor: "pointer" }}
+                      onClick={() => handleUserClick(holderData.user.id)}
+                    />
+                  )}
+              </>
             )}
           </Typography>
         ) : (
@@ -751,27 +819,42 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
           )}
 
           {/* Images */}
-          {data.item.images && data.item.images.length > 0 && (
-            <Box sx={{ mb: 4 }}>
-              <Grid container spacing={2}>
-                {data.item.images.map((image, index) => (
-                  <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
-                    <Paper elevation={2} sx={{ overflow: "hidden" }}>
-                      <img
-                        src={image}
-                        alt={`${data.item.name} - Image ${index + 1}`}
-                        style={{
-                          width: "100%",
-                          height: "250px",
-                          objectFit: "cover",
+          {((data.item.thumbnails && data.item.thumbnails.length > 0) ||
+            (data.item.images && data.item.images.length > 0)) && (
+              <Box sx={{ mb: 4 }}>
+                <Grid container spacing={2}>
+                  {(data.item.thumbnails && data.item.thumbnails.length > 0
+                    ? data.item.thumbnails
+                    : data.item.images || []
+                  ).map((image, index) => (
+                    <Grid key={index} size={{ xs: 6, sm: 4, md: 3 }}>
+                      <Paper
+                        elevation={2}
+                        sx={{
+                          overflow: "hidden",
+                          cursor: "pointer",
+                          transition: "transform 0.2s",
+                          "&:hover": {
+                            transform: "scale(1.05)",
+                          },
                         }}
-                      />
-                    </Paper>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-          )}
+                        onClick={() => handleThumbnailClick(index)}
+                      >
+                        <img
+                          src={image}
+                          alt={`${data.item.name} - Thumbnail ${index + 1}`}
+                          style={{
+                            width: "100%",
+                            height: "120px",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            )}
 
           {/* Item Info Grid */}
           <Box sx={{ mb: 4 }}>
@@ -995,6 +1078,99 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
           {t("item.requestError")}: {errorMessage}
         </Alert>
       </Snackbar>
+
+      {/* Image Modal */}
+      <Modal
+        open={imageModalOpen}
+        onClose={handleCloseModal}
+        closeAfterTransition
+        BackdropComponent={Backdrop}
+        BackdropProps={{
+          timeout: 500,
+        }}
+      >
+        <Fade in={imageModalOpen}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              bgcolor: "background.paper",
+              border: "2px solid #000",
+              boxShadow: 24,
+              p: 2,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            {/* Close Button */}
+            <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1 }}>
+              <IconButton onClick={handleCloseModal} color="primary">
+                <CloseIcon />
+              </IconButton>
+            </Box>
+
+            {/* Image Navigation */}
+            {data?.item && (
+              <Box
+                sx={{
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                {/* Previous Button */}
+                {data.item.images && data.item.images.length > 1 && (
+                  <IconButton
+                    onClick={handlePrevImage}
+                    sx={{ position: "absolute", left: -50, zIndex: 1 }}
+                    color="primary"
+                  >
+                    <PrevIcon />
+                  </IconButton>
+                )}
+
+                {/* Main Image */}
+                <img
+                  src={
+                    (data.item.images &&
+                      data.item.images[selectedImageIndex]) ||
+                    ""
+                  }
+                  alt={`${data.item.name} - Image ${selectedImageIndex + 1}`}
+                  style={{
+                    maxWidth: "80vw",
+                    maxHeight: "70vh",
+                    objectFit: "contain",
+                  }}
+                />
+
+                {/* Next Button */}
+                {data.item.images && data.item.images.length > 1 && (
+                  <IconButton
+                    onClick={handleNextImage}
+                    sx={{ position: "absolute", right: -50, zIndex: 1 }}
+                    color="primary"
+                  >
+                    <NextIcon />
+                  </IconButton>
+                )}
+              </Box>
+            )}
+
+            {/* Image Counter */}
+            {data?.item && data.item.images && data.item.images.length > 1 && (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                {selectedImageIndex + 1} / {data.item.images.length}
+              </Typography>
+            )}
+          </Box>
+        </Fade>
+      </Modal>
     </Container>
   );
 };

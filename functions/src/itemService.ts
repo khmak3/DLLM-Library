@@ -12,14 +12,17 @@ import * as geofire from "geofire-common";
 import { MapService, createMapService } from "./mapService";
 import { CategoryService } from "./categoryService";
 import firebase from "firebase-admin";
+import { UploadBufferToGCS } from "./platform";
 import { Timestamp } from "firebase-admin/firestore";
-import { p } from "graphql-ws/dist/common-DY-PBNYy";
+import sharp from "sharp";
+import axios from "axios";
 
 type ItemModel = Omit<Item, "id" | "createdAt" | "updatedAt"> & {
   geohash?: string;
   created: Timestamp;
   updated: Timestamp;
   gsImageUrls?: string[];
+  gsThumbnailUrls?: string[];
 };
 
 export class ItemService {
@@ -54,28 +57,26 @@ export class ItemService {
       { latitude, longitude },
       radiusKm
     );
-    const filteredItems = (await items).map((item) => {
-      item = {
-        ...item,
-        id: item.id,
-        createdAt: item.created.seconds * 1000,
-        updatedAt: item.updated.seconds * 1000,
-      };
-      return item as Item;
-    });
+    const filteredItems: Item[] = [];
+    await Promise.all(
+      (
+        await items
+      ).map(async (item) => {
+        const rv = await this._itemModelToItem(item);
+        filteredItems.push(rv);
+      })
+    );
     return filteredItems;
   }
 
   async itemById(itemId: string): Promise<Item | null> {
     const itemDoc = await db.collection("items").doc(itemId).get();
     if (!itemDoc.exists) return null;
-    const data = itemDoc.data() as ItemModel;
-    return {
-      id: itemId,
-      createdAt: data.created.seconds * 1000,
-      updatedAt: data.updated.seconds * 1000,
-      ...data,
-    } as Item;
+    let data = itemDoc.data();
+    if (!data) return null;
+    data.id = itemId;
+    const item: Item = await this._itemModelToItem(data);
+    return item;
   }
 
   // this function should be limited to internal use only
@@ -97,16 +98,12 @@ export class ItemService {
           .where(firebase.firestore.FieldPath.documentId(), "in", batchIds)
           .get();
 
-        const items = snapshot.docs.map(
-          (doc) =>
-            ({
-              id: doc.id,
-              createdAt: doc.data().created.seconds * 1000,
-              updatedAt: doc.data().updated.seconds * 1000,
-              ...doc.data(),
-            } as Item)
+        await Promise.all(
+          snapshot.docs.map(async (doc) => {
+            const item = await this._itemModelToItem(doc);
+            results.push(item);
+          })
         );
-        results.push(...items);
       }
     }
     return results;
@@ -123,8 +120,8 @@ export class ItemService {
     let query = db
       .collection("items")
       .where("ownerId", "==", userId)
-      .orderBy("id");
-    if (category)
+      .orderBy("updated", "desc");
+    if (category && category.length > 0)
       query = query.where("category", "array-contains-any", category);
     if (status) query = query.where("status", "==", status);
     if (keyword)
@@ -132,16 +129,91 @@ export class ItemService {
         .where("name", ">=", keyword)
         .where("name", "<=", keyword + "\uf8ff");
     const snapshot = await query.limit(limit).offset(offset).get();
-    const items = snapshot.docs.map(
-      (doc) =>
-        ({
-          id: doc.id,
-          createdAt: doc.data().created.seconds * 1000,
-          updatedAt: doc.data().updated.seconds * 1000,
-          ...doc.data(),
-        } as Item)
+    const results: Item[] = [];
+    await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const item = await this._itemQueryToItem(doc);
+        results.push(item);
+      })
     );
-    return items;
+    console.debug(
+      `Found ${results.length} items for user ${userId} with category ${category}, status ${status}, keyword ${keyword}`
+    );
+    return results;
+  }
+
+  async _itemQueryToItem(
+    query: firebase.firestore.QueryDocumentSnapshot<
+      firebase.firestore.DocumentData,
+      firebase.firestore.DocumentData
+    >
+  ): Promise<Item> {
+    const itemId = query.id;
+    const data = query.data();
+    data.id = itemId;
+    const item: Item = await this._itemModelToItem(data);
+    return item;
+  }
+
+  async _itemModelToItem(
+    docData: firebase.firestore.DocumentData
+  ): Promise<Item> {
+    const itemId = docData.id;
+    const data = docData as ItemModel;
+
+    // validate thumbnail exist or not.
+    // If there is images without thumbnails, we need to generate thumbnails.
+    // upload back to same google storage and update the document
+    if (data.images && data.images.length > 0 && !data.thumbnails) {
+      console.log(`Generating thumbnails for item ${itemId}`);
+      data.thumbnails = [];
+      data.gsThumbnailUrls = [];
+
+      let images = data.images;
+
+      if (data.gsImageUrls && data.gsImageUrls.length > 0) {
+        images = data.gsImageUrls;
+      }
+
+      const uploadPromises = images.map(async (image) => {
+        const thumbnail = await this._generateThumbnail(image);
+        if (thumbnail) {
+          data.thumbnails!.push(thumbnail.url);
+          data.gsThumbnailUrls!.push(thumbnail.gs);
+        }
+      });
+
+      await Promise.all(uploadPromises);
+
+      // Update the document in Firestore with the new thumbnail URLs
+      if (data.thumbnails.length > 0) {
+        try {
+          const updateTime = Timestamp.now();
+          await db.collection("items").doc(itemId).update({
+            thumbnails: data.thumbnails,
+            gsThumbnailUrls: data.gsThumbnailUrls,
+            updated: updateTime,
+          });
+          data.updated = updateTime;
+          console.log(
+            `Updated item ${itemId} with ${data.thumbnails.length} thumbnails`
+          );
+        } catch (error) {
+          console.error(
+            `Failed to update item ${itemId} with thumbnails:`,
+            error
+          );
+        }
+      }
+    }
+
+    const item: Item = {
+      id: itemId,
+      createdAt: data.created.seconds * 1000,
+      updatedAt: data.updated.seconds * 1000,
+      ...data,
+    };
+    return item;
   }
 
   async createItem(
@@ -336,15 +408,153 @@ export class ItemService {
       query = query.where("category", "array-contains-any", category);
     }
     const snapshot = await query.limit(limit).offset(offset).get();
-    const items = snapshot.docs.map(
-      (doc) =>
-        ({
-          id: doc.id,
-          createdAt: doc.data().created.seconds * 1000,
-          updatedAt: doc.data().updated.seconds * 1000,
-          ...doc.data(),
-        } as Item)
+    const items: Item[] = [];
+    await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const rv = await this._itemQueryToItem(doc);
+        items.push(rv);
+      })
     );
     return items;
+  }
+
+  /**
+   * Generate thumbnail for an image by downloading, resizing to 1/4 dimensions,
+   * and uploading back to Google Cloud Storage
+   * @param imageUrl - The original image URL (can be HTTP or GS URL)
+   * @returns Promise with thumbnail URLs (gs and http) or null if failed
+   */
+  private async _generateThumbnail(
+    imageUrl: string
+  ): Promise<{ gs: string; url: string } | null> {
+    try {
+      console.log(`Generating thumbnail for image: ${imageUrl}`);
+
+      // Download the original image
+      let imageBuffer: Buffer;
+
+      if (imageUrl.startsWith("gs://")) {
+        // Handle Google Storage URL
+        const gsPath = imageUrl.replace("gs://", "");
+        const pathParts = gsPath.split("/");
+        const bucketName = pathParts[0];
+        const filePath = pathParts.slice(1).join("/");
+
+        const bucket = firebase.storage().bucket(bucketName);
+        const file = bucket.file(filePath);
+
+        const [fileBuffer] = await file.download();
+        imageBuffer = fileBuffer;
+      } else {
+        // Handle HTTP URL
+        const response = await axios.get(imageUrl, {
+          responseType: "arraybuffer",
+          timeout: 30000, // 30 second timeout
+        });
+        imageBuffer = Buffer.from(response.data);
+      }
+
+      // Get original image metadata
+      const image = sharp(imageBuffer);
+      const metadata = await image.metadata();
+
+      if (!metadata.width || !metadata.height) {
+        console.error(`Could not get image dimensions for: ${imageUrl}`);
+        return null;
+      }
+
+      console.log(
+        `Original image dimensions: ${metadata.width}x${metadata.height}`
+      );
+
+      // Calculate new dimensions (1/4 of original)
+      const newWidth = Math.floor(metadata.width / 4);
+      const newHeight = Math.floor(metadata.height / 4);
+
+      console.log(`Thumbnail dimensions: ${newWidth}x${newHeight}`);
+
+      // Generate thumbnail
+      const thumbnailBuffer = await image
+        .resize(newWidth, newHeight, {
+          fit: "inside",
+          withoutEnlargement: true,
+        })
+        .jpeg({ quality: 40 }) // Convert to JPEG with 40% quality for smaller file size
+        .toBuffer();
+
+      // Generate thumbnail filename
+      const originalFileName = this._extractFileNameFromUrl(imageUrl);
+      const thumbnailFileName =
+        this._generateThumbnailFileName(originalFileName);
+
+      // Determine upload path
+      let uploadPath: string;
+
+      if (imageUrl.startsWith("gs://")) {
+        // Use same bucket and path structure as original
+        const gsPath = imageUrl.replace("gs://", "");
+        const pathParts = gsPath.split("/");
+        const originalPath = pathParts.slice(1).join("/");
+        const pathDir = originalPath.substring(
+          0,
+          originalPath.lastIndexOf("/")
+        );
+        uploadPath = `${pathDir}/${thumbnailFileName}`;
+
+        const gsUrl = await UploadBufferToGCS(uploadPath, thumbnailBuffer, "image/jpeg");
+        const publicUrl = await GetPublicUrlForGSFile(gsUrl);
+
+        return { gs: gsUrl, url: publicUrl };
+
+      } else {
+        // Create upload path: thumbnails/{generated_filename}
+        uploadPath = `thumbnails/${thumbnailFileName}`;
+        const gsUrl = await UploadBufferToGCS(uploadPath, thumbnailBuffer, "image/jpeg");
+        const publicUrl = await GetPublicUrlForGSFile(gsUrl);
+
+        console.log(`Thumbnail generated successfully: ${gsUrl}`);
+        return { gs: gsUrl, url: publicUrl };
+      }
+    } catch (error) {
+      console.error(`Failed to generate thumbnail for ${imageUrl}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Extract filename from URL
+   */
+  private _extractFileNameFromUrl(url: string): string {
+    try {
+      if (url.startsWith("gs://")) {
+        const pathParts = url.split("/");
+        return pathParts[pathParts.length - 1];
+      } else {
+        const urlObj = new URL(url);
+        const pathParts = urlObj.pathname.split("/");
+        return pathParts[pathParts.length - 1] || "image.jpg";
+      }
+    } catch (error) {
+      console.error(`Error extracting filename from URL: ${url}`, error);
+      return `image_${Date.now()}.jpg`;
+    }
+  }
+
+  /**
+   * Generate thumbnail filename by adding 'thumbnail' before file extension
+   */
+  private _generateThumbnailFileName(originalFileName: string): string {
+    const lastDotIndex = originalFileName.lastIndexOf(".");
+
+    if (lastDotIndex === -1) {
+      // No extension found, append thumbnail suffix
+      return `${originalFileName}_thumbnail.jpg`;
+    }
+
+    const nameWithoutExt = originalFileName.substring(0, lastDotIndex);
+    const extension = originalFileName.substring(lastDotIndex);
+
+    // Convert to .jpg for thumbnails regardless of original format
+    return `${nameWithoutExt}_thumbnail.jpg`;
   }
 }
