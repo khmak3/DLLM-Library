@@ -8,12 +8,14 @@ interface ItemSummaryProps {
     distance: number;
     status: string;
     images?: string[] | null;
+    thumbnails?: string[] | null;
     tags?: string[] | null;
   };
   onClick: (newsId: string) => void;
 }
 
 const ItemSummary: React.FC<ItemSummaryProps> = ({ item, onClick }) => {
+  const images = item.thumbnails ? item.thumbnails : item.images;
   return (
 
     <ListItem
@@ -60,15 +62,14 @@ const ItemSummary: React.FC<ItemSummaryProps> = ({ item, onClick }) => {
         </Box>
 
         {/* Images */}
-        {item.images && item.images.length > 0 && (
+        {images && images.length > 0 && (
           <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 1 }}>
-            {item.images.map((image, index) => (
+            {images.map((image, index) => (
               <img
                 key={index}
                 src={image}
                 alt={`Item image ${index + 1}`}
                 style={{
-                  width: "80px",
                   height: "80px",
                   objectFit: "cover",
                   borderRadius: "4px",

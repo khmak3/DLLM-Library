@@ -46,6 +46,7 @@ export type Item = {
   ownerId: Scalars['ID']['output'];
   publishedYear?: Maybe<Scalars['Int']['output']>;
   status: ItemStatus;
+  thumbnails?: Maybe<Array<Scalars['String']['output']>>;
   transactions?: Maybe<Array<Transaction>>;
   updatedAt: Scalars['Date']['output'];
 };
@@ -413,7 +414,7 @@ export type ItemQueryVariables = Exact<{
 }>;
 
 
-export type ItemQuery = { __typename?: 'Query', item?: { __typename?: 'Item', id: string, name: string, description?: string | null, condition: ItemCondition, category: Array<string>, status: ItemStatus, images?: Array<string> | null, publishedYear?: number | null, language: Language, createdAt: any, ownerId: string, holderId?: string | null } | null };
+export type ItemQuery = { __typename?: 'Query', item?: { __typename?: 'Item', id: string, name: string, description?: string | null, condition: ItemCondition, category: Array<string>, status: ItemStatus, images?: Array<string> | null, thumbnails?: Array<string> | null, publishedYear?: number | null, language: Language, createdAt: any, ownerId: string, holderId?: string | null } | null };
 
 export type CreateTransactionMutationVariables = Exact<{
   itemId: Scalars['ID']['input'];
@@ -422,12 +423,12 @@ export type CreateTransactionMutationVariables = Exact<{
 
 export type CreateTransactionMutation = { __typename?: 'Mutation', createTransaction: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any } };
 
-export type UserQueryVariables = Exact<{
+export type GetUserForItemQueryVariables = Exact<{
   userId: Scalars['ID']['input'];
 }>;
 
 
-export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type GetUserForItemQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type OpenTransactionsByItemQueryVariables = Exact<{
   itemId: Scalars['ID']['input'];
@@ -513,6 +514,22 @@ export type NewsRecentPostsQueryVariables = Exact<{
 
 export type NewsRecentPostsQuery = { __typename?: 'Query', newsRecentPosts: Array<{ __typename?: 'NewsPost', id: string, title: string, images?: Array<string> | null, createdAt: any, tags?: Array<string> | null }> };
 
+export type UserQueryVariables = Exact<{
+  userId: Scalars['ID']['input'];
+}>;
+
+
+export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, isVerified: boolean, isActive: boolean, role: Role, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+
+export type ItemsByUserQueryVariables = Exact<{
+  userId: Scalars['ID']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type ItemsByUserQuery = { __typename?: 'Query', itemsByUser: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, images?: Array<string> | null, thumbnails?: Array<string> | null, category: Array<string>, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }> };
+
 export type GeocodeAddressQueryVariables = Exact<{
   address: Scalars['String']['input'];
 }>;
@@ -552,7 +569,7 @@ export type ItemsByLocationQueryVariables = Exact<{
 }>;
 
 
-export type ItemsByLocationQuery = { __typename?: 'Query', itemsByLocation: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, images?: Array<string> | null, category: Array<string>, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }> };
+export type ItemsByLocationQuery = { __typename?: 'Query', itemsByLocation: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, images?: Array<string> | null, thumbnails?: Array<string> | null, category: Array<string>, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }> };
 
 export type HotCategoriesQueryVariables = Exact<{
   limit: Scalars['Int']['input'];
@@ -631,6 +648,7 @@ export const ItemDocument = gql`
     category
     status
     images
+    thumbnails
     publishedYear
     language
     createdAt
@@ -708,8 +726,8 @@ export function useCreateTransactionMutation(baseOptions?: Apollo.MutationHookOp
 export type CreateTransactionMutationHookResult = ReturnType<typeof useCreateTransactionMutation>;
 export type CreateTransactionMutationResult = Apollo.MutationResult<CreateTransactionMutation>;
 export type CreateTransactionMutationOptions = Apollo.BaseMutationOptions<CreateTransactionMutation, CreateTransactionMutationVariables>;
-export const UserDocument = gql`
-    query User($userId: ID!) {
+export const GetUserForItemDocument = gql`
+    query GetUserForItem($userId: ID!) {
   user(id: $userId) {
     createdAt
     email
@@ -730,37 +748,37 @@ export const UserDocument = gql`
     `;
 
 /**
- * __useUserQuery__
+ * __useGetUserForItemQuery__
  *
- * To run a query within a React component, call `useUserQuery` and pass it any options that fit your needs.
- * When your component renders, `useUserQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useGetUserForItemQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetUserForItemQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useUserQuery({
+ * const { data, loading, error } = useGetUserForItemQuery({
  *   variables: {
  *      userId: // value for 'userId'
  *   },
  * });
  */
-export function useUserQuery(baseOptions: Apollo.QueryHookOptions<UserQuery, UserQueryVariables> & ({ variables: UserQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+export function useGetUserForItemQuery(baseOptions: Apollo.QueryHookOptions<GetUserForItemQuery, GetUserForItemQueryVariables> & ({ variables: GetUserForItemQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+        return Apollo.useQuery<GetUserForItemQuery, GetUserForItemQueryVariables>(GetUserForItemDocument, options);
       }
-export function useUserLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<UserQuery, UserQueryVariables>) {
+export function useGetUserForItemLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<GetUserForItemQuery, GetUserForItemQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+          return Apollo.useLazyQuery<GetUserForItemQuery, GetUserForItemQueryVariables>(GetUserForItemDocument, options);
         }
-export function useUserSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<UserQuery, UserQueryVariables>) {
+export function useGetUserForItemSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<GetUserForItemQuery, GetUserForItemQueryVariables>) {
           const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+          return Apollo.useSuspenseQuery<GetUserForItemQuery, GetUserForItemQueryVariables>(GetUserForItemDocument, options);
         }
-export type UserQueryHookResult = ReturnType<typeof useUserQuery>;
-export type UserLazyQueryHookResult = ReturnType<typeof useUserLazyQuery>;
-export type UserSuspenseQueryHookResult = ReturnType<typeof useUserSuspenseQuery>;
-export type UserQueryResult = Apollo.QueryResult<UserQuery, UserQueryVariables>;
+export type GetUserForItemQueryHookResult = ReturnType<typeof useGetUserForItemQuery>;
+export type GetUserForItemLazyQueryHookResult = ReturnType<typeof useGetUserForItemLazyQuery>;
+export type GetUserForItemSuspenseQueryHookResult = ReturnType<typeof useGetUserForItemSuspenseQuery>;
+export type GetUserForItemQueryResult = Apollo.QueryResult<GetUserForItemQuery, GetUserForItemQueryVariables>;
 export const OpenTransactionsByItemDocument = gql`
     query OpenTransactionsByItem($itemId: ID!) {
   openTransactionsByItem(itemId: $itemId) {
@@ -1212,6 +1230,114 @@ export type NewsRecentPostsQueryHookResult = ReturnType<typeof useNewsRecentPost
 export type NewsRecentPostsLazyQueryHookResult = ReturnType<typeof useNewsRecentPostsLazyQuery>;
 export type NewsRecentPostsSuspenseQueryHookResult = ReturnType<typeof useNewsRecentPostsSuspenseQuery>;
 export type NewsRecentPostsQueryResult = Apollo.QueryResult<NewsRecentPostsQuery, NewsRecentPostsQueryVariables>;
+export const UserDocument = gql`
+    query User($userId: ID!) {
+  user(id: $userId) {
+    createdAt
+    email
+    id
+    nickname
+    address
+    isVerified
+    isActive
+    role
+    contactMethods {
+      type
+      value
+      isPublic
+    }
+    location {
+      latitude
+      longitude
+    }
+  }
+}
+    `;
+
+/**
+ * __useUserQuery__
+ *
+ * To run a query within a React component, call `useUserQuery` and pass it any options that fit your needs.
+ * When your component renders, `useUserQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useUserQuery({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *   },
+ * });
+ */
+export function useUserQuery(baseOptions: Apollo.QueryHookOptions<UserQuery, UserQueryVariables> & ({ variables: UserQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+      }
+export function useUserLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<UserQuery, UserQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+        }
+export function useUserSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<UserQuery, UserQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+        }
+export type UserQueryHookResult = ReturnType<typeof useUserQuery>;
+export type UserLazyQueryHookResult = ReturnType<typeof useUserLazyQuery>;
+export type UserSuspenseQueryHookResult = ReturnType<typeof useUserSuspenseQuery>;
+export type UserQueryResult = Apollo.QueryResult<UserQuery, UserQueryVariables>;
+export const ItemsByUserDocument = gql`
+    query ItemsByUser($userId: ID!, $limit: Int, $offset: Int) {
+  itemsByUser(userId: $userId, limit: $limit, offset: $offset) {
+    id
+    name
+    condition
+    status
+    images
+    thumbnails
+    category
+    location {
+      latitude
+      longitude
+    }
+  }
+}
+    `;
+
+/**
+ * __useItemsByUserQuery__
+ *
+ * To run a query within a React component, call `useItemsByUserQuery` and pass it any options that fit your needs.
+ * When your component renders, `useItemsByUserQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useItemsByUserQuery({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *      limit: // value for 'limit'
+ *      offset: // value for 'offset'
+ *   },
+ * });
+ */
+export function useItemsByUserQuery(baseOptions: Apollo.QueryHookOptions<ItemsByUserQuery, ItemsByUserQueryVariables> & ({ variables: ItemsByUserQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<ItemsByUserQuery, ItemsByUserQueryVariables>(ItemsByUserDocument, options);
+      }
+export function useItemsByUserLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<ItemsByUserQuery, ItemsByUserQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<ItemsByUserQuery, ItemsByUserQueryVariables>(ItemsByUserDocument, options);
+        }
+export function useItemsByUserSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<ItemsByUserQuery, ItemsByUserQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<ItemsByUserQuery, ItemsByUserQueryVariables>(ItemsByUserDocument, options);
+        }
+export type ItemsByUserQueryHookResult = ReturnType<typeof useItemsByUserQuery>;
+export type ItemsByUserLazyQueryHookResult = ReturnType<typeof useItemsByUserLazyQuery>;
+export type ItemsByUserSuspenseQueryHookResult = ReturnType<typeof useItemsByUserSuspenseQuery>;
+export type ItemsByUserQueryResult = Apollo.QueryResult<ItemsByUserQuery, ItemsByUserQueryVariables>;
 export const GeocodeAddressDocument = gql`
     query GeocodeAddress($address: String!) {
   geocodeAddress(address: $address) {
@@ -1399,6 +1525,7 @@ export const ItemsByLocationDocument = gql`
       longitude
     }
     images
+    thumbnails
     category
   }
 }

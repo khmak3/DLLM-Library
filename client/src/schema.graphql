@@ -65,6 +65,7 @@ type Item {
   category: [String!]! # 分類標籤，如 ["小說", "香港歷史"]
   status: ItemStatus!
   images: [String!] # 圖片URL列表
+  thumbnails: [String!] # 縮略圖URL列表
   publishedYear: Int # 可選出版年份
   language: Language! # 主要語言
   location: Location # 藏品所在地（繼承自擁有者）
