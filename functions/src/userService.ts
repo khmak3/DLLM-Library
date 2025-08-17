@@ -48,7 +48,19 @@ export class UserService {
     const userDoc = await db.collection("users").doc(userId).get();
     if (!userDoc.exists) return null;
     const data = userDoc.data() as UserModel;
-    const user = { createdAt: data.created.seconds * 1000, ...data } as User;
+
+    const categorySnapshot = await db.collection("users").doc(userId).collection("itemCategory").get();
+    const itemCategory = categorySnapshot.docs.map(doc => ({
+      category: doc.id,
+      count: doc.data().count
+    }));
+
+    const user = {
+      createdAt: data.created.seconds * 1000,
+      ...data,
+      ...(itemCategory && { itemCategory }),
+    } as User;
+
     this.userCache.set(userId, user);
     return user;
   }
