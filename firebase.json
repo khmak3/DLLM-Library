@@ -21,8 +21,8 @@
     "predeploy": [
       "npm run build --prefix client",
       "npm run build --prefix functions",
-      "cp client/dist/index.html functions/dist/",
-      "rm client/dist/index.html"
+      "test -f client/dist/index.html && cp client/dist/index.html functions/dist/ || echo 'index.html already moved'",
+      "test -f client/dist/index.html && rm client/dist/index.html || echo 'index.html already removed'"
     ],
     "ignore": [
       "firebase.json",
