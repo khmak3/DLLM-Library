@@ -73,7 +73,7 @@ export class ItemService {
     const itemDoc = await db.collection("items").doc(itemId).get();
     if (!itemDoc.exists) return null;
     let data = itemDoc.data();
-    console.log("itemByid", itemDoc, data);
+    
     if (!data) return null;
     data.id = itemId;
     const item: Item = await this._itemModelToItem(data);
@@ -453,20 +453,20 @@ export class ItemService {
       }
     }
 
-    // const rv = {
-    //   id: itemId,
-    //   createdAt: existingData.created.seconds * 1000,
-    //   updatedAt: updateData.updated?.seconds ? updateData.updated.seconds * 1000 : Date.now(),
-    //   ...existingData,
-    // } as Item;
-    // return rv;
+    const rv: Item = await this._itemModelToItem({
+      id: itemId,
+      createdAt: existingData.created.seconds * 1000,
+      updatedAt: updateData.updated?.seconds ? updateData.updated.seconds * 1000 : Date.now(),
+      ...existingData,
+    });
+    return rv;
     
     // Fetch and return the updated item
-    const updatedItem = await this.itemById(itemId);
-    if (!updatedItem) {
-      throw new Error(`Failed to fetch updated item with ID ${itemId}`);
-    }
-    return updatedItem;
+    // const updatedItem = await this.itemById(itemId);
+    // if (!updatedItem) {
+    //   throw new Error(`Failed to fetch updated item with ID ${itemId}`);
+    // }
+    // return updatedItem;
   }
 
   async updateUserItemsLocation(
