@@ -29,7 +29,7 @@ export class ItemService {
   private mapService: MapService;
   private categoryService: CategoryService;
 
-  constructor(categoryService: CategoryService ) {
+  constructor(categoryService: CategoryService) {
     this.mapService = createMapService();
     this.categoryService = categoryService;
   }
@@ -73,7 +73,7 @@ export class ItemService {
     const itemDoc = await db.collection("items").doc(itemId).get();
     if (!itemDoc.exists) return null;
     let data = itemDoc.data();
-    
+
     if (!data) return null;
     data.id = itemId;
     const item: Item = await this._itemModelToItem(data);
@@ -143,21 +143,20 @@ export class ItemService {
     return results;
   }
 
-  async itemCategoriesByUser(  userId: string )
-  {
-      // Assuming that we do not have anyone with large number of entries
-      const items = await this.itemsByUser(userId, [], "", "", 65535, 0);
+  async itemCategoriesByUser(userId: string) {
+    // Assuming that we do not have anyone with large number of entries
+    const items = await this.itemsByUser(userId, [], "", "", 65535, 0);
 
-      // Count categories
-      const categoryCount: { [category: string]: number } = {};
-      for (const item of items) {
-        if (item.category && Array.isArray(item.category)) {
-          for (const cat of item.category) {
-            categoryCount[cat] = (categoryCount[cat] || 0) + 1;
-          }
+    // Count categories
+    const categoryCount: { [category: string]: number } = {};
+    for (const item of items) {
+      if (item.category && Array.isArray(item.category)) {
+        for (const cat of item.category) {
+          categoryCount[cat] = (categoryCount[cat] || 0) + 1;
         }
       }
-      return categoryCount;
+    }
+    return categoryCount;
   }
 
   async _itemQueryToItem(
@@ -328,10 +327,15 @@ export class ItemService {
     // Update category counts
     if (category && category.length > 0) {
       // If user category is empty, then initialize it
-      const itemCategory = await this.categoryService.getUserItemCategory(owner.id);
+      const itemCategory = await this.categoryService.getUserItemCategory(
+        owner.id
+      );
       if (!itemCategory || itemCategory.length === 0) {
-          const categoryCount = await this.itemCategoriesByUser(owner.id);
-          await this.categoryService.initializeUserCategories( owner.id, categoryCount );
+        const categoryCount = await this.itemCategoriesByUser(owner.id);
+        await this.categoryService.initializeUserCategories(
+          owner.id,
+          categoryCount
+        );
       }
       await this.categoryService.upsertCategories(owner, category);
     }
@@ -342,23 +346,27 @@ export class ItemService {
   async updateItem(
     itemId: string,
     userId: string,
-    name?: string, 
-    condition?: ItemCondition, 
-    category?: string[], 
-    status?: ItemStatus, 
-    publishedYear?: number,  
-    description?: string,   
-    images?: string[]       
+    name?: string,
+    condition?: ItemCondition,
+    category?: string[],
+    status?: ItemStatus,
+    publishedYear?: number,
+    language?: Language,
+    description?: string,
+    images?: string[]
   ): Promise<Item> {
     // First, get the existing item to verify ownership
     const itemDoc = await db.collection("items").doc(itemId).get();
-    if (!itemDoc.exists) throw new Error(`Item with ID ${itemId} does not exist`);
+    if (!itemDoc.exists)
+      throw new Error(`Item with ID ${itemId} does not exist`);
 
     let existingData = itemDoc.data() as ItemModel;
-    
+
     // Verify the user owns this item
     if (existingData.ownerId !== userId) {
-      throw new Error(`User ${userId} does not have permission to update item ${itemId}`);
+      throw new Error(
+        `User ${userId} does not have permission to update item ${itemId}`
+      );
     }
 
     // Process new images if provided
@@ -375,7 +383,10 @@ export class ItemService {
             publicImageUrls.push(publicUrl);
             gsImageUrls.push(image);
           } catch (error) {
-            console.error(`Failed to get public URL for image ${image}:`, error);
+            console.error(
+              `Failed to get public URL for image ${image}:`,
+              error
+            );
           }
         } else {
           publicImageUrls.push(image);
@@ -405,7 +416,10 @@ export class ItemService {
       updateData.description = description;
       existingData.description = description;
     }
-    if (category && JSON.stringify(existingData.category) !== JSON.stringify(category)) {
+    if (
+      category &&
+      JSON.stringify(existingData.category) !== JSON.stringify(category)
+    ) {
       updateData.category = category;
       existingData.category = category;
     }
@@ -413,7 +427,12 @@ export class ItemService {
       updateData.publishedYear = publishedYear;
       existingData.publishedYear = publishedYear;
     }
-    
+
+    if (language && existingData.language !== language) {
+      updateData.language = language;
+      existingData.language = language;
+    }
+
     // Handle images - either replace entirely or append to existing
     if (images !== undefined) {
       if (images.length === 0) {
@@ -446,7 +465,7 @@ export class ItemService {
     if (category !== undefined) {
       // Get the owner data for category service
       const owner = { id: userId } as User; // Minimal user object for category service
-      
+
       if (category.length > 0) {
         // Update category counts for new categories
         await this.categoryService.upsertCategories(owner, category);
@@ -456,11 +475,13 @@ export class ItemService {
     const rv: Item = await this._itemModelToItem({
       id: itemId,
       createdAt: existingData.created.seconds * 1000,
-      updatedAt: updateData.updated?.seconds ? updateData.updated.seconds * 1000 : Date.now(),
+      updatedAt: updateData.updated?.seconds
+        ? updateData.updated.seconds * 1000
+        : Date.now(),
       ...existingData,
     });
     return rv;
-    
+
     // Fetch and return the updated item
     // const updatedItem = await this.itemById(itemId);
     // if (!updatedItem) {
@@ -655,15 +676,22 @@ export class ItemService {
         );
         uploadPath = `${pathDir}/${thumbnailFileName}`;
 
-        const gsUrl = await UploadBufferToGCS(uploadPath, thumbnailBuffer, "image/jpeg");
+        const gsUrl = await UploadBufferToGCS(
+          uploadPath,
+          thumbnailBuffer,
+          "image/jpeg"
+        );
         const publicUrl = await GetPublicUrlForGSFile(gsUrl);
 
         return { gs: gsUrl, url: publicUrl };
-
       } else {
         // Create upload path: thumbnails/{generated_filename}
         uploadPath = `thumbnails/${thumbnailFileName}`;
-        const gsUrl = await UploadBufferToGCS(uploadPath, thumbnailBuffer, "image/jpeg");
+        const gsUrl = await UploadBufferToGCS(
+          uploadPath,
+          thumbnailBuffer,
+          "image/jpeg"
+        );
         const publicUrl = await GetPublicUrlForGSFile(gsUrl);
 
         console.log(`Thumbnail generated successfully: ${gsUrl}`);
