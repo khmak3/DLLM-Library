@@ -225,6 +225,7 @@
     "noItemsInCategoryUser": "此用戶還沒有添加任何{{category}}物品。",
     "includeExchangePointItems": "包含交換點快取物品",
     "exchangePointItemsHelper": "啟用時，除了您的個人物品外，還包括在您的交換點快取的物品。",
-    "selectCategoryToViewItems": "選擇下面的類別來查看物品。"
+    "selectCategoryToViewItems": "選擇下面的類別來查看物品。",
+    "noCategories": "沒有可用的類別"
   }
 }

@@ -396,7 +396,7 @@ export class ItemService {
 
   async updateItem(
     itemId: string,
-    userId: string,
+    user: User,
     name?: string,
     condition?: ItemCondition,
     category?: string[],
@@ -414,9 +414,9 @@ export class ItemService {
     let existingData = itemDoc.data() as ItemModel;
 
     // Verify the user owns this item
-    if (existingData.ownerId !== userId) {
+    if (existingData.ownerId !== user.id) {
       throw new Error(
-        `User ${userId} does not have permission to update item ${itemId}`
+        `User ${user.id} does not have permission to update item ${itemId}`
       );
     }
 
@@ -453,6 +453,11 @@ export class ItemService {
       updated: Timestamp.now(),
     };
 
+    // Track category changes for later processing
+    let categoryChanged = false;
+    let oldCategories: string[] = [];
+    let newCategories: string[] = [];
+
     // Only update fields that were provided
     if (name && existingData.name !== name) {
       updateData.name = name;
@@ -470,13 +475,31 @@ export class ItemService {
       updateData.description = description;
       existingData.description = description;
     }
-    if (
-      category &&
-      JSON.stringify(existingData.category) !== JSON.stringify(category)
-    ) {
-      updateData.category = category;
-      existingData.category = category;
+
+    // Handle category changes with comparison
+    if (category !== undefined) {
+      const existingCategories = existingData.category || [];
+
+      // Check if categories actually changed
+      const categoriesEqual =
+        existingCategories.length === category.length &&
+        existingCategories.every((cat) => category.includes(cat)) &&
+        category.every((cat) => existingCategories.includes(cat));
+
+      if (!categoriesEqual) {
+        categoryChanged = true;
+        oldCategories = [...existingCategories];
+        newCategories = [...category];
+
+        updateData.category = category;
+        existingData.category = category;
+
+        console.debug(`Category change detected for item ${itemId}:`);
+        console.debug(`  Old categories: [${oldCategories.join(", ")}]`);
+        console.debug(`  New categories: [${newCategories.join(", ")}]`);
+      }
     }
+
     if (publishedYear && existingData.publishedYear !== publishedYear) {
       updateData.publishedYear = publishedYear;
       existingData.publishedYear = publishedYear;
@@ -515,14 +538,44 @@ export class ItemService {
     // Update the document
     await db.collection("items").doc(itemId).update(updateData);
 
-    // Handle category updates if category was changed
-    if (category !== undefined) {
-      // Get the owner data for category service
-      const owner = { id: userId } as User; // Minimal user object for category service
+    // Handle category updates if categories were changed
+    if (categoryChanged) {
+      try {
+        // Calculate categories to add and remove
+        const categoriesToAdd = newCategories.filter(
+          (cat) => !oldCategories.includes(cat)
+        );
+        const categoriesToRemove = oldCategories.filter(
+          (cat) => !newCategories.includes(cat)
+        );
 
-      if (category.length > 0) {
-        // Update category counts for new categories
-        await this.categoryService.upsertCategories(owner, category);
+        console.debug(`Categories to add: [${categoriesToAdd.join(", ")}]`);
+        console.debug(
+          `Categories to remove: [${categoriesToRemove.join(", ")}]`
+        );
+
+        // Process removals first to avoid potential conflicts
+        if (categoriesToRemove.length > 0) {
+          await this.categoryService.reduceCategories(user, categoriesToRemove);
+          console.debug(
+            `Removed categories: [${categoriesToRemove.join(", ")}]`
+          );
+        }
+
+        // Then process additions
+        if (categoriesToAdd.length > 0) {
+          await this.categoryService.upsertCategories(user, categoriesToAdd);
+          console.debug(`Added categories: [${categoriesToAdd.join(", ")}]`);
+        }
+
+        console.log(`Successfully updated categories for item ${itemId}`);
+      } catch (error) {
+        console.error(
+          `Failed to update category counts for item ${itemId}:`,
+          error
+        );
+        // Consider whether to throw here or just log the error
+        // For now, we'll log and continue since the item update succeeded
       }
     }
 

@@ -275,7 +275,7 @@ export const resolvers: Resolvers = {
       if (!owner) throw new Error("Owner not found");
       return itemService.updateItem(
         args.id,
-        owner.id,
+        owner,
         args.name,
         args.condition,
         args.category,

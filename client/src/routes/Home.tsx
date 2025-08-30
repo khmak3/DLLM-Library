@@ -159,10 +159,7 @@ const HomePage: React.FC = () => {
     navigate(`/user/${exchangePointId}`);
   };
 
-  const handleExchangePointsPageChange = (
-    event: React.ChangeEvent<unknown>,
-    value: number
-  ) => {
+  const handleExchangePointsPageChange = (value: number) => {
     setExchangePointsPage(value);
   };
 
@@ -283,7 +280,9 @@ const HomePage: React.FC = () => {
                   <Pagination
                     count={totalExchangePointsPages}
                     page={exchangePointsPage}
-                    onChange={handleExchangePointsPageChange}
+                    onChange={(_, value) =>
+                      handleExchangePointsPageChange(value)
+                    }
                     color="primary"
                     size="small"
                   />

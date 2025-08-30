@@ -219,6 +219,7 @@
     "noItemsInCategoryUser": "This user hasn't added any {{category}} items yet.",
     "includeExchangePointItems": "Include Exchange Point Cached Items",
     "exchangePointItemsHelper": "When enabled, includes items cached at your exchange point in addition to your personal items.",
-    "selectCategoryToViewItems": "Select a category below to view items."
+    "selectCategoryToViewItems": "Select a category below to view items.",
+    "noCategories": "No categories available"
   }
 }

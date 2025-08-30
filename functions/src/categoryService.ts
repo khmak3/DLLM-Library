@@ -351,4 +351,247 @@ export class CategoryService {
 
     return snapshot.docs.map((doc) => doc.id);
   }
+
+  async reduceCategories(owner: User, categories: string[]): Promise<void> {
+    if (!categories || categories.length === 0) {
+      console.log("No categories provided for reduction");
+      return;
+    }
+
+    const batch = db.batch();
+    const now = Timestamp.now();
+
+    // First, get current user's item categories to check counts
+    const userItemCategories = await this.getUserItemCategory(owner.id);
+    const userCategoryMap = new Map(
+      userItemCategories.map((cat) => [cat.category, cat.count])
+    );
+
+    // Update global categories and user's itemCategory subcollection
+    const userCategoryCollection = db
+      .collection("users")
+      .doc(owner.id)
+      .collection("itemCategory");
+
+    const categoriesToRemoveFromExchangePoint: {
+      category: string;
+      count: number;
+    }[] = [];
+
+    for (const category of categories) {
+      const userCurrentCount = userCategoryMap.get(category) || 0;
+
+      if (userCurrentCount <= 0) {
+        console.warn(
+          `Category ${category} has no items for user ${owner.id}, skipping`
+        );
+        continue;
+      }
+
+      // Reduce global category count
+      const globalCategoryRef = db.collection("categories").doc(category);
+      const globalCategoryDoc = await globalCategoryRef.get();
+
+      if (globalCategoryDoc.exists) {
+        const globalCurrentCount = globalCategoryDoc.data()?.count || 0;
+        if (globalCurrentCount <= 1) {
+          // If this is the last item in this category globally, delete the category
+          batch.delete(globalCategoryRef);
+        } else {
+          // Otherwise, decrement the count
+          batch.set(
+            globalCategoryRef,
+            {
+              count: firebase.firestore.FieldValue.increment(-1),
+              updated: now,
+            },
+            { merge: true }
+          );
+        }
+      }
+
+      // Reduce user's category count
+      const userCategoryRef = userCategoryCollection.doc(category);
+      if (userCurrentCount <= 1) {
+        // If this is the user's last item in this category, delete the category
+        batch.delete(userCategoryRef);
+      } else {
+        // Otherwise, decrement the count
+        batch.set(
+          userCategoryRef,
+          {
+            count: firebase.firestore.FieldValue.increment(-1),
+            updated: now,
+          },
+          { merge: true }
+        );
+      }
+
+      // Track categories to remove from exchange point cache
+      categoriesToRemoveFromExchangePoint.push({ category, count: 1 });
+    }
+
+    await batch.commit();
+    console.log(`Reduced categories: ${categories.join(", ")}`);
+
+    // Update user's exchange points's item and category cache
+    if (
+      owner.exchangePoints &&
+      owner.exchangePoints.length > 0 &&
+      categoriesToRemoveFromExchangePoint.length > 0
+    ) {
+      for (const exchangePointId of owner.exchangePoints) {
+        await this.removeExchangePointCategoryCache(
+          exchangePointId,
+          categoriesToRemoveFromExchangePoint
+        );
+      }
+    }
+  }
+
+  async removeCategoriesForUser(
+    userId: string,
+    categoriesMap: { [category: string]: number }
+  ): Promise<{ category: string; count: number }[]> {
+    if (!categoriesMap || Object.keys(categoriesMap).length === 0) {
+      console.warn("No categories provided for removal");
+      return [];
+    }
+
+    // Get current user categories to validate removal
+    const currentUserCategories = await this.getUserItemCategory(userId);
+    const currentCategoryMap = new Map(
+      currentUserCategories.map((cat) => [cat.category, cat.count])
+    );
+
+    let batch = db.batch();
+    const now = Timestamp.now();
+    const maxBatchSize = 20;
+    let batchCount = 0;
+
+    const actualRemovals: { category: string; count: number }[] = [];
+
+    // Update global categories
+    for (const [category, countToRemove] of Object.entries(categoriesMap)) {
+      if (!category || typeof countToRemove !== "number" || countToRemove <= 0)
+        continue;
+
+      const globalCategoryRef = db.collection("categories").doc(category);
+      const globalCategoryDoc = await globalCategoryRef.get();
+
+      if (globalCategoryDoc.exists) {
+        const globalCurrentCount = globalCategoryDoc.data()?.count || 0;
+
+        if (globalCurrentCount <= countToRemove) {
+          // If removing all or more items than exist, delete the category
+          batch.delete(globalCategoryRef);
+          actualRemovals.push({ category, count: globalCurrentCount });
+        } else {
+          // Otherwise, decrement the count
+          batch.set(
+            globalCategoryRef,
+            {
+              count: firebase.firestore.FieldValue.increment(-countToRemove),
+              updated: now,
+            },
+            { merge: true }
+          );
+          actualRemovals.push({ category, count: countToRemove });
+        }
+
+        batchCount++;
+        if (batchCount >= maxBatchSize) {
+          await batch.commit();
+          batch = db.batch();
+          batchCount = 0;
+        }
+      }
+    }
+
+    if (batchCount > 0) await batch.commit();
+
+    // Reset batch for user categories
+    batch = db.batch();
+    batchCount = 0;
+
+    // Update user's itemCategory subcollection
+    const userCategoryCollection = db
+      .collection("users")
+      .doc(userId)
+      .collection("itemCategory");
+
+    console.log("Removing user categories for user: " + userId);
+
+    for (const [category, countToRemove] of Object.entries(categoriesMap)) {
+      if (!category || typeof countToRemove !== "number" || countToRemove <= 0)
+        continue;
+
+      const currentUserCount = currentCategoryMap.get(category) || 0;
+
+      if (currentUserCount <= 0) {
+        console.warn(
+          `User ${userId} has no items in category ${category}, skipping`
+        );
+        continue;
+      }
+
+      const userCategoryRef = userCategoryCollection.doc(category);
+
+      if (currentUserCount <= countToRemove) {
+        // If removing all or more items than user has, delete the category
+        batch.delete(userCategoryRef);
+      } else {
+        // Otherwise, decrement the count
+        batch.set(
+          userCategoryRef,
+          {
+            count: firebase.firestore.FieldValue.increment(-countToRemove),
+            updated: now,
+          },
+          { merge: true }
+        );
+      }
+
+      batchCount++;
+      if (batchCount >= maxBatchSize) {
+        console.log(
+          "Committing batch of user category removals for user: " +
+            userId +
+            " starting with " +
+            category
+        );
+        await batch.commit();
+        batch = db.batch();
+        batchCount = 0;
+      }
+    }
+
+    if (batchCount > 0) await batch.commit();
+
+    console.log(
+      `Removed categories with counts: ${actualRemovals
+        .map(({ category, count }) => `${category} (-${count})`)
+        .join(", ")}`
+    );
+
+    return actualRemovals;
+  }
+
+  async decrementCategoriesForUser(
+    userId: string,
+    categories: string[]
+  ): Promise<void> {
+    if (!categories || categories.length === 0) {
+      console.log("No categories provided for decrement");
+      return;
+    }
+
+    // Convert to categoriesMap format for consistency
+    const categoriesMap: { [category: string]: number } = {};
+    categories.forEach((category) => {
+      categoriesMap[category] = 1;
+    });
+
+    await this.removeCategoriesForUser(userId, categoriesMap);
+  }
 }

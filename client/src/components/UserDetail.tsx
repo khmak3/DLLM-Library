@@ -34,6 +34,7 @@ import { useNavigate } from "react-router-dom";
 import { calculateDistance, formatDistance } from "../utils/geoProcessor";
 import ItemSummary from "./ItemSummary";
 import PaginationControls from "./PaginationControls";
+import { TagCloud } from "react-tagcloud";
 
 const USER_DETAIL_QUERY = gql`
   query User($userId: ID!) {
@@ -100,6 +101,11 @@ interface UserDetailProps {
   onBack?: () => void;
 }
 
+interface TagCloudData {
+  value: string;
+  count: number;
+}
+
 const ITEMS_PER_PAGE = 10;
 
 const UserDetail: React.FC<UserDetailProps> = ({
@@ -150,6 +156,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
 
   // Refetch items when page changes, category changes, or exchange point setting changes
   useEffect(() => {
+    console.log("Refetching items... " + selectedCategory);
     if (userId && selectedCategory) {
       refetchItems();
     }
@@ -165,7 +172,9 @@ const UserDetail: React.FC<UserDetailProps> = ({
     setItemsPage(newPage);
   };
 
-  const handleCategoryClick = (category: string) => {
+  const handleCategoryClick = (tag: TagCloudData) => {
+    const category = tag.value;
+    console.log("Clicked category:", tag);
     if (selectedCategory === category) {
       // If clicking the same category, deselect it
       setSelectedCategory(null);
@@ -226,40 +235,49 @@ const UserDetail: React.FC<UserDetailProps> = ({
     });
   };
 
-  // Calculate font size for tag cloud based on count
-  const getTagSize = (count: number, maxCount: number, minCount: number) => {
-    if (maxCount === minCount) return "medium";
+  // Prepare data for TagCloud component
+  const tagCloudData: TagCloudData[] = userData?.user?.itemCategory
+    ? userData.user.itemCategory.map((categoryItem) => ({
+        value: categoryItem.category,
+        count: categoryItem.count,
+      }))
+    : [];
 
-    const ratio = (count - minCount) / (maxCount - minCount);
-    if (ratio > 0.7) return "large";
-    if (ratio > 0.4) return "medium";
-    return "small";
+  // Custom renderer for TagCloud
+  const customRenderer = (tag: TagCloudData, size: number, color: string) => {
+    const isSelected = selectedCategory === tag.value;
+
+    return (
+      <Box
+        key={tag.value}
+        component="span"
+        sx={{
+          fontSize: `${size}px`,
+          color: isSelected ? "#1976d2" : color,
+          fontWeight: isSelected ? "bold" : "normal",
+          cursor: "pointer",
+          margin: "4px",
+          padding: "4px 8px",
+          borderRadius: "4px",
+          backgroundColor: isSelected
+            ? "rgba(25, 118, 210, 0.1)"
+            : "transparent",
+          border: isSelected ? "2px solid #1976d2" : "1px solid transparent",
+          display: "inline-block",
+          transition: "all 0.2s ease-in-out",
+          "&:hover": {
+            transform: "scale(1.05)",
+            backgroundColor: isSelected
+              ? "rgba(25, 118, 210, 0.2)"
+              : "rgba(0, 0, 0, 0.05)",
+          },
+        }}
+        title={`${tag.value} (${tag.count} items)`}
+      >
+        {tag.value} ({tag.count})
+      </Box>
+    );
   };
-
-  // Get tag color based on selection and count
-  const getTagColor = (category: string, count: number, maxCount: number) => {
-    if (selectedCategory === category) {
-      return "primary";
-    }
-
-    const ratio = maxCount > 0 ? count / maxCount : 0;
-    if (ratio > 0.7) return "success";
-    if (ratio > 0.4) return "info";
-    return "default";
-  };
-
-  // Calculate tag metrics
-  const tagMetrics =
-    userData?.user?.itemCategory?.length > 0
-      ? {
-          maxCount: Math.max(
-            ...userData.user.itemCategory.map((cat) => cat.count)
-          ),
-          minCount: Math.min(
-            ...userData.user.itemCategory.map((cat) => cat.count)
-          ),
-        }
-      : { maxCount: 0, minCount: 0 };
 
   // Handle case when userId is null
   if (!userId) {
@@ -520,57 +538,38 @@ const UserDetail: React.FC<UserDetailProps> = ({
                   </Alert>
                 )}
 
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {sortedCategories &&
-                    sortedCategories.map((categoryItem) => (
-                      <Chip
-                        key={categoryItem.category}
-                        label={`${categoryItem.category} (${categoryItem.count})`}
-                        size={getTagSize(
-                          categoryItem.count,
-                          tagMetrics.maxCount,
-                          tagMetrics.minCount
-                        )}
-                        color={getTagColor(
-                          categoryItem.category,
-                          categoryItem.count,
-                          tagMetrics.maxCount
-                        )}
-                        variant={
-                          selectedCategory === categoryItem.category
-                            ? "filled"
-                            : "outlined"
-                        }
-                        onClick={() =>
-                          handleCategoryClick(categoryItem.category)
-                        }
-                        sx={{
-                          cursor: "pointer",
-                          fontSize:
-                            getTagSize(
-                              categoryItem.count,
-                              tagMetrics.maxCount,
-                              tagMetrics.minCount
-                            ) === "large"
-                              ? "1.1rem"
-                              : getTagSize(
-                                  categoryItem.count,
-                                  tagMetrics.maxCount,
-                                  tagMetrics.minCount
-                                ) === "medium"
-                              ? "0.9rem"
-                              : "0.8rem",
-                          fontWeight:
-                            selectedCategory === categoryItem.category
-                              ? "bold"
-                              : "normal",
-                          "&:hover": {
-                            transform: "scale(1.05)",
-                            transition: "transform 0.2s ease-in-out",
-                          },
-                        }}
-                      />
-                    ))}
+                {/* React TagCloud */}
+                <Box
+                  sx={{
+                    minHeight: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    p: 2,
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  {tagCloudData.length > 0 ? (
+                    <TagCloud
+                      minSize={14}
+                      maxSize={32}
+                      tags={tagCloudData}
+                      onClick={(tag) => handleCategoryClick(tag)}
+                      renderer={customRenderer}
+                      shuffle={false}
+                      colorOptions={{
+                        luminosity: "dark",
+                        hue: "blue",
+                      }}
+                    />
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      {t("user.noCategories", "No categories available")}
+                    </Typography>
+                  )}
                 </Box>
 
                 <Typography
