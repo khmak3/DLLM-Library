@@ -28,6 +28,9 @@ export class UserService {
     this.mapService = createMapService();
     this.itemService = itemService;
     this.categoryService = categoryService;
+
+    // Set circular reference after construction
+    this.itemService.setUserService(this);
   }
 
   async me(loginUser: LoginUser | null): Promise<User | null> {
@@ -338,5 +341,41 @@ export class UserService {
     for (const itemId of itemIds) {
       await itemCacheCollection.doc(itemId).delete();
     }
+  }
+
+  async getItemCaches(
+    userId: string,
+    categories?: string[],
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<string[]> {
+    const itemCacheCollection = userCollection
+      .doc(userId)
+      .collection("itemCache");
+
+    let query = itemCacheCollection.orderBy("__name__"); // Order by document ID for consistent pagination
+
+    // Apply category filter if provided
+    if (categories && categories.length > 0) {
+      query = query.where("categories", "array-contains-any", categories);
+    }
+
+    const snapshot = await query.limit(limit).offset(offset).get();
+
+    if (snapshot.empty) {
+      console.debug(
+        `No cached items found for user ${userId} with categories ${categories}`
+      );
+      return [];
+    }
+
+    // Return the document IDs (which are the item IDs)
+    const itemIds = snapshot.docs.map((doc) => doc.id);
+
+    console.debug(
+      `Found ${itemIds.length} cached item IDs for user ${userId} with categories ${categories}`
+    );
+
+    return itemIds;
   }
 }

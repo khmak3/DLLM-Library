@@ -28,10 +28,15 @@ type ItemModel = Omit<Item, "id" | "createdAt" | "updatedAt"> & {
 export class ItemService {
   private mapService: MapService;
   private categoryService: CategoryService;
+  private userService?: any; // Will be set after initialization
 
   constructor(categoryService: CategoryService) {
     this.mapService = createMapService();
     this.categoryService = categoryService;
+  }
+
+  setUserService(userService: any) {
+    this.userService = userService;
   }
 
   async itemsByLocation(
@@ -101,7 +106,7 @@ export class ItemService {
 
         await Promise.all(
           snapshot.docs.map(async (doc) => {
-            const item = await this._itemModelToItem(doc);
+            const item = await this._itemQueryToItem(doc);
             results.push(item);
           })
         );
@@ -116,32 +121,58 @@ export class ItemService {
     status?: string,
     keyword?: string,
     limit: number = 20,
-    offset: number = 0
+    offset: number = 0,
+    isExchangePointItem: boolean = false
   ): Promise<Item[]> {
-    let query = db
-      .collection("items")
-      .where("ownerId", "==", userId)
-      .orderBy("updated", "desc");
-    if (category && category.length > 0)
-      query = query.where("category", "array-contains-any", category);
-    if (status && status.length > 0)
-      query = query.where("status", "==", status);
-    if (keyword && keyword.length > 0)
-      query = query
-        .where("name", ">=", keyword)
-        .where("name", "<=", keyword + "\uf8ff");
-    const snapshot = await query.limit(limit).offset(offset).get();
-    const results: Item[] = [];
-    await Promise.all(
-      snapshot.docs.map(async (doc) => {
-        const item = await this._itemQueryToItem(doc);
-        results.push(item);
-      })
-    );
-    console.debug(
-      `Found ${results.length} items for user ${userId} with category ${category}, status ${status}, keyword ${keyword}`
-    );
-    return results;
+    if (isExchangePointItem) {
+      if (!this.userService) {
+        throw new Error("UserService not available for exchange point items");
+      }
+
+      const cachedItemIds = await this.userService.getItemCaches(
+        userId,
+        category && category.length > 0 ? category : undefined,
+        limit,
+        offset
+      );
+
+      if (cachedItemIds.length === 0) {
+        return [];
+      }
+
+      const items = await this.itemsByIds(cachedItemIds);
+
+      console.debug(
+        `Found ${items.length} cached items for exchange point user ${userId}`
+      );
+
+      return items;
+    } else {
+      let query = db
+        .collection("items")
+        .where("ownerId", "==", userId)
+        .orderBy("updated", "desc");
+      if (category && category.length > 0)
+        query = query.where("category", "array-contains-any", category);
+      if (status && status.length > 0)
+        query = query.where("status", "==", status);
+      if (keyword && keyword.length > 0)
+        query = query
+          .where("name", ">=", keyword)
+          .where("name", "<=", keyword + "\uf8ff");
+      const snapshot = await query.limit(limit).offset(offset).get();
+      const results: Item[] = [];
+      await Promise.all(
+        snapshot.docs.map(async (doc) => {
+          const item = await this._itemQueryToItem(doc);
+          results.push(item);
+        })
+      );
+      console.debug(
+        `Found ${results.length} items for user ${userId} with category ${category}, status ${status}, keyword ${keyword}`
+      );
+      return results;
+    }
   }
 
   async itemCategoriesByUser(userId: string) {

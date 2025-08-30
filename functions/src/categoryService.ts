@@ -190,10 +190,53 @@ export class CategoryService {
       .doc(userId)
       .collection("itemCategory")
       .get();
-    var itemCategory = categorySnapshot.docs.map((doc) => ({
+
+    let itemCategory = categorySnapshot.docs.map((doc) => ({
       category: doc.id,
       count: doc.data().count,
     }));
+
+    // Check if user is an exchange point admin by looking for itemCategoryCache
+    const cacheSnapshot = await db
+      .collection("users")
+      .doc(userId)
+      .collection("itemCategoryCache")
+      .get();
+
+    if (!cacheSnapshot.empty) {
+      // User is an exchange point admin, merge the cache data
+      const cacheCategories = cacheSnapshot.docs.map((doc) => ({
+        category: doc.id,
+        count: doc.data().count,
+      }));
+
+      // Create a map to combine counts from both sources
+      const combinedCategories = new Map<string, number>();
+
+      // Add user's own item categories
+      itemCategory.forEach(({ category, count }) => {
+        combinedCategories.set(category, count);
+      });
+
+      // Add cached categories (from exchange point)
+      cacheCategories.forEach(({ category, count }) => {
+        const existingCount = combinedCategories.get(category) || 0;
+        combinedCategories.set(category, existingCount + count);
+      });
+
+      // Convert back to array format
+      itemCategory = Array.from(combinedCategories.entries()).map(
+        ([category, count]) => ({
+          category,
+          count,
+        })
+      );
+
+      console.log(
+        `Combined categories for exchange point admin ${userId}: ${itemCategory.length} categories`
+      );
+    }
+
     return itemCategory;
   }
 

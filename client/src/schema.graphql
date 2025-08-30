@@ -153,6 +153,7 @@ type Query {
     keyword: String
     limit: Int
     offset: Int
+    isExchangePointItem: Boolean
   ): [Item!]! # 基於User的搜尋
   recentAddedItems(limit: Int, offset: Int, category: [String!]): [Item!]! # 最近新增的藏品
   # 交易相關

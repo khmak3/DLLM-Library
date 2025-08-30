@@ -107,7 +107,15 @@ export const resolvers: Resolvers = {
     },
     itemsByUser: async (
       _: any,
-      { userId, category, status, keyword, limit = 20, offset = 0 }: any,
+      {
+        userId,
+        category,
+        status,
+        keyword,
+        limit = 20,
+        offset = 0,
+        isExchangePointItem = false,
+      }: any,
       __: any
     ): Promise<Item[]> => {
       return itemService.itemsByUser(
@@ -116,7 +124,8 @@ export const resolvers: Resolvers = {
         status,
         keyword,
         limit,
-        offset
+        offset,
+        isExchangePointItem
       );
     },
     item: async (_: any, { id }: any, __: any): Promise<Item | null> => {
