@@ -642,6 +642,13 @@ export type RecentCategoriesQueryVariables = Exact<{
 
 export type RecentCategoriesQuery = { __typename?: 'Query', recentUpdateCategories: Array<string> };
 
+export type HotCategoriesQueryVariables = Exact<{
+  limit: Scalars['Int']['input'];
+}>;
+
+
+export type HotCategoriesQuery = { __typename?: 'Query', hotCategories: Array<string> };
+
 export type GetExchangePointsCountQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -663,13 +670,6 @@ export type ItemsByLocationQueryVariables = Exact<{
 
 
 export type ItemsByLocationQuery = { __typename?: 'Query', itemsByLocation: Array<{ __typename?: 'Item', id: string, name: string, condition: ItemCondition, status: ItemStatus, images?: Array<string> | null, thumbnails?: Array<string> | null, category: Array<string>, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }> };
-
-export type HotCategoriesQueryVariables = Exact<{
-  limit: Scalars['Int']['input'];
-}>;
-
-
-export type HotCategoriesQuery = { __typename?: 'Query', hotCategories: Array<string> };
 
 export type GetUserTransactionsQueryVariables = Exact<{
   userId: Scalars['ID']['input'];
@@ -1952,6 +1952,44 @@ export type RecentCategoriesQueryHookResult = ReturnType<typeof useRecentCategor
 export type RecentCategoriesLazyQueryHookResult = ReturnType<typeof useRecentCategoriesLazyQuery>;
 export type RecentCategoriesSuspenseQueryHookResult = ReturnType<typeof useRecentCategoriesSuspenseQuery>;
 export type RecentCategoriesQueryResult = Apollo.QueryResult<RecentCategoriesQuery, RecentCategoriesQueryVariables>;
+export const HotCategoriesDocument = gql`
+    query HotCategories($limit: Int!) {
+  hotCategories(limit: $limit)
+}
+    `;
+
+/**
+ * __useHotCategoriesQuery__
+ *
+ * To run a query within a React component, call `useHotCategoriesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHotCategoriesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHotCategoriesQuery({
+ *   variables: {
+ *      limit: // value for 'limit'
+ *   },
+ * });
+ */
+export function useHotCategoriesQuery(baseOptions: Apollo.QueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables> & ({ variables: HotCategoriesQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
+      }
+export function useHotCategoriesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
+        }
+export function useHotCategoriesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
+        }
+export type HotCategoriesQueryHookResult = ReturnType<typeof useHotCategoriesQuery>;
+export type HotCategoriesLazyQueryHookResult = ReturnType<typeof useHotCategoriesLazyQuery>;
+export type HotCategoriesSuspenseQueryHookResult = ReturnType<typeof useHotCategoriesSuspenseQuery>;
+export type HotCategoriesQueryResult = Apollo.QueryResult<HotCategoriesQuery, HotCategoriesQueryVariables>;
 export const GetExchangePointsCountDocument = gql`
     query GetExchangePointsCount {
   exchangePointsCount
@@ -2093,44 +2131,6 @@ export type ItemsByLocationQueryHookResult = ReturnType<typeof useItemsByLocatio
 export type ItemsByLocationLazyQueryHookResult = ReturnType<typeof useItemsByLocationLazyQuery>;
 export type ItemsByLocationSuspenseQueryHookResult = ReturnType<typeof useItemsByLocationSuspenseQuery>;
 export type ItemsByLocationQueryResult = Apollo.QueryResult<ItemsByLocationQuery, ItemsByLocationQueryVariables>;
-export const HotCategoriesDocument = gql`
-    query HotCategories($limit: Int!) {
-  hotCategories(limit: $limit)
-}
-    `;
-
-/**
- * __useHotCategoriesQuery__
- *
- * To run a query within a React component, call `useHotCategoriesQuery` and pass it any options that fit your needs.
- * When your component renders, `useHotCategoriesQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useHotCategoriesQuery({
- *   variables: {
- *      limit: // value for 'limit'
- *   },
- * });
- */
-export function useHotCategoriesQuery(baseOptions: Apollo.QueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables> & ({ variables: HotCategoriesQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
-      }
-export function useHotCategoriesLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
-        }
-export function useHotCategoriesSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<HotCategoriesQuery, HotCategoriesQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<HotCategoriesQuery, HotCategoriesQueryVariables>(HotCategoriesDocument, options);
-        }
-export type HotCategoriesQueryHookResult = ReturnType<typeof useHotCategoriesQuery>;
-export type HotCategoriesLazyQueryHookResult = ReturnType<typeof useHotCategoriesLazyQuery>;
-export type HotCategoriesSuspenseQueryHookResult = ReturnType<typeof useHotCategoriesSuspenseQuery>;
-export type HotCategoriesQueryResult = Apollo.QueryResult<HotCategoriesQuery, HotCategoriesQueryVariables>;
 export const GetUserTransactionsDocument = gql`
     query GetUserTransactions($userId: ID!) {
   transactionsByUser(userId: $userId) {

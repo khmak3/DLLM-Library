@@ -37,6 +37,12 @@ const RecentCategoriesQuery = gql`
   }
 `;
 
+const HotCategoriesQuery = gql`
+  query HotCategories($limit: Int!) {
+    hotCategories(limit: $limit)
+  }
+`;
+
 const GET_EXCHANGE_POINTS = gql`
   query GetExchangePoints($limit: Int, $offset: Int) {
     exchangePoints(limit: $limit, offset: $offset) {
@@ -111,7 +117,8 @@ const HomePage: React.FC = () => {
   );
 
   const handleItemCreated = () => {
-    refetch();
+    recentCategoriesRefetch();
+    hotCategoriesRefetch();
   };
 
   const handleUserClick = (userId: string) => {
@@ -131,11 +138,23 @@ const HomePage: React.FC = () => {
   const {
     data: recentCategoriesData,
     loading: recentCategoriesLoading,
-    error,
-    refetch,
+    error: recentCategoriesError,
+    refetch: recentCategoriesRefetch,
   } = useQuery<{
     recentUpdateCategories: string[];
   }>(RecentCategoriesQuery, {
+    variables: { limit: 1 },
+  });
+
+  // Query for hot categories
+  const {
+    data: hotCategoriesData,
+    loading: hotCategoriesLoading,
+    error: errorHotCategories,
+    refetch: hotCategoriesRefetch,
+  } = useQuery<{
+    hotCategories: string[];
+  }>(HotCategoriesQuery, {
     variables: { limit: 3 },
   });
 
@@ -385,6 +404,24 @@ const HomePage: React.FC = () => {
               </ListItem>
             )
           )}
+        </>
+      )}
+
+      {/* Loading state for recent categories */}
+      {recentCategoriesLoading && (
+        <ListItem>
+          <Typography>{t("common.loading")}</Typography>
+        </ListItem>
+      )}
+
+      {/* Recent Categories Section */}
+      {hotCategoriesData?.hotCategories && (
+        <>
+          {hotCategoriesData.hotCategories.map((category, index) => (
+            <ListItem key={`hot-category-${index}`}>
+              <RecentItemBanner category={category} />
+            </ListItem>
+          ))}
         </>
       )}
 
