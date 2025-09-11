@@ -398,7 +398,8 @@ export type Transaction = {
   id: Scalars['ID']['output'];
   item: Item;
   location?: Maybe<Location>;
-  requestor?: Maybe<User>;
+  receiver?: Maybe<User>;
+  requestor: User;
   status: TransactionStatus;
   updatedAt: Scalars['Date']['output'];
 };
@@ -437,7 +438,7 @@ export type User = {
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', address?: string | null, createdAt: any, email: string, id: string, isVerified: boolean, isActive: boolean, role: Role, nickname?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', address?: string | null, createdAt: any, email: string, id: string, isVerified: boolean, isActive: boolean, role: Role, exchangePoints?: Array<string> | null, nickname?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type UpdateItemMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -463,6 +464,8 @@ export type ItemQuery = { __typename?: 'Query', item?: { __typename?: 'Item', id
 
 export type CreateTransactionMutationVariables = Exact<{
   itemId: Scalars['ID']['input'];
+  location: TransactionLocation;
+  locationIndex?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
@@ -473,14 +476,14 @@ export type GetUserForItemQueryVariables = Exact<{
 }>;
 
 
-export type GetUserForItemQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type GetUserForItemQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, exchangePoints?: Array<string> | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type OpenTransactionsByItemQueryVariables = Exact<{
   itemId: Scalars['ID']['input'];
 }>;
 
 
-export type OpenTransactionsByItemQuery = { __typename?: 'Query', openTransactionsByItem: Array<{ __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, requestor?: { __typename?: 'User', id: string, nickname?: string | null, email: string } | null }> };
+export type OpenTransactionsByItemQuery = { __typename?: 'Query', openTransactionsByItem: Array<{ __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string } }> };
 
 export type ApproveTransactionForItemMutationVariables = Exact<{
   transactionId: Scalars['ID']['input'];
@@ -564,7 +567,7 @@ export type GetTransactionQueryVariables = Exact<{
 }>;
 
 
-export type GetTransactionQuery = { __typename?: 'Query', transaction?: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, description?: string | null, images?: Array<string> | null, thumbnails?: Array<string> | null, condition: ItemCondition, category: Array<string>, ownerId: string, holderId?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor?: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type GetTransactionQuery = { __typename?: 'Query', transaction?: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, description?: string | null, images?: Array<string> | null, thumbnails?: Array<string> | null, condition: ItemCondition, category: Array<string>, ownerId: string, holderId?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, receiver?: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type ApproveTransactionMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -594,13 +597,6 @@ export type CancelTransactionMutationVariables = Exact<{
 
 export type CancelTransactionMutation = { __typename?: 'Mutation', cancelTransaction: boolean };
 
-export type UserQueryVariables = Exact<{
-  userId: Scalars['ID']['input'];
-}>;
-
-
-export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, isVerified: boolean, isActive: boolean, role: Role, exchangePoints?: Array<string> | null, itemCategory?: Array<{ __typename?: 'Category', category: string, count: number }> | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
-
 export type ItemsByUserQueryVariables = Exact<{
   userId: Scalars['ID']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -618,6 +614,13 @@ export type GeocodeAddressQueryVariables = Exact<{
 
 
 export type GeocodeAddressQuery = { __typename?: 'Query', geocodeAddress?: { __typename?: 'Location', latitude: number, longitude: number, geohash?: string | null } | null };
+
+export type UserQueryVariables = Exact<{
+  userId: Scalars['ID']['input'];
+}>;
+
+
+export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, isVerified: boolean, isActive: boolean, role: Role, exchangePoints?: Array<string> | null, itemCategory?: Array<{ __typename?: 'Category', category: string, count: number }> | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type UpdateUserMutationVariables = Exact<{
   address?: InputMaybe<Scalars['String']['input']>;
@@ -686,14 +689,14 @@ export type GetUserTransactionsQueryVariables = Exact<{
 }>;
 
 
-export type GetUserTransactionsQuery = { __typename?: 'Query', transactionsByUser: Array<{ __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, images?: Array<string> | null, thumbnails?: Array<string> | null, ownerId: string, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor?: { __typename?: 'User', id: string, nickname?: string | null, email: string } | null }> };
+export type GetUserTransactionsQuery = { __typename?: 'Query', transactionsByUser: Array<{ __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, images?: Array<string> | null, thumbnails?: Array<string> | null, ownerId: string, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string } }> };
 
 export type GetUserOpenTransactionsQueryVariables = Exact<{
   userId: Scalars['ID']['input'];
 }>;
 
 
-export type GetUserOpenTransactionsQuery = { __typename?: 'Query', openTransactionsByUser: Array<{ __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, images?: Array<string> | null, thumbnails?: Array<string> | null, ownerId: string, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor?: { __typename?: 'User', id: string, nickname?: string | null, email: string } | null }> };
+export type GetUserOpenTransactionsQuery = { __typename?: 'Query', openTransactionsByUser: Array<{ __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, images?: Array<string> | null, thumbnails?: Array<string> | null, ownerId: string, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string } }> };
 
 export type GenerateSignedUrlMutationVariables = Exact<{
   fileName: Scalars['String']['input'];
@@ -715,6 +718,7 @@ export const MeDocument = gql`
     isVerified
     isActive
     role
+    exchangePoints
     nickname
     location {
       latitude
@@ -870,8 +874,12 @@ export type ItemLazyQueryHookResult = ReturnType<typeof useItemLazyQuery>;
 export type ItemSuspenseQueryHookResult = ReturnType<typeof useItemSuspenseQuery>;
 export type ItemQueryResult = Apollo.QueryResult<ItemQuery, ItemQueryVariables>;
 export const CreateTransactionDocument = gql`
-    mutation CreateTransaction($itemId: ID!) {
-  createTransaction(itemId: $itemId) {
+    mutation CreateTransaction($itemId: ID!, $location: TransactionLocation!, $locationIndex: Int) {
+  createTransaction(
+    itemId: $itemId
+    location: $location
+    locationIndex: $locationIndex
+  ) {
     id
     status
     createdAt
@@ -895,6 +903,8 @@ export type CreateTransactionMutationFn = Apollo.MutationFunction<CreateTransact
  * const [createTransactionMutation, { data, loading, error }] = useCreateTransactionMutation({
  *   variables: {
  *      itemId: // value for 'itemId'
+ *      location: // value for 'location'
+ *      locationIndex: // value for 'locationIndex'
  *   },
  * });
  */
@@ -918,6 +928,7 @@ export const GetUserForItemDocument = gql`
       isPublic
     }
     address
+    exchangePoints
     location {
       latitude
       longitude
@@ -1446,6 +1457,21 @@ export const GetTransactionDocument = gql`
       }
       address
     }
+    receiver {
+      id
+      nickname
+      email
+      contactMethods {
+        type
+        value
+        isPublic
+      }
+      location {
+        latitude
+        longitude
+      }
+      address
+    }
     location {
       latitude
       longitude
@@ -1622,67 +1648,6 @@ export function useCancelTransactionMutation(baseOptions?: Apollo.MutationHookOp
 export type CancelTransactionMutationHookResult = ReturnType<typeof useCancelTransactionMutation>;
 export type CancelTransactionMutationResult = Apollo.MutationResult<CancelTransactionMutation>;
 export type CancelTransactionMutationOptions = Apollo.BaseMutationOptions<CancelTransactionMutation, CancelTransactionMutationVariables>;
-export const UserDocument = gql`
-    query User($userId: ID!) {
-  user(id: $userId) {
-    createdAt
-    email
-    id
-    nickname
-    address
-    isVerified
-    isActive
-    role
-    exchangePoints
-    itemCategory {
-      category
-      count
-    }
-    contactMethods {
-      type
-      value
-      isPublic
-    }
-    location {
-      latitude
-      longitude
-    }
-  }
-}
-    `;
-
-/**
- * __useUserQuery__
- *
- * To run a query within a React component, call `useUserQuery` and pass it any options that fit your needs.
- * When your component renders, `useUserQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useUserQuery({
- *   variables: {
- *      userId: // value for 'userId'
- *   },
- * });
- */
-export function useUserQuery(baseOptions: Apollo.QueryHookOptions<UserQuery, UserQueryVariables> & ({ variables: UserQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useQuery<UserQuery, UserQueryVariables>(UserDocument, options);
-      }
-export function useUserLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<UserQuery, UserQueryVariables>) {
-          const options = {...defaultOptions, ...baseOptions}
-          return Apollo.useLazyQuery<UserQuery, UserQueryVariables>(UserDocument, options);
-        }
-export function useUserSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<UserQuery, UserQueryVariables>) {
-          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return Apollo.useSuspenseQuery<UserQuery, UserQueryVariables>(UserDocument, options);
-        }
-export type UserQueryHookResult = ReturnType<typeof useUserQuery>;
-export type UserLazyQueryHookResult = ReturnType<typeof useUserLazyQuery>;
-export type UserSuspenseQueryHookResult = ReturnType<typeof useUserSuspenseQuery>;
-export type UserQueryResult = Apollo.QueryResult<UserQuery, UserQueryVariables>;
 export const ItemsByUserDocument = gql`
     query ItemsByUser($userId: ID!, $limit: Int, $offset: Int, $category: [String!], $isExchangePointItem: Boolean) {
   itemsByUser(
@@ -1785,6 +1750,67 @@ export type GeocodeAddressQueryHookResult = ReturnType<typeof useGeocodeAddressQ
 export type GeocodeAddressLazyQueryHookResult = ReturnType<typeof useGeocodeAddressLazyQuery>;
 export type GeocodeAddressSuspenseQueryHookResult = ReturnType<typeof useGeocodeAddressSuspenseQuery>;
 export type GeocodeAddressQueryResult = Apollo.QueryResult<GeocodeAddressQuery, GeocodeAddressQueryVariables>;
+export const UserDocument = gql`
+    query User($userId: ID!) {
+  user(id: $userId) {
+    createdAt
+    email
+    id
+    nickname
+    address
+    isVerified
+    isActive
+    role
+    exchangePoints
+    itemCategory {
+      category
+      count
+    }
+    contactMethods {
+      type
+      value
+      isPublic
+    }
+    location {
+      latitude
+      longitude
+    }
+  }
+}
+    `;
+
+/**
+ * __useUserQuery__
+ *
+ * To run a query within a React component, call `useUserQuery` and pass it any options that fit your needs.
+ * When your component renders, `useUserQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useUserQuery({
+ *   variables: {
+ *      userId: // value for 'userId'
+ *   },
+ * });
+ */
+export function useUserQuery(baseOptions: Apollo.QueryHookOptions<UserQuery, UserQueryVariables> & ({ variables: UserQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+      }
+export function useUserLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<UserQuery, UserQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+        }
+export function useUserSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<UserQuery, UserQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<UserQuery, UserQueryVariables>(UserDocument, options);
+        }
+export type UserQueryHookResult = ReturnType<typeof useUserQuery>;
+export type UserLazyQueryHookResult = ReturnType<typeof useUserLazyQuery>;
+export type UserSuspenseQueryHookResult = ReturnType<typeof useUserSuspenseQuery>;
+export type UserQueryResult = Apollo.QueryResult<UserQuery, UserQueryVariables>;
 export const UpdateUserDocument = gql`
     mutation UpdateUser($address: String, $nickname: String, $exchangePoints: [String!]) {
   updateUser(

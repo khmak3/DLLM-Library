@@ -16,6 +16,7 @@ type TransactionModel = Omit<
   "id" | "requestor" | "item" | "createdAt" | "updatedAt"
 > & {
   requestorId: string;
+  receiverId?: string | null;
   itemId: string;
   created: Timestamp;
   updated: Timestamp;
@@ -35,19 +36,11 @@ export class TransactionService {
 
   async transactionById(id: string): Promise<Transaction | null> {
     const data = await this._transactionById(id);
-    const item = await this.itemService.itemById(data.itemId);
-    if (!item) {
-      throw new Error(`Item with id ${data.itemId} not found`);
+    if (!data) {
+      return null;
     }
-    const requestor = await this.userService.userById(data.requestorId);
-    return {
-      id: id,
-      item: item,
-      requestor: requestor,
-      status: data.status,
-      createdAt: data.created.seconds * 1000,
-      updatedAt: data.updated.seconds * 1000,
-    };
+    const rv = await this._transactionModeltoTransaction(id, data);
+    return rv;
   }
 
   async _transactionById(id: string): Promise<TransactionModel> {
@@ -66,23 +59,13 @@ export class TransactionService {
   ): Promise<Transaction[]> {
     const transactionsMap = await this._transactionsNotStatus(
       itemId,
-      null,
+      userId,
       statuses
     );
     const transactions: Transaction[] = [];
     for (const [id, data] of transactionsMap) {
-      const item = await this.itemService.itemById(data.itemId);
-      if (item && data.requestorId) {
-        const requestor = await this.userService.userById(data.requestorId);
-        transactions.push({
-          id: id,
-          item: item,
-          requestor: requestor,
-          status: data.status,
-          createdAt: data.created.seconds * 1000,
-          updatedAt: data.updated.seconds * 1000,
-        });
-      }
+      const transaction = await this._transactionModeltoTransaction(id, data);
+      transactions.push(transaction);
     }
     return transactions;
   }
@@ -111,6 +94,37 @@ export class TransactionService {
     return transactions;
   }
 
+  async _transactionModeltoTransaction(
+    id: string,
+    data: TransactionModel
+  ): Promise<Transaction> {
+    const item = await this.itemService.itemById(data.itemId);
+    if (!item) {
+      throw new Error(`Item with id ${data.itemId} not found`);
+    }
+    const requestor = await this.userService.userById(data.requestorId);
+    if (!requestor) {
+      throw new Error(`Requestor with id ${data.requestorId} not found`);
+    }
+    let receiver: User | null = null;
+    if (data.receiverId) {
+      receiver = await this.userService.userById(data.receiverId);
+      if (!receiver) {
+        throw new Error(`Receiver with id ${data.receiverId} not found`);
+      }
+    }
+    return {
+      id: id,
+      item: item,
+      location: data.location,
+      requestor: requestor,
+      receiver: receiver,
+      status: data.status,
+      createdAt: data.created.seconds * 1000,
+      updatedAt: data.updated.seconds * 1000,
+    };
+  }
+
   async createTransaction(
     requestor: User,
     itemId: string,
@@ -123,6 +137,7 @@ export class TransactionService {
       throw new Error(`Item with id ${itemId} not found`);
     }
     let toList = [requestor.email];
+    let ccList: string[] = [];
     let holder: User | null = null;
     if (item.holderId) {
       holder = await this.userService.userById(item.holderId);
@@ -140,18 +155,27 @@ export class TransactionService {
       throw new Error(`Owner with id ${item.ownerId} not found`);
     }
     let location = holder.location;
+    let maxOpenTransactions = 2;
+    // for any ExchangePoint location type, we should create chained transactions
+    // for from holder to exchange point, then from exchange point to requestor
+    let exchangeId: string | null = null;
     switch (locationType) {
       case TransactionLocation.HolderLocation:
         location = holder.location;
         break;
       case TransactionLocation.RequestorLocation:
+        location = requestor.location;
+        break;
+      case TransactionLocation.RequestorPublicExchangePoint:
+        maxOpenTransactions++;
         if (
           requestor.exchangePoints &&
           requestor.exchangePoints.length > locationIndex
         ) {
-          const exchangeId = requestor.exchangePoints[locationIndex];
+          exchangeId = requestor.exchangePoints[locationIndex];
           const exchangePoint = await this.userService.userById(exchangeId);
           if (exchangePoint) {
+            toList.push(exchangePoint.email);
             location = exchangePoint.location;
           } else {
             throw new Error(`Exchange point with id ${exchangeId} not found`);
@@ -159,11 +183,12 @@ export class TransactionService {
         }
         break;
       case TransactionLocation.HolderPublicExchangePoint:
+        maxOpenTransactions++;
         if (
           holder.exchangePoints &&
           holder.exchangePoints.length > locationIndex
         ) {
-          const exchangeId = holder.exchangePoints[locationIndex];
+          exchangeId = holder.exchangePoints[locationIndex];
           const exchangePoint = await this.userService.userById(exchangeId);
           if (exchangePoint) {
             location = exchangePoint.location;
@@ -173,20 +198,21 @@ export class TransactionService {
         }
         break;
     }
-    const requestorId = requestor.id;
     // check if there is 2 open transactions for the item
     const existingTransactions = await this._transactionsNotStatus(
       itemId,
       null,
       [TransactionStatus.Completed, TransactionStatus.Cancelled]
     );
-    if (existingTransactions.size >= 2) {
+
+    if (existingTransactions.size >= maxOpenTransactions) {
       throw new Error(
-        `There are already 2 open transactions for item with id ${itemId}`
+        `There are already ${maxOpenTransactions} open transactions for item with id ${itemId}`
       );
     }
     const transactionModel: TransactionModel = {
-      requestorId: requestorId,
+      requestorId: requestor.id,
+      receiverId: exchangeId,
       itemId: itemId,
       created: Timestamp.now(),
       updated: Timestamp.now(),
@@ -201,9 +227,24 @@ export class TransactionService {
       throw new Error("Failed to create transaction");
     }
 
+    // for chained transaction, create another transaction from exchange point to requestor
+    if (exchangeId) {
+      const chainedTransactionModel: TransactionModel = {
+        requestorId: requestor.id,
+        itemId: itemId,
+        created: Timestamp.now(),
+        updated: Timestamp.now(),
+        location: location,
+        status: TransactionStatus.Pending,
+      };
+      const chainedTransactionRef = await db
+        .collection("transactions")
+        .add(chainedTransactionModel);
+      if (!chainedTransactionRef.id) {
+        throw new Error("Failed to create chained transaction");
+      }
+    }
     // Notify the user
-
-    let ccList: string[] = [];
 
     sendNotificationViaEmail(
       toList,
@@ -274,9 +315,13 @@ export class TransactionService {
       throw new Error(`Item with id ${data.itemId} not found`);
     }
 
-    if (data.requestorId !== user.id && item.ownerId !== user.id) {
+    if (
+      data.requestorId !== user.id &&
+      item.ownerId !== user.id &&
+      data.receiverId !== user.id
+    ) {
       throw new Error(
-        `User with id ${user.id} is not the requestor or owner of item with id ${data.itemId}`
+        `User with id ${user.id} is not the requestor receiver or owner of item with id ${data.itemId}`
       );
     }
 
@@ -321,7 +366,13 @@ export class TransactionService {
     if (!requestor) {
       throw new Error(`Requestor with id ${data.requestorId} not found`);
     }
-
+    let receiver: User | null = null;
+    if (data.receiverId) {
+      receiver = await this.userService.userById(data.receiverId);
+      if (!receiver) {
+        throw new Error(`Receiver with id ${data.receiverId} not found`);
+      }
+    }
     const updated = Timestamp.now();
     await db.collection("transactions").doc(id).update({ status, updated });
     // Logic to approve a transaction
@@ -334,6 +385,9 @@ export class TransactionService {
         toList.push(holder.email);
       }
     }
+    if (receiver) {
+      toList.push(receiver.email);
+    }
     sendNotificationViaEmail(
       toList,
       ccList,
@@ -344,6 +398,7 @@ export class TransactionService {
       id: id,
       item: item,
       requestor: requestor,
+      receiver: receiver,
       ...data,
       status: status,
       createdAt: data.created.seconds * 1000,
@@ -399,7 +454,7 @@ export class TransactionService {
     return rv;
   }
 
-  async receiveTransaction(requestor: User, id: string): Promise<Transaction> {
+  async receiveTransaction(receiver: User, id: string): Promise<Transaction> {
     // Logic to receive a transaction
     const data = await this._transactionById(id);
     if (data.status !== TransactionStatus.Transfered) {
@@ -408,9 +463,10 @@ export class TransactionService {
       );
     }
     // only the requestor can receive the transaction
-    if (data.requestorId !== requestor.id) {
+    const receiverId = data.receiverId ? data.receiverId : data.requestorId;
+    if (receiverId !== receiver.id) {
       throw new Error(
-        `User with id ${requestor.id} is not the requestor of transaction with id ${id}`
+        `User with id ${receiver.id} is not the receiver of transaction with id ${id}`
       );
     }
 
@@ -420,7 +476,7 @@ export class TransactionService {
       throw new Error(`Item with id ${data.itemId} not found`);
     }
 
-    const updated = await this.itemService.updateItemHolder(item.id, requestor);
+    const updated = await this.itemService.updateItemHolder(item.id, receiver);
     if (!updated) {
       throw new Error(
         `Failed to update item holder for item with id ${item.id}`
@@ -430,8 +486,8 @@ export class TransactionService {
       subject: `Transaction Received for Item: ${item.name}`,
       body: `Your transaction request for item ${item.name} has been received.`,
     };
-    let owner: User = requestor;
-    if (item.ownerId !== requestor.id) {
+    let owner: User = receiver;
+    if (item.ownerId !== receiver.id) {
       let ownerRv = await this.userService.userById(item.ownerId);
       if (!ownerRv) {
         throw new Error(`Owner with id ${item.ownerId} not found`);

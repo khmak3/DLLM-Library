@@ -99,7 +99,8 @@ type NewsPost {
 type Transaction {
   id: ID!
   item: Item!
-  requestor: User #
+  requestor: User!
+  receiver: User # 最終接收者
   location: Location # 交易地點
   status: TransactionStatus!
   createdAt: Date!
