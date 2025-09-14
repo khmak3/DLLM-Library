@@ -9,7 +9,7 @@ import {
   User,
 } from "./generated/graphql";
 import firebase from "firebase-admin";
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin";
 
 type CategoryModel = {
   count: number;
