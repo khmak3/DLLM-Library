@@ -686,24 +686,42 @@ const TransactionDetailPage: React.FC = () => {
               </Button>
             </>
           )}
-
-          {isOwner && transaction.status === TransactionStatus.Approved && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => handleAction("transfer", transferTransaction)}
-              disabled={actionLoading === "transfer"}
-              startIcon={
-                actionLoading === "transfer" ? (
-                  <CircularProgress size={20} />
-                ) : (
-                  <LocalShippingIcon />
-                )
-              }
-            >
-              {t("transactions.transfer", "Mark as Transferred")}
-            </Button>
-          )}
+          {transaction.status === TransactionStatus.Approved ? (
+            <>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => handleAction("cancel", cancelTransaction)}
+                disabled={actionLoading === "cancel"}
+                startIcon={
+                  actionLoading === "cancel" ? (
+                    <CircularProgress size={20} />
+                  ) : (
+                    <CancelIcon />
+                  )
+                }
+              >
+                {t("transactions.cancel", "Cancel")}
+              </Button>
+              {isOwner && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => handleAction("transfer", transferTransaction)}
+                  disabled={actionLoading === "transfer"}
+                  startIcon={
+                    actionLoading === "transfer" ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <LocalShippingIcon />
+                    )
+                  }
+                >
+                  {t("transactions.transfer", "Mark as Transferred")}
+                </Button>
+              )}
+            </>
+          ) : null}
 
           {/* Requestor Actions */}
           {isRequestor &&

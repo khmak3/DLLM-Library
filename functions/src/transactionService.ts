@@ -13,13 +13,15 @@ import { it } from "node:test";
 
 type TransactionModel = Omit<
   Transaction,
-  "id" | "requestor" | "item" | "createdAt" | "updatedAt"
+  "id" | "requestor" | "item" | "receiver" | "createdAt" | "updatedAt"
 > & {
   requestorId: string;
   receiverId?: string | null;
   itemId: string;
+  participants: string[]; // Array containing requestorId, receiverId, holderId and ownerId
   created: Timestamp;
   updated: Timestamp;
+  parentTransactionId?: string | null;
 };
 
 type EmailDetail = {
@@ -76,21 +78,25 @@ export class TransactionService {
     statuses: TransactionStatus[]
   ): Promise<Map<string, TransactionModel>> {
     let query = db.collection("transactions").orderBy("updated", "desc");
+
     if (itemId) {
       query = query.where("itemId", "==", itemId);
     }
     if (userId) {
-      query = query.where("requestorId", "==", userId);
+      query = query.where("participants", "array-contains", userId);
     }
     if (statuses.length > 0) {
       query = query.where("status", "not-in", statuses);
     }
+
     const transactionDocs = await query.get();
     const transactions: Map<string, TransactionModel> = new Map();
+
     for (const doc of transactionDocs.docs) {
       const data = doc.data() as TransactionModel;
       transactions.set(doc.id, data);
     }
+
     return transactions;
   }
 
@@ -210,10 +216,19 @@ export class TransactionService {
         `There are already ${maxOpenTransactions} open transactions for item with id ${itemId}`
       );
     }
+    const participants = [requestor.id, owner.id];
+    if (holder) {
+      participants.push(holder.id);
+    }
+    if (exchangeId) {
+      participants.push(exchangeId);
+    }
+
     const transactionModel: TransactionModel = {
       requestorId: requestor.id,
       receiverId: exchangeId,
       itemId: itemId,
+      participants: [...new Set(participants)], // Remove duplicates
       created: Timestamp.now(),
       updated: Timestamp.now(),
       location: location,
@@ -236,6 +251,8 @@ export class TransactionService {
         updated: Timestamp.now(),
         location: location,
         status: TransactionStatus.Pending,
+        participants: [requestor.id, exchangeId, owner.id], // Add participants array
+        parentTransactionId: transactionRef.id,
       };
       const chainedTransactionRef = await db
         .collection("transactions")
@@ -349,6 +366,23 @@ export class TransactionService {
     if (!rv) {
       throw new Error(`Failed to cancel transaction with id ${id}`);
     }
+    // remove all chained transactions
+    if (rv.id) {
+      const chainedTransactions = await db
+        .collection("transactions")
+        .where("parentTransactionId", "==", rv.id)
+        .get();
+      for (const doc of chainedTransactions.docs) {
+        await this._updateTransaction(
+          doc.id,
+          TransactionStatus.Cancelled,
+          owner,
+          item,
+          data,
+          null
+        );
+      }
+    }
     return true;
   }
 
@@ -358,7 +392,7 @@ export class TransactionService {
     owner: User,
     item: Item,
     data: TransactionModel,
-    emailDetail: EmailDetail
+    emailDetail: EmailDetail | null
   ): Promise<Transaction> {
     // Save the updated transaction to the database
 
@@ -388,12 +422,14 @@ export class TransactionService {
     if (receiver) {
       toList.push(receiver.email);
     }
-    sendNotificationViaEmail(
-      toList,
-      ccList,
-      emailDetail.subject,
-      emailDetail.body
-    );
+    if (emailDetail) {
+      sendNotificationViaEmail(
+        toList,
+        ccList,
+        emailDetail.subject,
+        emailDetail.body
+      );
+    }
     let rv: Transaction = {
       id: id,
       item: item,
