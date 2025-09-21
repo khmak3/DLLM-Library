@@ -139,8 +139,6 @@ const generateRedirectScript = (itemId: string) => {
       userAgent.includes('mediapartners-google') ||
       userAgent.includes('googlebot') ||
       userAgent.includes('slurp') || // Yahoo
-      userAgent.includes('yandexbot') ||
-      userAgent.includes('applebot') ||
       
       // Other crawlers
       userAgent.includes('ia_archiver') || // Internet Archive
