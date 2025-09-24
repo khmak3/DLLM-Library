@@ -31,20 +31,20 @@ export class CommentService {
       results.push({
         id: doc.id,
         userId: data.userId,
-        userNickname: "Unknown",
+        userNickname: "Unknown User",
         createdAt: data.createdAt.toDate().toISOString(),
         updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : data.createdAt.toDate().toISOString(),
         content: data.content,
       });
-
-      for (const result of results) {
-        this.userService.userById(result.userId).then(user => {
-          if (user) {
-            result.userNickname = user.nickname ?? "Unknown";
-          }
-        });
-      }
     });
+
+    for (const result of results) {
+      const user = await this.userService.userById(result.userId);
+      if ( user ){
+        result.userNickname = user.nickname ?? "Unknown Nickname";
+      }
+    }
+
     const pageInfo: ItemCommentPageInfo = {
       startCursor: results.length > 0 ? results[0].id : null,
       endCursor: results.length > 0 ? results[results.length - 1].id : null,
