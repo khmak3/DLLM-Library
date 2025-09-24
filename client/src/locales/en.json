@@ -59,7 +59,11 @@
     "disabled": "Disabled",
     "search": "Search",
     "searching": "Searching...",
-    "clearAll": "Clear All"
+    "clearAll": "Clear All",
+    "public": "Public",
+    "private": "Private",
+    "add": "Add",
+    "update": "Update"
   },
   "location": {
     "latitude": "Latitude",
@@ -192,8 +196,8 @@
     "received": "Received",
     "editItem": "Edit Item",
     "selectExchangeLocation": "Select Exchange Location",
-    "holderAddress": "Holder's Address",
-    "requestorAddress": "Your Address",
+    "holderAddress": "Holder's Exchange Address",
+    "requestorAddress": "Your Exchange Address",
     "holderExchangePoint": "Holder's Exchange Point",
     "requestorExchangePoint": "Your Exchange Point",
     "selectExchangePoint": "Select Exchange Point",
@@ -208,7 +212,7 @@
   },
   "userProfile": {
     "nickname": "Nickname",
-    "address": "Address",
+    "address": "Exchange Address",
     "searchAddress": "Search address",
     "resolvingAddress": "Resolving address...",
     "currentAddress": "Current Address",
@@ -220,7 +224,20 @@
     "loadingExchangePoints": "Loading exchange points...",
     "selectedPoints": "{{count}} exchange point(s) selected",
     "locationNotFound": "Could not find location for the address.",
-    "geocodeError": "Failed to resolve address location"
+    "geocodeError": "Failed to resolve address location",
+    "contactMethods": "Contact Methods",
+    "addContactMethod": "Add Contact Method",
+    "editContactMethod": "Edit Contact Method",
+    "contactMethodsHelper": "Add contact methods for other users to reach you when needed",
+    "noContactMethods": "No contact methods added yet. Add some to help others contact you.",
+    "contactMethodType": "Type",
+    "contactValue": "Contact Value",
+    "makePublic": "Make Public",
+    "publicContactHelp": "This contact method will be visible to all users",
+    "privateContactHelp": "This contact method will only be shared during transactions",
+    "phonePlaceholder": "e.g., +1234567890",
+    "emailPlaceholder": "e.g., user@example.com",
+    "socialPlaceholder": "e.g., @username, telegram ID"
   },
   "user": {
     "itemCategories": "Item Categories",
@@ -237,7 +254,7 @@
     "exchangePointItemsHelper": "When enabled, includes items cached at your exchange point in addition to your personal items.",
     "selectCategoryToViewItems": "Select a category below to view items.",
     "noCategories": "No categories available",
-    "addressNotSet": "Address not set"
+    "addressNotSet": "Exchange Address not set"
   },
   "transactions": {
     "title": "My Transactions",

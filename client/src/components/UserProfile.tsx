@@ -24,15 +24,49 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Divider,
+  Select,
+  MenuItem,
+  InputLabel,
+  Card,
+  CardContent,
+  Grid,
+  Switch,
+  Chip,
+  SvgIcon,
 } from "@mui/material";
 import {
   UpdateUserMutation,
   UpdateUserMutationVariables,
   CreateUserMutation,
   CreateUserMutationVariables,
+  ContactMethodType,
+  ContactMethod,
 } from "../generated/graphql";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { LocationOn as LocationIcon } from "@mui/icons-material";
+import {
+  LocationOn as LocationIcon,
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  Chat as ChatIcon,
+  Public as PublicIcon,
+  Lock as PrivateIcon,
+} from "@mui/icons-material";
+
+// Create custom icons for social platforms that don't have default MUI icons
+const SignalIcon = (props: any) => (
+  <SvgIcon {...props}>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 2c4.42 0 8 3.58 8 8s-3.58 8-8 8-8-3.58-8-8 3.58-8 8-8zm1 12h-2v-2h2v2zm0-4h-2V7h2v5z" />
+  </SvgIcon>
+);
+
+const TelegramIcon = (props: any) => (
+  <SvgIcon {...props}>
+    <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z" />
+  </SvgIcon>
+);
 import {
   UPDATE_USER_MUTATION,
   CREATE_USER_MUTATION,
@@ -71,6 +105,12 @@ interface ExchangePoint {
   };
 }
 
+interface ContactMethodForm {
+  type: ContactMethodType;
+  value: string;
+  isPublic: boolean;
+}
+
 interface UserProfileProps {
   email?: string | null | undefined;
   onUserCreated?: (data: UpdateUserMutation | CreateUserMutation) => void;
@@ -79,7 +119,8 @@ interface UserProfileProps {
   isCreateUser?: boolean;
   initialNickname?: string | undefined | null;
   initialAddress?: string | undefined | null;
-  initialExchangePoints?: string[] | undefined | null; // For pre-filling selected exchange points
+  initialExchangePoints?: string[] | undefined | null;
+  initialContactMethods?: ContactMethod[] | undefined | null; // Add initial contact methods
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({
@@ -91,6 +132,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
   initialNickname = "",
   initialAddress = "",
   initialExchangePoints = [],
+  initialContactMethods = [],
 }) => {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(open);
@@ -99,9 +141,25 @@ const UserProfile: React.FC<UserProfileProps> = ({
   const [selectedExchangePoints, setSelectedExchangePoints] = useState<
     string[]
   >(initialExchangePoints || []);
+  const [contactMethods, setContactMethods] = useState<ContactMethodForm[]>(
+    initialContactMethods?.map((cm) => ({
+      type: cm.type,
+      value: cm.value,
+      isPublic: cm.isPublic,
+    })) || []
+  );
   const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const [selectedPointForMap, setSelectedPointForMap] =
     useState<ExchangePoint | null>(null);
+  const [contactMethodDialogOpen, setContactMethodDialogOpen] = useState(false);
+  const [editingContactMethodIndex, setEditingContactMethodIndex] = useState<
+    number | null
+  >(null);
+  const [newContactMethod, setNewContactMethod] = useState<ContactMethodForm>({
+    type: ContactMethodType.Email,
+    value: "",
+    isPublic: false,
+  });
 
   const [resolvedLocation, setResolvedLocation] = useState<{
     latitude: number;
@@ -120,7 +178,7 @@ const UserProfile: React.FC<UserProfileProps> = ({
     GET_EXCHANGE_POINTS,
     {
       variables: { limit: 50, offset: 0 },
-      skip: isCreateUser, // Skip for create user, only show for update
+      skip: isCreateUser,
     }
   );
 
@@ -154,7 +212,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
     }
   );
 
-  // Determine which mutation data/loading/error to use
   const data = isCreateUser ? createData : updateData;
   const loading = isCreateUser ? createLoading : updateLoading;
   const mutationError = isCreateUser ? createError : updateError;
@@ -168,11 +225,17 @@ const UserProfile: React.FC<UserProfileProps> = ({
     setAddress(initialAddress || "");
     setNickname(initialNickname || "");
     setSelectedExchangePoints(initialExchangePoints || []);
+    setContactMethods(
+      initialContactMethods?.map((cm) => ({
+        type: cm.type,
+        value: cm.value,
+        isPublic: cm.isPublic,
+      })) || []
+    );
     setResolvedLocation(null);
     setLocationError(null);
   };
 
-  // Update internal state when props change
   useEffect(() => {
     setInternalOpen(open);
   }, [open]);
@@ -182,11 +245,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
     setNickname(initialNickname || "");
   }, [initialAddress, initialNickname]);
 
-  /*
-  useEffect(() => {
-    setSelectedExchangePoints(initialExchangePoints || []);
-  }, [initialExchangePoints]);
-*/
   const [geocodeAddress, { loading: geocodeLoading }] = useLazyQuery(
     GET_GEO_DETAILS,
     {
@@ -223,7 +281,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
     setAddress(newAddress);
     setLocationError(null);
 
-    // Clear previous timeout
     if (debounceTimeout) {
       clearTimeout(debounceTimeout);
     }
@@ -233,10 +290,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
       return;
     }
 
-    // Set new timeout
     const timeoutId = setTimeout(() => {
       setIsGeocodingAddress(true);
-
       geocodeAddress({
         variables: { address: newAddress.trim() },
       });
@@ -260,20 +315,102 @@ const UserProfile: React.FC<UserProfileProps> = ({
     setMapDialogOpen(true);
   };
 
+  // Contact Method handlers
+  const handleAddContactMethod = () => {
+    setNewContactMethod({
+      type: ContactMethodType.Email,
+      value: "",
+      isPublic: false,
+    });
+    setEditingContactMethodIndex(null);
+    setContactMethodDialogOpen(true);
+  };
+
+  const handleEditContactMethod = (index: number) => {
+    setNewContactMethod(contactMethods[index]);
+    setEditingContactMethodIndex(index);
+    setContactMethodDialogOpen(true);
+  };
+
+  const handleDeleteContactMethod = (index: number) => {
+    setContactMethods((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveContactMethod = () => {
+    if (!newContactMethod.value.trim()) return;
+
+    if (editingContactMethodIndex !== null) {
+      // Editing existing contact method
+      setContactMethods((prev) =>
+        prev.map((cm, index) =>
+          index === editingContactMethodIndex ? newContactMethod : cm
+        )
+      );
+    } else {
+      // Adding new contact method
+      setContactMethods((prev) => [...prev, newContactMethod]);
+    }
+
+    setContactMethodDialogOpen(false);
+    setEditingContactMethodIndex(null);
+  };
+
+  const handleCloseContactMethodDialog = () => {
+    setContactMethodDialogOpen(false);
+    setEditingContactMethodIndex(null);
+  };
+
+  const getContactMethodIcon = (type: ContactMethodType) => {
+    switch (type) {
+      case ContactMethodType.Whatsapp:
+        return <PhoneIcon fontSize="small" />;
+      case ContactMethodType.Email:
+        return <EmailIcon fontSize="small" />;
+      case ContactMethodType.Signal:
+        return <SignalIcon fontSize="small" />;
+      case ContactMethodType.Telegram:
+        return <TelegramIcon fontSize="small" />;
+      default:
+        return <ChatIcon fontSize="small" />;
+    }
+  };
+
+  const getContactMethodLabel = (type: ContactMethodType) => {
+    switch (type) {
+      case ContactMethodType.Whatsapp:
+        return t("contactMethod.whatsapp", "WhatsApp");
+      case ContactMethodType.Email:
+        return t("contactMethod.email", "Email");
+      case ContactMethodType.Signal:
+        return t("contactMethod.signal", "Signal");
+      case ContactMethodType.Telegram:
+        return t("contactMethod.telegram", "Telegram");
+      default:
+        return type;
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Use the resolved/formatted address if available
     const finalAddress = resolvedLocation?.formattedAddress || address;
 
     const variables = {
       email: email || "",
       address: finalAddress,
       nickname: nickname,
-      ...(isCreateUser ? {} : { exchangePoints: selectedExchangePoints }),
+      ...(isCreateUser
+        ? {}
+        : {
+            exchangePoints: selectedExchangePoints,
+            contactMethods: contactMethods.map((cm) => ({
+              type: cm.type,
+              value: cm.value.trim(),
+              isPublic: cm.isPublic,
+            })),
+          }),
     };
 
-    // Call the appropriate mutation based on isCreateUser
     if (isCreateUser) {
       createUser({ variables });
     } else {
@@ -353,7 +490,6 @@ const UserProfile: React.FC<UserProfileProps> = ({
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                       />
-
                       <Marker
                         position={[
                           resolvedLocation.latitude,
@@ -372,7 +508,115 @@ const UserProfile: React.FC<UserProfileProps> = ({
                 </Box>
               )}
 
-            {/* Exchange Points Selection - Only show for update user */}
+            {/* Contact Methods Section - Only show for update user */}
+            {!isCreateUser && (
+              <Box sx={{ mt: 3 }}>
+                <Divider sx={{ mb: 2 }} />
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                  }}
+                >
+                  <Typography variant="h6">
+                    {t("userProfile.contactMethods", "Contact Methods")}
+                  </Typography>
+                  <Button
+                    startIcon={<AddIcon />}
+                    onClick={handleAddContactMethod}
+                    variant="outlined"
+                    size="small"
+                  >
+                    {t("userProfile.addContactMethod", "Add Contact Method")}
+                  </Button>
+                </Box>
+
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2 }}
+                >
+                  {t(
+                    "userProfile.contactMethodsHelper",
+                    "Add contact methods for other users to reach you when needed"
+                  )}
+                </Typography>
+
+                {contactMethods.length === 0 ? (
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    {t(
+                      "userProfile.noContactMethods",
+                      "No contact methods added yet. Add some to help others contact you."
+                    )}
+                  </Alert>
+                ) : (
+                  <List>
+                    {contactMethods.map((method, index) => (
+                      <ListItem key={index} divider>
+                        <ListItemText
+                          primary={
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
+                            >
+                              {getContactMethodIcon(method.type)}
+                              <Typography variant="body1">
+                                {getContactMethodLabel(method.type)}
+                              </Typography>
+                              <Chip
+                                icon={
+                                  method.isPublic ? (
+                                    <PublicIcon />
+                                  ) : (
+                                    <PrivateIcon />
+                                  )
+                                }
+                                label={
+                                  method.isPublic
+                                    ? t("common.public")
+                                    : t("common.private")
+                                }
+                                size="small"
+                                color={method.isPublic ? "success" : "default"}
+                                variant="outlined"
+                              />
+                            </Box>
+                          }
+                          secondary={method.value}
+                        />
+                        <ListItemSecondaryAction>
+                          <IconButton
+                            edge="end"
+                            aria-label="edit"
+                            onClick={() => handleEditContactMethod(index)}
+                            size="small"
+                            sx={{ mr: 1 }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton
+                            edge="end"
+                            aria-label="delete"
+                            onClick={() => handleDeleteContactMethod(index)}
+                            size="small"
+                            color="error"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </ListItemSecondaryAction>
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </Box>
+            )}
+
+            {/* Exchange Points Section - Only show for update user */}
             {!isCreateUser && (
               <Box sx={{ mt: 3 }}>
                 <Divider sx={{ mb: 2 }} />
@@ -503,8 +747,8 @@ const UserProfile: React.FC<UserProfileProps> = ({
                   ? t("common.creating")
                   : t("common.updating")
                 : isCreateUser
-                  ? t("auth.createProfile")
-                  : t("userProfile.updateProfile")}
+                ? t("auth.createProfile")
+                : t("userProfile.updateProfile")}
             </Button>
             <Button
               onClick={handleClose}
@@ -516,6 +760,134 @@ const UserProfile: React.FC<UserProfileProps> = ({
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Contact Method Dialog */}
+      <Dialog
+        open={contactMethodDialogOpen}
+        onClose={handleCloseContactMethodDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {editingContactMethodIndex !== null
+            ? t("userProfile.editContactMethod", "Edit Contact Method")
+            : t("userProfile.addContactMethod", "Add Contact Method")}
+        </DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="contact-method-type-label">
+              {t("userProfile.contactMethodType", "Type")}
+            </InputLabel>
+            <Select
+              labelId="contact-method-type-label"
+              value={newContactMethod.type}
+              label={t("userProfile.contactMethodType", "Type")}
+              onChange={(e) =>
+                setNewContactMethod((prev) => ({
+                  ...prev,
+                  type: e.target.value as ContactMethodType,
+                }))
+              }
+            >
+              <MenuItem value={ContactMethodType.Whatsapp}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <PhoneIcon fontSize="small" />
+                  {t("contactMethod.whatsapp", "WhatsApp")}
+                </Box>
+              </MenuItem>
+              <MenuItem value={ContactMethodType.Email}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <EmailIcon fontSize="small" />
+                  {t("contactMethod.email", "Email")}
+                </Box>
+              </MenuItem>
+              <MenuItem value={ContactMethodType.Signal}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <ChatIcon fontSize="small" />
+                  {t("contactMethod.signal", "Signal")}
+                </Box>
+              </MenuItem>
+              <MenuItem value={ContactMethodType.Telegram}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <ChatIcon fontSize="small" />
+                  {t("contactMethod.telegram", "Telegram")}
+                </Box>
+              </MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            margin="normal"
+            label={t("userProfile.contactValue", "Contact Value")}
+            placeholder={
+              newContactMethod.type === ContactMethodType.Whatsapp
+                ? t("userProfile.phonePlaceholder", "e.g., +1234567890")
+                : newContactMethod.type === ContactMethodType.Email
+                ? t("userProfile.emailPlaceholder", "e.g., user@example.com")
+                : t(
+                    "userProfile.socialPlaceholder",
+                    "e.g., @username, telegram ID"
+                  )
+            }
+            value={newContactMethod.value}
+            onChange={(e) =>
+              setNewContactMethod((prev) => ({
+                ...prev,
+                value: e.target.value,
+              }))
+            }
+            required
+          />
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={newContactMethod.isPublic}
+                onChange={(e) =>
+                  setNewContactMethod((prev) => ({
+                    ...prev,
+                    isPublic: e.target.checked,
+                  }))
+                }
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="body2">
+                  {t("userProfile.makePublic", "Make Public")}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {newContactMethod.isPublic
+                    ? t(
+                        "userProfile.publicContactHelp",
+                        "This contact method will be visible to all users"
+                      )
+                    : t(
+                        "userProfile.privateContactHelp",
+                        "This contact method will only be shared during transactions"
+                      )}
+                </Typography>
+              </Box>
+            }
+            sx={{ mt: 2, alignItems: "flex-start" }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseContactMethodDialog}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            onClick={handleSaveContactMethod}
+            variant="contained"
+            disabled={!newContactMethod.value.trim()}
+          >
+            {editingContactMethodIndex !== null
+              ? t("common.update")
+              : t("common.add")}
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Exchange Point Map Dialog */}

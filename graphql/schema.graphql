@@ -13,6 +13,13 @@ enum ItemCondition {
   POOR
 }
 
+enum ContactMethodType {
+  WHATSAPP
+  SIGNAL
+  TELEGRAM
+  EMAIL
+}
+
 enum ItemStatus {
   AVAILABLE # 可借閱
   EXCHANGEABLE # 可交換
@@ -57,7 +64,7 @@ type User {
 }
 
 type ContactMethod {
-  type: String! # 如 "WhatsApp", "Signal"
+  type: ContactMethodType!
   value: String! # 聯繫方式詳情
   isPublic: Boolean! # 是否公開
 }

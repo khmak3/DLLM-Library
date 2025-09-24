@@ -56,7 +56,11 @@
     "save": "儲存",
     "clearFilter": "清除過濾",
     "enabled": "已啟用",
-    "disabled": "已停用"
+    "disabled": "已停用",
+    "public": "Public",
+    "private": "Private",
+    "add": "Add",
+    "update": "Update"
   },
   "location": {
     "latitude": "緯度",
@@ -195,11 +199,11 @@
     "confirmReceiptInstructions": "只有在實際從當前持有者手中收到物品後，才點擊「已接收」。",
     "received": "已接收",
     "selectExchangeLocation": "選擇交換地點",
-    "holderAddress": "持有者地址",
-    "requestorAddress": "您的地址",
-    "holderExchangePoint": "持有者的交換點",
-    "requestorExchangePoint": "您的交換點",
-    "selectExchangePoint": "選擇交換點",
+    "holderAddress": "持有者交收地址",
+    "requestorAddress": "您的交收地址",
+    "holderExchangePoint": "持有者的交換站",
+    "requestorExchangePoint": "您的交換站",
+    "selectExchangePoint": "選擇交換站",
     "alreadyRequested": "您已經申請過此物品。",
     "deposit": "押金",
     "depositHelper": "必填：設定押金金額以確保物品安全。",
@@ -207,7 +211,7 @@
   },
   "userProfile": {
     "nickname": "暱稱",
-    "address": "地址",
+    "address": "交收地址",
     "searchAddress": "搜尋地址",
     "resolvingAddress": "正在解析地址...",
     "currentAddress": "目前地址",
@@ -219,7 +223,25 @@
     "loadingExchangePoints": "載入交換點中...",
     "selectedPoints": "已選擇 {{count}} 個交換點",
     "locationNotFound": "找不到該地址的位置。",
-    "geocodeError": "無法解析地址位置"
+    "geocodeError": "無法解析地址位置",
+    "contactMethods": "聯絡方法",
+    "addContactMethod": "添加聯絡方法",
+    "editContactMethod": "編輯聯絡方法",
+    "contactMethodsHelper": "添加聯絡方法以便其他用戶在需要時聯繫您",
+    "noContactMethods": "尚未添加聯絡方法。添加一些以幫助其他人聯繫您。",
+    "contactMethodType": "類型",
+    "contactValue": "聯絡資訊",
+    "makePublic": "公開",
+    "publicContactHelp": "此聯絡方法將對所有用戶可見",
+    "privateContactHelp": "此聯絡方法僅在交易期間共享",
+    "phonePlaceholder": "例如：+1234567890",
+    "emailPlaceholder": "例如：user@example.com",
+    "socialPlaceholder": "例如：@username, telegram ID"
+  },
+  "contactMethod": {
+    "phone": "電話",
+    "email": "電子郵件",
+    "social": "社交媒體"
   },
   "languages": {
     "en": "English",

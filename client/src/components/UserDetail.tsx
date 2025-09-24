@@ -620,6 +620,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
               initialNickname={userData.user?.nickname}
               initialAddress={userData.user?.address}
               initialExchangePoints={userData.user?.exchangePoints}
+              initialContactMethods={userData.user?.contactMethods || []}
               onClose={() => setShowUpdateUser(false)}
             />
           )}
