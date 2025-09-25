@@ -15,6 +15,7 @@ import {
   CardMedia,
   IconButton,
   LinearProgress,
+  Snackbar,
 } from "@mui/material";
 import { CloudUpload, Delete, PhotoCamera } from "@mui/icons-material";
 import {
@@ -89,7 +90,6 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [category, setCategory] = useState<string>("");
   const [condition, setCondition] = useState<ItemCondition>(ItemCondition.New);
   const [description, setDescription] = useState("");
   const [deposit, setdeposit] = useState<number>(0);
@@ -98,6 +98,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
   const [publishedYear, setPublishedYear] = useState<number | "">("");
   const [status, setStatus] = useState<ItemStatus>(ItemStatus.Available);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
 
   // Image processing states
   const [isProcessingImages, setIsProcessingImages] = useState(false);
@@ -114,6 +115,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
     CreateItemMutationVariables
   >(CREATE_ITEM_MUTATION, {
     onCompleted: (data) => {
+      setShowSuccessSnackbar(true);
       if (onItemCreated) onItemCreated(data);
       handleClose();
     },
@@ -128,7 +130,6 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
     });
 
     setName("");
-    setCategory("");
     setCondition(ItemCondition.New);
     setDescription("");
     setImageFiles([]);
@@ -141,6 +142,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
     setIsUploading(false);
     setUploadProgress(0);
     setdeposit(0);
+  };
+
+  const handleCloseSuccessSnackbar = () => {
+    setShowSuccessSnackbar(false);
   };
 
   const handleFileSelect = async (
@@ -243,10 +248,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
             prev.map((img, idx) =>
               idx === fileIndex
                 ? {
-                    ...img,
-                    isUploading: true,
-                    uploadProgress: progress.percentage,
-                  }
+                  ...img,
+                  isUploading: true,
+                  uploadProgress: progress.percentage,
+                }
                 : img
             )
           );
@@ -263,11 +268,11 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
             prev.map((img, idx) =>
               idx === fileIndex
                 ? {
-                    ...img,
-                    isUploading: false,
-                    uploadProgress: 100,
-                    gsUrl: gsUrl,
-                  }
+                  ...img,
+                  isUploading: false,
+                  uploadProgress: 100,
+                  gsUrl: gsUrl,
+                }
                 : img
             )
           );
@@ -286,10 +291,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
         prev.map((img, _) =>
           !img.gsUrl
             ? {
-                ...img,
-                isUploading: false,
-                uploadError: `Upload failed: ${error}`,
-              }
+              ...img,
+              isUploading: false,
+              uploadError: `Upload failed: ${error}`,
+            }
             : img
         )
       );
@@ -301,7 +306,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!name.trim() || !category.trim()) {
+    if (!name.trim()) {
       setFormError(t("item.nameAndCategoryRequired"));
       return;
     }
@@ -321,10 +326,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
       // Build variables object with required fields
       const variables: CreateItemMutationVariables = {
         name,
-        category: category
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean),
+        category: [],
         condition,
         language,
         status,
@@ -344,6 +346,8 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
           variables.category = [...variables.category, ...hashtags];
         }
       }
+
+      if (!variables.category && variables.category.length === 0) variables.category = ["Uncategorized"];
 
       if (uploadedImageUrls.length > 0) {
         variables.images = uploadedImageUrls;
@@ -391,7 +395,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
               onChange={(e) => setName(e.target.value)}
             />
 
-            <TextField
+            {/* <TextField
               label={t("item.categoryCommaSeparated")}
               fullWidth
               margin="normal"
@@ -399,7 +403,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               helperText={t("item.categoryHelper")}
-            />
+            /> */}
 
             <TextField
               select
@@ -586,10 +590,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
               {isProcessingImages
                 ? t("common.processingImages")
                 : isUploading
-                ? t("common.uploading")
-                : loading
-                ? t("common.creating")
-                : t("item.create")}
+                  ? t("common.uploading")
+                  : loading
+                    ? t("common.creating")
+                    : t("item.create")}
             </Button>
 
             <Button
@@ -604,11 +608,20 @@ const ItemForm: React.FC<ItemFormProps> = ({ onItemCreated }) => {
         </form>
       </Dialog>
 
-      {data && (
-        <Alert severity="success" sx={{ mt: 2 }}>
+      <Snackbar
+        open={showSuccessSnackbar}
+        autoHideDuration={4000}
+        onClose={handleCloseSuccessSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseSuccessSnackbar}
+          severity="success"
+          sx={{ width: '100%' }}
+        >
           {t("item.createSuccess")}
         </Alert>
-      )}
+      </Snackbar>
     </Box>
   );
 };
