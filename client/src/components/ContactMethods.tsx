@@ -183,8 +183,7 @@ const ContactMethods: React.FC<ContactMethodsProps> = ({
           };
         }
         if (
-          !trimmedValue.includes("signal.me") &&
-          !trimmedValue.includes("signal.org")
+          !trimmedValue.includes("signal.me")
         ) {
           return {
             isValid: false,
