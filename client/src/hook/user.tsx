@@ -34,11 +34,13 @@ export const UPDATE_USER_MUTATION = gql`
     $address: String
     $nickname: String
     $exchangePoints: [String!]
+    $contactMethods: [ContactMethodInput!]
   ) {
     updateUser(
       address: $address
       nickname: $nickname
       exchangePoints: $exchangePoints
+      contactMethods: $contactMethods
     ) {
       id
       address
@@ -48,6 +50,11 @@ export const UPDATE_USER_MUTATION = gql`
         latitude
         longitude
         geohash
+      }
+      contactMethods {
+        type
+        value
+        isPublic
       }
       isVerified
       isActive

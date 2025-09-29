@@ -27,7 +27,7 @@ export type Category = {
 export type ContactMethod = {
   __typename?: 'ContactMethod';
   isPublic: Scalars['Boolean']['output'];
-  type: Scalars['String']['output'];
+  type: ContactMethodType;
   value: Scalars['String']['output'];
 };
 
@@ -36,6 +36,13 @@ export type ContactMethodInput = {
   type: Scalars['String']['input'];
   value: Scalars['String']['input'];
 };
+
+export enum ContactMethodType {
+  Email = 'EMAIL',
+  Signal = 'SIGNAL',
+  Telegram = 'TELEGRAM',
+  Whatsapp = 'WHATSAPP'
+}
 
 export type Item = {
   __typename?: 'Item';
@@ -525,7 +532,7 @@ export type GetUserForItemQueryVariables = Exact<{
 }>;
 
 
-export type GetUserForItemQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, exchangePoints?: Array<string> | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type GetUserForItemQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, exchangePoints?: Array<string> | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type OpenTransactionsByItemQueryVariables = Exact<{
   itemId: Scalars['ID']['input'];
@@ -589,7 +596,7 @@ export type GetTransactionQueryVariables = Exact<{
 }>;
 
 
-export type GetTransactionQuery = { __typename?: 'Query', transaction?: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, description?: string | null, images?: Array<string> | null, thumbnails?: Array<string> | null, condition: ItemCondition, category: Array<string>, ownerId: string, holderId?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, receiver?: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type GetTransactionQuery = { __typename?: 'Query', transaction?: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, description?: string | null, images?: Array<string> | null, thumbnails?: Array<string> | null, condition: ItemCondition, category: Array<string>, ownerId: string, holderId?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, receiver?: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type ApproveTransactionMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -642,16 +649,17 @@ export type UserQueryVariables = Exact<{
 }>;
 
 
-export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, isVerified: boolean, isActive: boolean, role: Role, exchangePoints?: Array<string> | null, itemCategory?: Array<{ __typename?: 'Category', category: string, count: number }> | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: string, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type UserQuery = { __typename?: 'Query', user?: { __typename?: 'User', createdAt: any, email: string, id: string, nickname?: string | null, address?: string | null, isVerified: boolean, isActive: boolean, role: Role, exchangePoints?: Array<string> | null, itemCategory?: Array<{ __typename?: 'Category', category: string, count: number }> | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type UpdateUserMutationVariables = Exact<{
   address?: InputMaybe<Scalars['String']['input']>;
   nickname?: InputMaybe<Scalars['String']['input']>;
   exchangePoints?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  contactMethods?: InputMaybe<Array<ContactMethodInput> | ContactMethodInput>;
 }>;
 
 
-export type UpdateUserMutation = { __typename?: 'Mutation', updateUser: { __typename?: 'User', id: string, address?: string | null, nickname?: string | null, createdAt: any, isVerified: boolean, isActive: boolean, exchangePoints?: Array<string> | null, location?: { __typename?: 'Location', latitude: number, longitude: number, geohash?: string | null } | null } };
+export type UpdateUserMutation = { __typename?: 'Mutation', updateUser: { __typename?: 'User', id: string, address?: string | null, nickname?: string | null, createdAt: any, isVerified: boolean, isActive: boolean, exchangePoints?: Array<string> | null, location?: { __typename?: 'Location', latitude: number, longitude: number, geohash?: string | null } | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null } };
 
 export type GetExchangePointsQueryVariables = Exact<{
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -1713,11 +1721,12 @@ export type UserLazyQueryHookResult = ReturnType<typeof useUserLazyQuery>;
 export type UserSuspenseQueryHookResult = ReturnType<typeof useUserSuspenseQuery>;
 export type UserQueryResult = Apollo.QueryResult<UserQuery, UserQueryVariables>;
 export const UpdateUserDocument = gql`
-    mutation UpdateUser($address: String, $nickname: String, $exchangePoints: [String!]) {
+    mutation UpdateUser($address: String, $nickname: String, $exchangePoints: [String!], $contactMethods: [ContactMethodInput!]) {
   updateUser(
     address: $address
     nickname: $nickname
     exchangePoints: $exchangePoints
+    contactMethods: $contactMethods
   ) {
     id
     address
@@ -1727,6 +1736,11 @@ export const UpdateUserDocument = gql`
       latitude
       longitude
       geohash
+    }
+    contactMethods {
+      type
+      value
+      isPublic
     }
     isVerified
     isActive
@@ -1752,6 +1766,7 @@ export type UpdateUserMutationFn = Apollo.MutationFunction<UpdateUserMutation, U
  *      address: // value for 'address'
  *      nickname: // value for 'nickname'
  *      exchangePoints: // value for 'exchangePoints'
+ *      contactMethods: // value for 'contactMethods'
  *   },
  * });
  */

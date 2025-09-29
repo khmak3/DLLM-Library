@@ -59,7 +59,11 @@
     "disabled": "Disabled",
     "search": "Search",
     "searching": "Searching...",
-    "clearAll": "Clear All"
+    "clearAll": "Clear All",
+    "public": "Public",
+    "private": "Private",
+    "add": "Add",
+    "update": "Update"
   },
   "location": {
     "latitude": "Latitude",
@@ -193,8 +197,8 @@
     "received": "Received",
     "editItem": "Edit Item",
     "selectExchangeLocation": "Select Exchange Location",
-    "holderAddress": "Holder's Address",
-    "requestorAddress": "Your Address",
+    "holderAddress": "Holder's Exchange Address",
+    "requestorAddress": "Your Exchange Address",
     "holderExchangePoint": "Holder's Exchange Point",
     "requestorExchangePoint": "Your Exchange Point",
     "selectExchangePoint": "Select Exchange Point",
@@ -209,7 +213,7 @@
   },
   "userProfile": {
     "nickname": "Nickname",
-    "address": "Address",
+    "address": "Exchange Address",
     "searchAddress": "Search address",
     "resolvingAddress": "Resolving address...",
     "currentAddress": "Current Address",
@@ -221,7 +225,52 @@
     "loadingExchangePoints": "Loading exchange points...",
     "selectedPoints": "{{count}} exchange point(s) selected",
     "locationNotFound": "Could not find location for the address.",
-    "geocodeError": "Failed to resolve address location"
+    "geocodeError": "Failed to resolve address location",
+    "contactMethods": {
+      "title": "Contact Methods",
+      "add": "Add Contact Method",
+      "addTitle": "Add Contact Method",
+      "editTitle": "Edit Contact Method",
+      "typeLabel": "Type",
+      "valueLabel": "Contact Value",
+      "makePublic": "Make Public",
+      "publicHelp": "This contact method will be visible to all users",
+      "privateHelp": "This contact method will only be shared during transactions",
+      "showPublicOnly": "Show public only",
+      "helper": "Add contact methods for other users to reach you when needed",
+      "noContactMethods": "No contact methods added yet. Add some to help others contact you.",
+      "noContactMethodsRead": "No contact methods available",
+      "emailPlaceholder": "e.g., user@example.com",
+      "whatsappPlaceholder": "e.g., https://wa.me/1234567890",
+      "signalPlaceholder": "e.g., https://signal.me/#p/+1234567890",
+      "telegramPlaceholder": "e.g., https://t.me/username",
+      "socialPlaceholder": "Enter contact information",
+      "emailHelper": "Enter a valid email address",
+      "whatsappHelper": "Enter your WhatsApp link",
+      "signalHelper": "Enter your Signal link",
+      "telegramHelper": "Enter your Telegram link",
+      "socialHelper": "Enter your contact information",
+      "validation": {
+        "required": "This field is required",
+        "invalidEmail": "Please enter a valid email address",
+        "invalidWhatsappUrl": "Please enter a valid WhatsApp HTTPS link",
+        "invalidSignalUrl": "Please enter a valid Signal HTTPS link",
+        "invalidTelegramUrl": "Please enter a valid Telegram HTTPS link",
+        "whatsappFormat": "Please use a WhatsApp link format (wa.me or whatsapp.com)",
+        "signalFormat": "Please use a Signal link format",
+        "telegramFormat": "Please use a Telegram link format",
+        "duplicate": "This contact method already exists"
+      }
+    },
+    "emailPlaceholder": "e.g., user@example.com",
+    "whatsappPlaceholder": "e.g., https://wa.me/1234567890",
+    "signalPlaceholder": "e.g., https://signal.me/#p/+1234567890",
+    "telegramPlaceholder": "e.g., https://t.me/username",
+    "emailHelper": "Enter a valid email address",
+    "whatsappHelper": "Enter your WhatsApp link (https://wa.me/your-number)",
+    "signalHelper": "Enter your Signal link (https://signal.me/#p/your-number)",
+    "telegramHelper": "Enter your Telegram link (https://t.me/username)",
+    "socialHelper": "Enter your contact information"
   },
   "user": {
     "itemCategories": "Item Categories",
@@ -238,7 +287,7 @@
     "exchangePointItemsHelper": "When enabled, includes items cached at your exchange point in addition to your personal items.",
     "selectCategoryToViewItems": "Select a category below to view items.",
     "noCategories": "No categories available",
-    "addressNotSet": "Address not set"
+    "addressNotSet": "Exchange Address not set"
   },
   "transactions": {
     "title": "My Transactions",

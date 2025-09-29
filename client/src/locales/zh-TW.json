@@ -56,7 +56,11 @@
     "save": "儲存",
     "clearFilter": "清除過濾",
     "enabled": "已啟用",
-    "disabled": "已停用"
+    "disabled": "已停用",
+    "public": "Public",
+    "private": "Private",
+    "add": "Add",
+    "update": "更新"
   },
   "location": {
     "latitude": "緯度",
@@ -196,11 +200,11 @@
     "confirmReceiptInstructions": "只有在實際從當前持有者手中收到物品後，才點擊「已接收」。",
     "received": "已接收",
     "selectExchangeLocation": "選擇交換地點",
-    "holderAddress": "持有者地址",
-    "requestorAddress": "您的地址",
-    "holderExchangePoint": "持有者的交換點",
-    "requestorExchangePoint": "您的交換點",
-    "selectExchangePoint": "選擇交換點",
+    "holderAddress": "持有者交收地址",
+    "requestorAddress": "您的交收地址",
+    "holderExchangePoint": "持有者的交換站",
+    "requestorExchangePoint": "您的交換站",
+    "selectExchangePoint": "選擇交換站",
     "alreadyRequested": "您已經申請過此物品。",
     "deposit": "押金",
     "depositHelper": "必填：設定押金金額以確保物品安全。",
@@ -208,7 +212,7 @@
   },
   "userProfile": {
     "nickname": "暱稱",
-    "address": "地址",
+    "address": "交收地址",
     "searchAddress": "搜尋地址",
     "resolvingAddress": "正在解析地址...",
     "currentAddress": "目前地址",
@@ -220,7 +224,61 @@
     "loadingExchangePoints": "載入交換點中...",
     "selectedPoints": "已選擇 {{count}} 個交換點",
     "locationNotFound": "找不到該地址的位置。",
-    "geocodeError": "無法解析地址位置"
+    "geocodeError": "無法解析地址位置",
+    "contactMethods": {
+      "title": "聯絡方法",
+      "add": "添加聯絡方法",
+      "addTitle": "添加聯絡方法",
+      "editTitle": "編輯聯絡方法",
+      "typeLabel": "類型",
+      "valueLabel": "聯絡資訊",
+      "makePublic": "公開",
+      "publicHelp": "此聯絡方法將對所有用戶可見",
+      "privateHelp": "此聯絡方法僅在交易期間共享",
+      "showPublicOnly": "僅顯示公開",
+      "helper": "添加聯絡方法以便其他用戶在需要時聯繫您",
+      "noContactMethods": "尚未添加聯絡方法。添加一些以幫助其他人聯繫您。",
+      "noContactMethodsRead": "沒有可用的聯絡方法",
+      "emailPlaceholder": "例如：user@example.com",
+      "whatsappPlaceholder": "例如：https://wa.me/1234567890",
+      "signalPlaceholder": "例如：https://signal.me/#p/+1234567890",
+      "telegramPlaceholder": "例如：https://t.me/username",
+      "socialPlaceholder": "輸入聯絡資訊",
+      "emailHelper": "請輸入有效的電子郵件地址",
+      "whatsappHelper": "請輸入您的 WhatsApp 連結",
+      "signalHelper": "請輸入您的 Signal 連結",
+      "telegramHelper": "請輸入您的 Telegram 連結",
+      "socialHelper": "請輸入您的聯絡資訊",
+      "validation": {
+        "required": "此欄位為必填項",
+        "invalidEmail": "請輸入有效的電子郵件地址",
+        "invalidWhatsappUrl": "請輸入有效的 WhatsApp HTTPS 連結",
+        "invalidSignalUrl": "請輸入有效的 Signal HTTPS 連結",
+        "invalidTelegramUrl": "請輸入有效的 Telegram HTTPS 連結",
+        "whatsappFormat": "請使用 WhatsApp 連結格式（wa.me 或 whatsapp.com）",
+        "signalFormat": "請使用 Signal 連結格式",
+        "telegramFormat": "請使用 Telegram 連結格式",
+        "duplicate": "此聯絡方法已存在"
+      }
+    }
+  },
+  "contactMethod": {
+    "phone": "電話",
+    "email": "電子郵件",
+    "social": "社交媒體"
+  },
+  "contactMethodPlaceholders": {
+    "email": "例如：user@example.com",
+    "whatsapp": "例如：https://wa.me/1234567890",
+    "signal": "例如：https://signal.me/#p/+1234567890",
+    "telegram": "例如：https://t.me/username"
+  },
+  "contactMethodHelpers": {
+    "email": "請輸入有效的電子郵件地址",
+    "whatsapp": "請輸入您的 WhatsApp 連結（https://wa.me/your-number）",
+    "signal": "請輸入您的 Signal 連結（https://signal.me/#p/your-number）",
+    "telegram": "請輸入您的 Telegram 連結（https://t.me/username）",
+    "social": "請輸入您的聯絡資訊（例如：Facebook, Instagram）"
   },
   "languages": {
     "en": "English",
