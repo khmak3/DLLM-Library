@@ -211,7 +211,7 @@ const ItemForm: React.FC<ItemFormProps> = ({
         const file = files[i];
 
         if (!file.type.startsWith("image/")) {
-          setFormError(t("item.invalidFileType", { fileName: file.name }));
+          setFormError(t("item.fileNotImage", { fileName: file.name }));
           continue;
         }
 
@@ -439,7 +439,7 @@ const ItemForm: React.FC<ItemFormProps> = ({
   return (
     <Box>
       {dialogOpen ? (
-        <Dialog open={dialogOpen} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog open={dialogOpen} onClose={handleClose} maxWidth="md" fullWidth>
           <DialogTitle sx={{ textAlign: "center" }}>
             {t("item.create")}
           </DialogTitle>
