@@ -61,7 +61,6 @@ export type Item = {
   publishedYear?: Maybe<Scalars['Int']['output']>;
   status: ItemStatus;
   thumbnails?: Maybe<Array<Scalars['String']['output']>>;
-  transactions?: Maybe<Array<Transaction>>;
   updatedAt: Scalars['Date']['output'];
 };
 
@@ -70,6 +69,7 @@ export type ItemComment = {
   content: Scalars['String']['output'];
   createdAt: Scalars['Date']['output'];
   id: Scalars['ID']['output'];
+  updatedAt: Scalars['Date']['output'];
   userId: Scalars['ID']['output'];
   userNickname: Scalars['String']['output'];
 };
@@ -131,10 +131,13 @@ export type Mutation = {
   deleteItem: Scalars['Boolean']['output'];
   deleteItemComment: Scalars['Boolean']['output'];
   deleteUser: Scalars['Boolean']['output'];
+  editItemComment: Scalars['Boolean']['output'];
   generateSignedUrl: SignedUrlResponse;
   hideNewsPost: Scalars['Boolean']['output'];
+  pinItem: Scalars['Boolean']['output'];
   receiveTransaction: Transaction;
   transferTransaction: Transaction;
+  unpinItem: Scalars['Boolean']['output'];
   updateItem: Item;
   updateNewsPost: NewsPost;
   updateUser: User;
@@ -209,6 +212,13 @@ export type MutationDeleteUserArgs = {
 };
 
 
+export type MutationEditItemCommentArgs = {
+  commentId: Scalars['ID']['input'];
+  content: Scalars['String']['input'];
+  itemId: Scalars['ID']['input'];
+};
+
+
 export type MutationGenerateSignedUrlArgs = {
   contentType: Scalars['String']['input'];
   fileName: Scalars['String']['input'];
@@ -221,6 +231,11 @@ export type MutationHideNewsPostArgs = {
 };
 
 
+export type MutationPinItemArgs = {
+  itemId: Scalars['ID']['input'];
+};
+
+
 export type MutationReceiveTransactionArgs = {
   id: Scalars['ID']['input'];
 };
@@ -228,6 +243,11 @@ export type MutationReceiveTransactionArgs = {
 
 export type MutationTransferTransactionArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type MutationUnpinItemArgs = {
+  itemId: Scalars['ID']['input'];
 };
 
 
@@ -295,6 +315,7 @@ export type Query = {
   openTransactionsByUser: Array<Transaction>;
   recentAddedItems: Array<Item>;
   recentUpdateCategories: Array<Scalars['String']['output']>;
+  recommendedItems: Array<Item>;
   transaction?: Maybe<Transaction>;
   transactions: Array<Transaction>;
   transactionsByItem: Array<Transaction>;
@@ -401,6 +422,14 @@ export type QueryRecentUpdateCategoriesArgs = {
 };
 
 
+export type QueryRecommendedItemsArgs = {
+  category?: InputMaybe<Array<Scalars['String']['input']>>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  type: RecommendationType;
+};
+
+
 export type QueryTransactionArgs = {
   id: Scalars['ID']['input'];
 };
@@ -433,6 +462,13 @@ export type QueryUsersArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export enum RecommendationType {
+  AdminPicked = 'ADMIN_PICKED',
+  NewArrivals = 'NEW_ARRIVALS',
+  Popular = 'POPULAR',
+  UserPicked = 'USER_PICKED'
+}
+
 export enum Role {
   Admin = 'ADMIN',
   ExchangePointAdmin = 'EXCHANGE_POINT_ADMIN',
@@ -450,12 +486,15 @@ export type SignedUrlResponse = {
 export type Transaction = {
   __typename?: 'Transaction';
   createdAt: Scalars['Date']['output'];
+  details?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  images?: Maybe<Array<Scalars['String']['output']>>;
   item: Item;
   location?: Maybe<Location>;
   receiver?: Maybe<User>;
   requestor: User;
   status: TransactionStatus;
+  thumbnails?: Maybe<Array<Scalars['String']['output']>>;
   updatedAt: Scalars['Date']['output'];
 };
 
@@ -487,6 +526,7 @@ export type User = {
   itemCategory?: Maybe<Array<Category>>;
   location?: Maybe<Location>;
   nickname?: Maybe<Scalars['String']['output']>;
+  pinItems?: Maybe<Array<Item>>;
   role: Role;
 };
 

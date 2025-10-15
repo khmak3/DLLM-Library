@@ -323,6 +323,26 @@ export const resolvers: Resolvers = {
         args.deposit
       );
     },
+    pinItem: async (
+      _: any,
+      { itemId }: any,
+      { loginUser }: Context
+    ): Promise<boolean> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      const user = await userService.userModelById(loginUser.uid);
+      if (!user) throw new Error("User not found");
+      return userService.pinItem(user, itemId);
+    },
+    unpinItem: async (
+      _: any,
+      { itemId }: any,
+      { loginUser }: Context
+    ): Promise<boolean> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      const user = await userService.userModelById(loginUser.uid);
+      if (!user) throw new Error("User not found");
+      return userService.unpinItem(user, itemId);
+    },
     createNewsPost: async (
       _: any,
       { title, content, images, relatedItemIds, tags }: any,
