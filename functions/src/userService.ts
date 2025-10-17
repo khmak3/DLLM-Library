@@ -447,14 +447,9 @@ export class UserService {
 
   async updateCache(userModel: UserModel): Promise<User> {
     // get all pinned items
-    const pinItems: Item[] = [];
+    let pinItems: Item[] = [];
     if (userModel.pinItemIds && userModel.pinItemIds.length > 0) {
-      for (const itemId of userModel.pinItemIds) {
-        const item = await this.itemService.itemById(itemId);
-        if (item) {
-          pinItems.push(item);
-        }
-      }
+      pinItems = await this.itemService.itemsByIds(userModel.pinItemIds);
     }
     const itemCategory = await this.getOrComputeUserItemCategory(userModel.id);
     const updatedUser = {

@@ -13,7 +13,7 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { User, Item } from "../generated/graphql";
+import { User, Item, RecommendationType } from "../generated/graphql";
 import RecentNewsBanner from "../components/RecentNewsBanner";
 import RecentItemBanner from "../components/RecentItemBanner";
 import { useOutletContext } from "react-router-dom";
@@ -121,7 +121,7 @@ const HomePage: React.FC = () => {
     recommendedItems: Item[];
   }>(RecommendedItemsQuery, {
     variables: {
-      type: "USER_PICKED",
+      type: RecommendationType.UserPicked,
       limit: 5,
     },
     skip: !user?.isActive,
@@ -410,7 +410,7 @@ const HomePage: React.FC = () => {
             userPickedData.recommendedItems.length > 0 && (
               <ListItem>
                 <RecentItemBanner
-                  recommendationType="userPicked"
+                  recommendationType={RecommendationType.UserPicked}
                   recommendedItems={userPickedData.recommendedItems}
                   titleOverride={t(
                     "home.userPickedItems",

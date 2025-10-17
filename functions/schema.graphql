@@ -139,7 +139,7 @@ type Transaction {
   receiver: User # 最終接收者
   location: Location # 交易地點
   status: TransactionStatus!
-  details: String # 可選交易詳情 如 "Deposit ammount or special notes in JSON format"
+  details: String # 可選交易詳情 如 "Deposit amount or special notes in JSON format"
   images: [String!] # 圖片URL列表
   thumbnails: [String!] # 縮略圖URL列表
   createdAt: Date!
