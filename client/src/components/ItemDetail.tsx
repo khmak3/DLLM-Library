@@ -45,6 +45,7 @@ import { calculateDistance, formatDistance } from "../utils/geoProcessor";
 import SafeImage from "./SafeImage";
 import RequestConfirmationDialog from "./RequestConfirmationDialog";
 import EditItemForm from "./EditItemForm";
+import ItemComments from './ItemComments';
 
 const ITEM_DETAIL_QUERY = gql`
   query Item($itemId: ID!) {
@@ -973,9 +974,15 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                 {selectedImageIndex + 1} / {data.item.images.length}
               </Typography>
             )}
+
           </Box>
         </Fade>
       </Modal>
+      {data?.item && (
+        <Box sx={{ mt: 4 }}>
+          <ItemComments itemId={itemId!} currentUser={user} />
+        </Box>
+      )}
     </Container>
   );
 };
