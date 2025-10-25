@@ -168,6 +168,7 @@ type Transaction {
   thumbnails: [String!] # 縮略圖URL列表
   createdAt: Date!
   updatedAt: Date!
+  expireAt: Date # 交易過期時間
 }
 
 enum TransactionStatus {
@@ -176,6 +177,7 @@ enum TransactionStatus {
   TRANSFERED # 已轉讓
   COMPLETED # 已完成
   CANCELLED # 已取消
+  EXPIRED # 已過期
 }
 
 enum TransactionLocation {
@@ -183,6 +185,7 @@ enum TransactionLocation {
   HOLDER_PUBLIC_EXCHANGE_POINT
   REQUESTOR_PUBLIC_EXCHANGE_POINT
   REQUESTOR_LOCATION
+  FACE_TO_FACE
 }
 
 type SignedUrlResponse {
@@ -265,7 +268,6 @@ type Query {
   recentUpdateCategories(limit: Int): [String!]! # 最近更新的分類列表
   hotCategories(limit: Int): [String!]! # 熱門分類列表
   defaultCategories: [String!]! # 預設分類列表
-
   # Query comments by itemId
   # first - the number of comments to return.
   # startAfterId, startAfterDate - Key used in pagination to figure out the next item.
@@ -337,9 +339,14 @@ type Mutation {
     location: TransactionLocation! = HOLDER_LOCATION
     locationIndex: Int! = 0
   ): Transaction!
+  # 快速創建交易 By Holder
+  # 使用預設位置選項 FACE_TO_FACE
+  # 只需提供 itemId 即可
+  # 此交易將直接進入 TRANSFERED 狀態
+  createQuickTransaction(itemId: ID!): Transaction!
   approveTransaction(id: ID!): Transaction!
   transferTransaction(id: ID!): Transaction!
-  receiveTransaction(id: ID!): Transaction!
+  receiveTransaction(id: ID!, images: [String!]): Transaction!
   cancelTransaction(id: ID!): Boolean!
 
   # 新聞管理 Only for Admin/Moderator

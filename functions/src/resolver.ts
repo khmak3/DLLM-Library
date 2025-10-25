@@ -429,6 +429,16 @@ export const resolvers: Resolvers = {
         locationIndex
       );
     },
+    createQuickTransaction: async (
+      _: any,
+      { itemId }: any,
+      { loginUser }: Context
+    ): Promise<Transaction> => {
+      if (!loginUser) throw new Error("Not authenticated");
+      const holder = await userService.me(loginUser);
+      if (!holder) throw new Error("Holder not found");
+      return transactionService.createQuickTransaction(holder, itemId);
+    },
     approveTransaction: async (
       _: any,
       { id }: any,
@@ -452,13 +462,13 @@ export const resolvers: Resolvers = {
 
     receiveTransaction: async (
       _: any,
-      { id }: any,
+      { id, images }: any,
       { loginUser }: Context
     ): Promise<Transaction> => {
       if (!loginUser) throw new Error("Not authenticated");
       const requestor = await userService.me(loginUser);
       if (!requestor) throw new Error("User not found");
-      return transactionService.receiveTransaction(requestor, id);
+      return transactionService.receiveTransaction(requestor, id, images);
     },
     cancelTransaction: async (
       _: any,

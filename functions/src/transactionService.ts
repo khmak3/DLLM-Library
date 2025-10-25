@@ -1,5 +1,9 @@
 import { Timestamp } from "firebase-admin/firestore";
-import { db, sendNotificationViaEmail } from "./platform";
+import {
+  db,
+  GetPublicUrlForGSFile,
+  sendNotificationViaEmail,
+} from "./platform";
 import {
   Item,
   Transaction,
@@ -13,7 +17,13 @@ import { it } from "node:test";
 
 type TransactionModel = Omit<
   Transaction,
-  "id" | "requestor" | "item" | "receiver" | "createdAt" | "updatedAt"
+  | "id"
+  | "requestor"
+  | "item"
+  | "receiver"
+  | "createdAt"
+  | "updatedAt"
+  | "expireAt"
 > & {
   requestorId: string;
   receiverId?: string | null;
@@ -21,6 +31,10 @@ type TransactionModel = Omit<
   participants: string[]; // Array containing requestorId, receiverId, holderId and ownerId
   created: Timestamp;
   updated: Timestamp;
+  expired?: Timestamp;
+  locationType?: TransactionLocation;
+  gsImageUrls?: string[];
+  gsThumbnailUrls?: string[];
   parentTransactionId?: string | null;
 };
 
@@ -38,9 +52,6 @@ export class TransactionService {
 
   async transactionById(id: string): Promise<Transaction | null> {
     const data = await this._transactionById(id);
-    if (!data) {
-      return null;
-    }
     const rv = await this._transactionModeltoTransaction(id, data);
     return rv;
   }
@@ -51,6 +62,15 @@ export class TransactionService {
       throw new Error(`Transaction with id ${id} not found`);
     }
     const data = transactionDoc.data() as TransactionModel;
+    if (data.expired && data.expired.toDate() < new Date()) {
+      const user = await this.userService.userById(data.requestorId);
+      if (!user) {
+        throw new Error(`User with id ${data.requestorId} not found`);
+      }
+      await this._cancelTransaction(user, id, true);
+      data.status = TransactionStatus.Expired;
+    }
+
     return data;
   }
 
@@ -128,6 +148,7 @@ export class TransactionService {
       status: data.status,
       createdAt: data.created.seconds * 1000,
       updatedAt: data.updated.seconds * 1000,
+      expireAt: data.expired ? data.expired.seconds * 1000 : undefined,
     };
   }
 
@@ -231,7 +252,11 @@ export class TransactionService {
       participants: [...new Set(participants)], // Remove duplicates
       created: Timestamp.now(),
       updated: Timestamp.now(),
+      expired: Timestamp.fromDate(
+        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      ), // expire in 14 days
       location: location,
+      locationType: locationType,
       status: TransactionStatus.Pending,
     };
     // Save transaction to the database
@@ -247,8 +272,10 @@ export class TransactionService {
       const chainedTransactionModel: TransactionModel = {
         requestorId: requestor.id,
         itemId: itemId,
-        created: Timestamp.now(),
-        updated: Timestamp.now(),
+        created: transactionModel.created,
+        updated: transactionModel.updated,
+        expired: transactionModel.expired,
+        receiverId: requestor.id,
         location: location,
         status: TransactionStatus.Pending,
         participants: [requestor.id, exchangeId, owner.id], // Add participants array
@@ -276,6 +303,56 @@ export class TransactionService {
       status: transactionModel.status,
       createdAt: transactionModel.created.seconds * 1000,
       updatedAt: transactionModel.updated.seconds * 1000,
+      expireAt: transactionModel.expired
+        ? transactionModel.expired.seconds * 1000
+        : undefined,
+    };
+    return rv;
+  }
+
+  async createQuickTransaction(
+    holder: User,
+    itemId: string
+  ): Promise<Transaction> {
+    // Logic to create a quick transaction
+    const item = await this.itemService.itemById(itemId);
+    if (!item) {
+      throw new Error(`Item with id ${itemId} not found`);
+    }
+    if (item.holderId !== holder.id && item.ownerId !== holder.id) {
+      throw new Error(
+        `User with id ${holder.id} is not the holder or owner of item with id ${itemId}`
+      );
+    }
+
+    const transactionModel: TransactionModel = {
+      requestorId: holder.id,
+      itemId: itemId,
+      created: Timestamp.now(),
+      updated: Timestamp.now(),
+      locationType: TransactionLocation.FaceToFace,
+      expired: Timestamp.fromDate(new Date(Date.now() + 60 * 60 * 1000)), // expire in 1 hours,
+      status: TransactionStatus.Transfered,
+      participants: [holder.id, item.ownerId],
+    };
+    // Save transaction to the database
+    const transactionRef = await db
+      .collection("transactions")
+      .add(transactionModel);
+    if (!transactionRef.id) {
+      throw new Error("Failed to create quick transaction");
+    }
+
+    let rv: Transaction = {
+      id: transactionRef.id,
+      item: item,
+      requestor: holder,
+      status: transactionModel.status,
+      createdAt: transactionModel.created.seconds * 1000,
+      updatedAt: transactionModel.updated.seconds * 1000,
+      expireAt: transactionModel.expired
+        ? transactionModel.expired.seconds * 1000
+        : undefined,
     };
     return rv;
   }
@@ -315,11 +392,20 @@ export class TransactionService {
   }
 
   async cancelTransaction(user: User, id: string): Promise<boolean> {
+    return this._cancelTransaction(user, id, false);
+  }
+
+  async _cancelTransaction(
+    user: User,
+    id: string,
+    expired: boolean
+  ): Promise<boolean> {
     const data = await this._transactionById(id);
     // Logic to approve a transaction
     if (
       data.status == TransactionStatus.Completed ||
-      data.status == TransactionStatus.Cancelled
+      data.status == TransactionStatus.Cancelled ||
+      data.status == TransactionStatus.Expired
     ) {
       throw new Error(
         `Transaction with id ${id} is not in open status, current status: ${data.status}`
@@ -350,6 +436,9 @@ export class TransactionService {
       }
       owner = ownerRv;
     }
+    const finalStatus = expired
+      ? TransactionStatus.Expired
+      : TransactionStatus.Cancelled;
 
     const emailDetail: EmailDetail = {
       subject: `Transaction Cancelled for Item: ${item.name}`,
@@ -357,7 +446,7 @@ export class TransactionService {
     };
     const rv = await this._updateTransaction(
       id,
-      TransactionStatus.Cancelled,
+      finalStatus,
       owner,
       item,
       data,
@@ -375,7 +464,7 @@ export class TransactionService {
       for (const doc of chainedTransactions.docs) {
         await this._updateTransaction(
           doc.id,
-          TransactionStatus.Cancelled,
+          finalStatus,
           owner,
           item,
           data,
@@ -490,7 +579,11 @@ export class TransactionService {
     return rv;
   }
 
-  async receiveTransaction(receiver: User, id: string): Promise<Transaction> {
+  async receiveTransaction(
+    receiver: User,
+    id: string,
+    images: string[]
+  ): Promise<Transaction> {
     // Logic to receive a transaction
     const data = await this._transactionById(id);
     if (data.status !== TransactionStatus.Transfered) {
@@ -498,18 +591,49 @@ export class TransactionService {
         `Transaction with id ${id} is not in transfered status, current status: ${data.status}`
       );
     }
-    // only the requestor can receive the transaction
-    const receiverId = data.receiverId ? data.receiverId : data.requestorId;
-    if (receiverId !== receiver.id) {
-      throw new Error(
-        `User with id ${receiver.id} is not the receiver of transaction with id ${id}`
-      );
+    if (data.locationType !== TransactionLocation.FaceToFace) {
+      // only the requestor can receive the transaction
+      const receiverId = data.receiverId ? data.receiverId : data.requestorId;
+      if (receiverId !== receiver.id) {
+        throw new Error(
+          `User with id ${receiver.id} is not the receiver of transaction with id ${id}`
+        );
+      }
+    } else {
+      data.receiverId = receiver.id;
     }
 
     // update the item holder to the requestor
     const item = await this.itemService.itemById(data.itemId);
     if (!item) {
       throw new Error(`Item with id ${data.itemId} not found`);
+    }
+
+    let gsImageUrls: string[] | null = null;
+    let publicImageUrls: string[] | null = null;
+
+    if (images && images.length > 0) {
+      for (const image of images) {
+        console.debug(`Processing image: ${image}`);
+        if (image.startsWith("gs://")) {
+          try {
+            const publicUrl = await GetPublicUrlForGSFile(image);
+            console.debug(`Public URL for image ${image}: ${publicUrl}`);
+            if (!gsImageUrls) gsImageUrls = [];
+            if (!publicImageUrls) publicImageUrls = [];
+            publicImageUrls.push(publicUrl);
+            gsImageUrls.push(image);
+          } catch (error) {
+            console.error(
+              `Failed to get public URL for image ${image}:`,
+              error
+            );
+          }
+        } else {
+          if (!publicImageUrls) publicImageUrls = [];
+          publicImageUrls.push(image);
+        }
+      }
     }
 
     const updated = await this.itemService.updateItemHolder(item.id, receiver);
@@ -530,6 +654,11 @@ export class TransactionService {
       }
       owner = ownerRv;
     }
+
+    if (gsImageUrls && gsImageUrls.length > 0) {
+      data.gsImageUrls = gsImageUrls;
+    }
+
     const rv = await this._updateTransaction(
       id,
       TransactionStatus.Completed,
