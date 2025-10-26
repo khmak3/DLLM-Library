@@ -51,7 +51,23 @@ export class TransactionService {
   ) {}
 
   async transactionById(id: string): Promise<Transaction | null> {
-    const data = await this._transactionById(id);
+    let data = await this._transactionById(id);
+    // check if the transaction is open
+    if (
+      data.status !== TransactionStatus.Completed &&
+      data.status !== TransactionStatus.Cancelled &&
+      data.status !== TransactionStatus.Expired
+    ) {
+      if (data.expired && data.expired.toDate() < new Date()) {
+        const user = await this.userService.userById(data.requestorId);
+        if (!user) {
+          throw new Error(`User with id ${data.requestorId} not found`);
+        }
+        await this._cancelTransaction(user, id, true);
+        data.status = TransactionStatus.Expired;
+      }
+    }
+
     const rv = await this._transactionModeltoTransaction(id, data);
     return rv;
   }
@@ -62,15 +78,6 @@ export class TransactionService {
       throw new Error(`Transaction with id ${id} not found`);
     }
     const data = transactionDoc.data() as TransactionModel;
-    if (data.expired && data.expired.toDate() < new Date()) {
-      const user = await this.userService.userById(data.requestorId);
-      if (!user) {
-        throw new Error(`User with id ${data.requestorId} not found`);
-      }
-      await this._cancelTransaction(user, id, true);
-      data.status = TransactionStatus.Expired;
-    }
-
     return data;
   }
 
@@ -149,6 +156,7 @@ export class TransactionService {
       createdAt: data.created.seconds * 1000,
       updatedAt: data.updated.seconds * 1000,
       expireAt: data.expired ? data.expired.seconds * 1000 : undefined,
+      images: data.images,
     };
   }
 
@@ -419,6 +427,7 @@ export class TransactionService {
     }
 
     if (
+      !expired &&
       data.requestorId !== user.id &&
       item.ownerId !== user.id &&
       data.receiverId !== user.id
@@ -427,7 +436,6 @@ export class TransactionService {
         `User with id ${user.id} is not the requestor receiver or owner of item with id ${data.itemId}`
       );
     }
-
     let owner: User = user;
     if (item.ownerId !== user.id) {
       let ownerRv = await this.userService.userById(item.ownerId);
@@ -484,12 +492,14 @@ export class TransactionService {
     emailDetail: EmailDetail | null
   ): Promise<Transaction> {
     // Save the updated transaction to the database
-
+    console.log(`Updating transaction with id ${id} to status ${status}`);
     const requestor = await this.userService.userById(data.requestorId);
     if (!requestor) {
       throw new Error(`Requestor with id ${data.requestorId} not found`);
     }
     let receiver: User | null = null;
+    console.log(`Updating transaction with id ${id} to status 1${status}`);
+
     if (data.receiverId) {
       receiver = await this.userService.userById(data.receiverId);
       if (!receiver) {
@@ -497,7 +507,13 @@ export class TransactionService {
       }
     }
     const updated = Timestamp.now();
-    await db.collection("transactions").doc(id).update({ status, updated });
+    await db.collection("transactions").doc(id).update({
+      status,
+      updated,
+      images: data.images,
+      gsImageUrls: data.gsImageUrls,
+      receiverId: data.receiverId,
+    });
     // Logic to approve a transaction
     // Notify the requestor
     let toList = [requestor.email, owner.email];
@@ -512,7 +528,7 @@ export class TransactionService {
       toList.push(receiver.email);
     }
     if (emailDetail) {
-      sendNotificationViaEmail(
+      await sendNotificationViaEmail(
         toList,
         ccList,
         emailDetail.subject,
@@ -653,6 +669,10 @@ export class TransactionService {
         throw new Error(`Owner with id ${item.ownerId} not found`);
       }
       owner = ownerRv;
+    }
+
+    if (publicImageUrls && publicImageUrls.length > 0) {
+      data.images = publicImageUrls;
     }
 
     if (gsImageUrls && gsImageUrls.length > 0) {

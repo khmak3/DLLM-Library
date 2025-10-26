@@ -21,6 +21,9 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  ImageList,
+  ImageListItem,
+  ImageListItemBar,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -37,6 +40,7 @@ import {
   AccountBox as AccountBoxIcon,
   PersonAdd as PersonAddIcon,
   Home as HomeIcon,
+  Image as ImageIcon,
 } from "@mui/icons-material";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
@@ -44,6 +48,7 @@ import { User, Transaction, TransactionStatus } from "../generated/graphql";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import ReceiptImageUploadDialog from "./ReceiptImageUploadDialog";
 
 // Create a custom icon using Leaflet's default marker
 const customIcon = new L.Icon({
@@ -110,6 +115,7 @@ const GET_TRANSACTION = gql`
         latitude
         longitude
       }
+      images
     }
   }
 `;
@@ -135,11 +141,12 @@ const TRANSFER_TRANSACTION = gql`
 `;
 
 const RECEIVE_TRANSACTION = gql`
-  mutation ReceiveTransaction($id: ID!) {
-    receiveTransaction(id: $id) {
+  mutation ReceiveTransaction($id: ID!, $images: [String!]!) {
+    receiveTransaction(id: $id, images: $images) {
       id
       status
       updatedAt
+      images
     }
   }
 `;
@@ -161,6 +168,9 @@ const TransactionDetailPage: React.FC = () => {
   const { transactionId } = useParams<{ transactionId: string }>();
   const { user } = useOutletContext<OutletContext>();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Add state for receipt image upload dialog
+  const [receiptImageDialogOpen, setReceiptImageDialogOpen] = useState(false);
 
   const { data, loading, error, refetch } = useQuery<{
     transaction: Transaction;
@@ -284,6 +294,38 @@ const TransactionDetailPage: React.FC = () => {
   const holder = transaction.item?.holderId
     ? { id: transaction.item.holderId }
     : null;
+
+  // Update the receive handler to open dialog instead of direct mutation
+  const handleReceiveClick = () => {
+    setReceiptImageDialogOpen(true);
+  };
+
+  const handleConfirmReceive = async (images: string[]) => {
+    if (!transactionId) return;
+
+    setActionLoading("receive");
+    try {
+      await receiveTransaction({
+        variables: {
+          id: transactionId,
+          images: images.length > 0 ? images : null,
+        },
+      });
+      await refetch();
+      setReceiptImageDialogOpen(false);
+    } catch (err) {
+      console.error("Error confirming receipt:", err);
+      alert(t("transactions.receiveError", "Failed to confirm receipt"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCloseReceiptDialog = () => {
+    if (actionLoading !== "receive") {
+      setReceiptImageDialogOpen(false);
+    }
+  };
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -644,6 +686,61 @@ const TransactionDetailPage: React.FC = () => {
         </Paper>
       )}
 
+      {/* Add Receipt Images Section - Show when completed */}
+      {transaction.status === TransactionStatus.Completed &&
+        transaction.images &&
+        transaction.images.length > 0 && (
+          <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
+            <Typography
+              variant="h6"
+              sx={{ mb: 2, display: "flex", alignItems: "center" }}
+            >
+              <ImageIcon sx={{ mr: 1 }} />
+              {t("transactions.receiptImages", "Item Condition at Receipt")}
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {t(
+                "transactions.receiptImagesDescription",
+                "Photos taken when the item was received, documenting its condition."
+              )}
+            </Typography>
+
+            <ImageList
+              sx={{ width: "100%", maxHeight: 500 }}
+              cols={3}
+              rowHeight={200}
+            >
+              {transaction.images.map((image, index) => (
+                <ImageListItem key={index}>
+                  <img
+                    src={image}
+                    alt={`Receipt ${index + 1}`}
+                    loading="lazy"
+                    style={{
+                      objectFit: "cover",
+                      width: "100%",
+                      height: "100%",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => window.open(image, "_blank")}
+                  />
+                  <ImageListItemBar
+                    title={t(
+                      "transactions.receiptImage",
+                      "Receipt Image {{number}}",
+                      {
+                        number: index + 1,
+                      }
+                    )}
+                    subtitle={t("common.clickToEnlarge", "Click to enlarge")}
+                  />
+                </ImageListItem>
+              ))}
+            </ImageList>
+          </Paper>
+        )}
+
       {/* Action Buttons */}
       <Paper elevation={1} sx={{ p: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
@@ -729,7 +826,7 @@ const TransactionDetailPage: React.FC = () => {
               <Button
                 variant="contained"
                 color="success"
-                onClick={() => handleAction("receive", receiveTransaction)}
+                onClick={handleReceiveClick}
                 disabled={actionLoading === "receive"}
                 startIcon={
                   actionLoading === "receive" ? (
@@ -749,7 +846,7 @@ const TransactionDetailPage: React.FC = () => {
               <Button
                 variant="contained"
                 color="success"
-                onClick={() => handleAction("receive", receiveTransaction)}
+                onClick={handleReceiveClick}
                 disabled={actionLoading === "receive"}
                 startIcon={
                   actionLoading === "receive" ? (
@@ -801,6 +898,14 @@ const TransactionDetailPage: React.FC = () => {
           )}
         </Box>
       </Paper>
+
+      {/* Receipt Image Upload Dialog */}
+      <ReceiptImageUploadDialog
+        open={receiptImageDialogOpen}
+        onClose={handleCloseReceiptDialog}
+        onConfirm={handleConfirmReceive}
+        loading={actionLoading === "receive"}
+      />
     </Container>
   );
 };

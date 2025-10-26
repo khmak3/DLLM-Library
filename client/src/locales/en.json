@@ -153,7 +153,19 @@
     "previousHolder": "Previous Holder",
     "lastUpdated": "Last Updated",
     "browseItems": "Browse Available Items",
-    "away": "away"
+    "away": "away",
+    "faceToFaceTransfer": "Face-to-Face Transfer",
+    "quickTransferExpiry": "This transfer will expire in 1 hour",
+    "quickTransferExpiryDescription": "The recipient must confirm receipt within 1 hour, or the transaction will be automatically cancelled.",
+    "faceToFaceInstructions": "How it works:",
+    "faceToFaceStep1": "A quick transaction will be created immediately",
+    "faceToFaceStep2": "Hand over the item to the recipient in person",
+    "faceToFaceStep3": "The recipient confirms receipt within 1 hour",
+    "faceToFaceStep4": "The transaction is completed, and the recipient becomes the new holder",
+    "faceToFaceNotice": "Make sure you are physically present with the recipient before creating this transaction.",
+    "confirmTransfer": "Confirm Transfer",
+    "creating": "Creating...",
+    "itemName": "Item"
   },
   "languages": {
     "en": "English",
