@@ -64,7 +64,7 @@ export type Item = {
   updatedAt: Scalars['Date']['output'];
 };
 
-export type ItemComment = {
+export type ItemComment = ItemCommentBase & {
   __typename?: 'ItemComment';
   content: Scalars['String']['output'];
   createdAt: Scalars['Date']['output'];
@@ -74,11 +74,32 @@ export type ItemComment = {
   userNickname: Scalars['String']['output'];
 };
 
+export type ItemCommentBase = {
+  content: Scalars['String']['output'];
+  createdAt: Scalars['Date']['output'];
+  updatedAt: Scalars['Date']['output'];
+};
+
+export type ItemCommentByUser = ItemCommentBase & {
+  __typename?: 'ItemCommentByUser';
+  commentId: Scalars['ID']['output'];
+  content: Scalars['String']['output'];
+  createdAt: Scalars['Date']['output'];
+  itemId: Scalars['ID']['output'];
+  updatedAt: Scalars['Date']['output'];
+};
+
 export type ItemCommentPageInfo = {
   __typename?: 'ItemCommentPageInfo';
   endCursor?: Maybe<Scalars['ID']['output']>;
   hasNextPage: Scalars['Boolean']['output'];
   startCursor?: Maybe<Scalars['ID']['output']>;
+};
+
+export type ItemCommentsByUserConnection = {
+  __typename?: 'ItemCommentsByUserConnection';
+  comments?: Maybe<Array<Maybe<ItemCommentByUser>>>;
+  pageInfo?: Maybe<ItemCommentPageInfo>;
 };
 
 export type ItemCommentsConnection = {
@@ -126,6 +147,7 @@ export type Mutation = {
   cancelTransaction: Scalars['Boolean']['output'];
   createItem: Item;
   createNewsPost: NewsPost;
+  createQuickTransaction: Transaction;
   createTransaction: Transaction;
   createUser: User;
   deleteItem: Scalars['Boolean']['output'];
@@ -182,7 +204,14 @@ export type MutationCreateNewsPostArgs = {
 };
 
 
+export type MutationCreateQuickTransactionArgs = {
+  details?: InputMaybe<Scalars['String']['input']>;
+  itemId: Scalars['ID']['input'];
+};
+
+
 export type MutationCreateTransactionArgs = {
+  details?: InputMaybe<Scalars['String']['input']>;
   itemId: Scalars['ID']['input'];
   location?: TransactionLocation;
   locationIndex?: Scalars['Int']['input'];
@@ -238,6 +267,7 @@ export type MutationPinItemArgs = {
 
 export type MutationReceiveTransactionArgs = {
   id: Scalars['ID']['input'];
+  images?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 
@@ -299,6 +329,7 @@ export type NewsPost = {
 export type Query = {
   __typename?: 'Query';
   commentsByItemId: ItemCommentsConnection;
+  commentsByUserId: ItemCommentsByUserConnection;
   defaultCategories: Array<Scalars['String']['output']>;
   exchangePoints: Array<User>;
   exchangePointsCount: Scalars['Int']['output'];
@@ -331,6 +362,14 @@ export type QueryCommentsByItemIdArgs = {
   itemId: Scalars['ID']['input'];
   startAfterDate?: InputMaybe<Scalars['Date']['input']>;
   startAfterId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+export type QueryCommentsByUserIdArgs = {
+  first: Scalars['Int']['input'];
+  startAfterDate?: InputMaybe<Scalars['Date']['input']>;
+  startAfterId?: InputMaybe<Scalars['ID']['input']>;
+  userId: Scalars['ID']['input'];
 };
 
 
@@ -497,6 +536,7 @@ export type Transaction = {
   __typename?: 'Transaction';
   createdAt: Scalars['Date']['output'];
   details?: Maybe<Scalars['String']['output']>;
+  expireAt?: Maybe<Scalars['Date']['output']>;
   id: Scalars['ID']['output'];
   images?: Maybe<Array<Scalars['String']['output']>>;
   item: Item;
@@ -509,6 +549,7 @@ export type Transaction = {
 };
 
 export enum TransactionLocation {
+  FaceToFace = 'FACE_TO_FACE',
   HolderLocation = 'HOLDER_LOCATION',
   HolderPublicExchangePoint = 'HOLDER_PUBLIC_EXCHANGE_POINT',
   RequestorLocation = 'REQUESTOR_LOCATION',
@@ -519,6 +560,7 @@ export enum TransactionStatus {
   Approved = 'APPROVED',
   Cancelled = 'CANCELLED',
   Completed = 'COMPLETED',
+  Expired = 'EXPIRED',
   Pending = 'PENDING',
   Transfered = 'TRANSFERED'
 }
@@ -579,10 +621,19 @@ export type CreateTransactionMutationVariables = Exact<{
   itemId: Scalars['ID']['input'];
   location: TransactionLocation;
   locationIndex?: InputMaybe<Scalars['Int']['input']>;
+  details: Scalars['String']['input'];
 }>;
 
 
 export type CreateTransactionMutation = { __typename?: 'Mutation', createTransaction: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any } };
+
+export type CreateQuickTransactionMutationVariables = Exact<{
+  itemId: Scalars['ID']['input'];
+  details: Scalars['String']['input'];
+}>;
+
+
+export type CreateQuickTransactionMutation = { __typename?: 'Mutation', createQuickTransaction: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any } };
 
 export type GetUserForItemQueryVariables = Exact<{
   userId: Scalars['ID']['input'];
@@ -596,7 +647,7 @@ export type OpenTransactionsByItemQueryVariables = Exact<{
 }>;
 
 
-export type OpenTransactionsByItemQuery = { __typename?: 'Query', openTransactionsByItem: Array<{ __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string } }> };
+export type OpenTransactionsByItemQuery = { __typename?: 'Query', openTransactionsByItem: Array<{ __typename?: 'Transaction', id: string, details?: string | null, status: TransactionStatus, createdAt: any, updatedAt: any, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string } }> };
 
 export type PinItemMutationVariables = Exact<{
   itemId: Scalars['ID']['input'];
@@ -667,7 +718,7 @@ export type GetTransactionQueryVariables = Exact<{
 }>;
 
 
-export type GetTransactionQuery = { __typename?: 'Query', transaction?: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, item: { __typename?: 'Item', id: string, name: string, description?: string | null, images?: Array<string> | null, thumbnails?: Array<string> | null, condition: ItemCondition, category: Array<string>, ownerId: string, holderId?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, receiver?: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
+export type GetTransactionQuery = { __typename?: 'Query', transaction?: { __typename?: 'Transaction', id: string, status: TransactionStatus, createdAt: any, updatedAt: any, details?: string | null, images?: Array<string> | null, item: { __typename?: 'Item', id: string, name: string, description?: string | null, images?: Array<string> | null, thumbnails?: Array<string> | null, condition: ItemCondition, category: Array<string>, ownerId: string, holderId?: string | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, requestor: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null }, receiver?: { __typename?: 'User', id: string, nickname?: string | null, email: string, address?: string | null, contactMethods?: Array<{ __typename?: 'ContactMethod', type: ContactMethodType, value: string, isPublic: boolean }> | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null, location?: { __typename?: 'Location', latitude: number, longitude: number } | null } | null };
 
 export type ApproveTransactionMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -685,10 +736,11 @@ export type TransferTransactionMutation = { __typename?: 'Mutation', transferTra
 
 export type ReceiveTransactionMutationVariables = Exact<{
   id: Scalars['ID']['input'];
+  images: Array<Scalars['String']['input']> | Scalars['String']['input'];
 }>;
 
 
-export type ReceiveTransactionMutation = { __typename?: 'Mutation', receiveTransaction: { __typename?: 'Transaction', id: string, status: TransactionStatus, updatedAt: any } };
+export type ReceiveTransactionMutation = { __typename?: 'Mutation', receiveTransaction: { __typename?: 'Transaction', id: string, status: TransactionStatus, updatedAt: any, images?: Array<string> | null } };
 
 export type CancelTransactionMutationVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -1098,11 +1150,12 @@ export type ItemLazyQueryHookResult = ReturnType<typeof useItemLazyQuery>;
 export type ItemSuspenseQueryHookResult = ReturnType<typeof useItemSuspenseQuery>;
 export type ItemQueryResult = Apollo.QueryResult<ItemQuery, ItemQueryVariables>;
 export const CreateTransactionDocument = gql`
-    mutation CreateTransaction($itemId: ID!, $location: TransactionLocation!, $locationIndex: Int) {
+    mutation CreateTransaction($itemId: ID!, $location: TransactionLocation!, $locationIndex: Int, $details: String!) {
   createTransaction(
     itemId: $itemId
     location: $location
     locationIndex: $locationIndex
+    details: $details
   ) {
     id
     status
@@ -1129,6 +1182,7 @@ export type CreateTransactionMutationFn = Apollo.MutationFunction<CreateTransact
  *      itemId: // value for 'itemId'
  *      location: // value for 'location'
  *      locationIndex: // value for 'locationIndex'
+ *      details: // value for 'details'
  *   },
  * });
  */
@@ -1139,6 +1193,43 @@ export function useCreateTransactionMutation(baseOptions?: Apollo.MutationHookOp
 export type CreateTransactionMutationHookResult = ReturnType<typeof useCreateTransactionMutation>;
 export type CreateTransactionMutationResult = Apollo.MutationResult<CreateTransactionMutation>;
 export type CreateTransactionMutationOptions = Apollo.BaseMutationOptions<CreateTransactionMutation, CreateTransactionMutationVariables>;
+export const CreateQuickTransactionDocument = gql`
+    mutation CreateQuickTransaction($itemId: ID!, $details: String!) {
+  createQuickTransaction(itemId: $itemId, details: $details) {
+    id
+    status
+    createdAt
+    updatedAt
+  }
+}
+    `;
+export type CreateQuickTransactionMutationFn = Apollo.MutationFunction<CreateQuickTransactionMutation, CreateQuickTransactionMutationVariables>;
+
+/**
+ * __useCreateQuickTransactionMutation__
+ *
+ * To run a mutation, you first call `useCreateQuickTransactionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateQuickTransactionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createQuickTransactionMutation, { data, loading, error }] = useCreateQuickTransactionMutation({
+ *   variables: {
+ *      itemId: // value for 'itemId'
+ *      details: // value for 'details'
+ *   },
+ * });
+ */
+export function useCreateQuickTransactionMutation(baseOptions?: Apollo.MutationHookOptions<CreateQuickTransactionMutation, CreateQuickTransactionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateQuickTransactionMutation, CreateQuickTransactionMutationVariables>(CreateQuickTransactionDocument, options);
+      }
+export type CreateQuickTransactionMutationHookResult = ReturnType<typeof useCreateQuickTransactionMutation>;
+export type CreateQuickTransactionMutationResult = Apollo.MutationResult<CreateQuickTransactionMutation>;
+export type CreateQuickTransactionMutationOptions = Apollo.BaseMutationOptions<CreateQuickTransactionMutation, CreateQuickTransactionMutationVariables>;
 export const GetUserForItemDocument = gql`
     query GetUserForItem($userId: ID!) {
   user(id: $userId) {
@@ -1205,6 +1296,7 @@ export const OpenTransactionsByItemDocument = gql`
       nickname
       email
     }
+    details
     status
     createdAt
     updatedAt
@@ -1598,6 +1690,7 @@ export const GetTransactionDocument = gql`
         longitude
       }
     }
+    details
     requestor {
       id
       nickname
@@ -1632,6 +1725,7 @@ export const GetTransactionDocument = gql`
       latitude
       longitude
     }
+    images
   }
 }
     `;
@@ -1739,11 +1833,12 @@ export type TransferTransactionMutationHookResult = ReturnType<typeof useTransfe
 export type TransferTransactionMutationResult = Apollo.MutationResult<TransferTransactionMutation>;
 export type TransferTransactionMutationOptions = Apollo.BaseMutationOptions<TransferTransactionMutation, TransferTransactionMutationVariables>;
 export const ReceiveTransactionDocument = gql`
-    mutation ReceiveTransaction($id: ID!) {
-  receiveTransaction(id: $id) {
+    mutation ReceiveTransaction($id: ID!, $images: [String!]!) {
+  receiveTransaction(id: $id, images: $images) {
     id
     status
     updatedAt
+    images
   }
 }
     `;
@@ -1763,6 +1858,7 @@ export type ReceiveTransactionMutationFn = Apollo.MutationFunction<ReceiveTransa
  * const [receiveTransactionMutation, { data, loading, error }] = useReceiveTransactionMutation({
  *   variables: {
  *      id: // value for 'id'
+ *      images: // value for 'images'
  *   },
  * });
  */

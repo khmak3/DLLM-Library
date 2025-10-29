@@ -46,6 +46,7 @@ import { calculateDistance, formatDistance } from "../utils/geoProcessor";
 import SafeImage from "./SafeImage";
 import RequestConfirmationDialog from "./RequestConfirmationDialog";
 import EditItemForm from "./EditItemForm";
+import FaceToFaceConfirmDialog from "./FaceToFaceConfirmDialog";
 import ItemComments from './ItemComments';
 import { convertLinksToClickable } from "../utils/helpers";
 
@@ -75,12 +76,25 @@ const CREATE_TRANSACTION_MUTATION = gql`
     $itemId: ID!
     $location: TransactionLocation!
     $locationIndex: Int
+    $details: String!
   ) {
     createTransaction(
       itemId: $itemId
       location: $location
       locationIndex: $locationIndex
+      details: $details
     ) {
+      id
+      status
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const CREATE_QUICK_TRANSACTION_MUTATION = gql`
+  mutation CreateQuickTransaction($itemId: ID!, $details: String!) {
+    createQuickTransaction(itemId: $itemId, details: $details) {
       id
       status
       createdAt
@@ -123,6 +137,7 @@ const OPEN_TRANSACTIONS_QUERY = gql`
         nickname
         email
       }
+      details
       status
       createdAt
       updatedAt
@@ -163,6 +178,9 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
   // State for image popup
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+
+  // Add state for Face-to-Face dialog
+  const [faceToFaceDialogOpen, setFaceToFaceDialogOpen] = useState(false);
 
   const { data, loading, error, refetch } = useQuery<{ item: Item }>(
     ITEM_DETAIL_QUERY,
@@ -207,6 +225,22 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
         setErrorMessage(error.message);
         setErrorSnackbarOpen(true);
         console.error("Transaction creation error:", error);
+      },
+    });
+
+  const [createQuickTransaction, { loading: quickTransactionLoading }] =
+    useMutation(CREATE_QUICK_TRANSACTION_MUTATION, {
+      onCompleted: (data) => {
+        setFaceToFaceDialogOpen(false);
+        setSuccessSnackbarOpen(true);
+        // Navigate to the newly created transaction
+        navigate(`/transaction/${data.createQuickTransaction.id}`);
+      },
+      onError: (error) => {
+        setFaceToFaceDialogOpen(false);
+        setErrorMessage(error.message);
+        setErrorSnackbarOpen(true);
+        console.error("Quick transaction creation error:", error);
       },
     });
 
@@ -296,6 +330,10 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     setRequestDialogOpen(true);
   };
 
+  const handleFaceToFaceClick = () => {
+    setFaceToFaceDialogOpen(true);
+  };
+
   const handleConfirmRequest = async (
     location: TransactionLocation,
     locationIndex?: number
@@ -303,16 +341,43 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
     if (!itemId) return;
 
     try {
+      const details = buildDetailsString();
       await createTransaction({
-        variables: { itemId, location, locationIndex: locationIndex || 0 },
+        variables: {
+          itemId,
+          location,
+          locationIndex: locationIndex || 0,
+          details: details,
+        },
       });
     } catch (error) {
       console.error("Error creating transaction:", error);
     }
   };
 
+  const handleConfirmFaceToFace = async () => {
+    if (!itemId) return;
+
+    try {
+      const details = buildDetailsString();
+      await createQuickTransaction({
+        variables: { itemId, details: details },
+      });
+    } catch (error) {
+      console.error("Error creating quick transaction:", error);
+    }
+  };
+
+  const buildDetailsString = () => {
+    return JSON.stringify({ deposit: data?.item.deposit });
+  };
+
   const handleCloseRequestDialog = () => {
     setRequestDialogOpen(false);
+  };
+
+  const handleCloseFaceToFaceDialog = () => {
+    setFaceToFaceDialogOpen(false);
   };
 
   const handleCloseSuccessSnackbar = () => {
@@ -912,9 +977,23 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
           <Box
             sx={{ mt: 4, display: "flex", gap: 2, justifyContent: "flex-end" }}
           >
+            {/* Face-to-Face Transfer Button - Show for owner or holder */}
+            {(isOwner || isHolder) && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                size="large"
+                onClick={handleFaceToFaceClick}
+                disabled={quickTransactionLoading}
+                startIcon={<TransferIcon />}
+              >
+                {t("item.faceToFaceTransfer", "Face-to-Face Transfer")}
+              </Button>
+            )}
+
             {isOwner && (
               <>
-                {/* Pin Status Indicator (optional - shows current pin count) */}
+                {/* Pin Status Indicator */}
                 {ownerData?.user?.pinItems && (
                   <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
                     <Typography variant="body2" color="text.secondary">
@@ -935,6 +1014,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                 </Button>
               </>
             )}
+
             {canCreateTransaction && (
               <Button
                 variant="contained"
@@ -974,6 +1054,15 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
         requestor={user || null}
         existingTransactions={openTransactions}
         transactionsLoading={transactionsLoading}
+      />
+
+      {/* Face-to-Face Confirmation Dialog */}
+      <FaceToFaceConfirmDialog
+        open={faceToFaceDialogOpen}
+        onClose={handleCloseFaceToFaceDialog}
+        onConfirm={handleConfirmFaceToFace}
+        loading={quickTransactionLoading}
+        itemName={data?.item?.name || ""}
       />
 
       {/* Success Snackbar */}

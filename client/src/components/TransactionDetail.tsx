@@ -21,6 +21,14 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  ImageList,
+  ImageListItem,
+  ImageListItemBar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -37,13 +45,23 @@ import {
   AccountBox as AccountBoxIcon,
   PersonAdd as PersonAddIcon,
   Home as HomeIcon,
+  Image as ImageIcon,
+  Share as ShareIcon,
+  ContentCopy as ContentCopyIcon,
+  WhatsApp as WhatsAppIcon,
+  Telegram as TelegramIcon,
+  Facebook as FacebookIcon,
+  Twitter as TwitterIcon,
+  Link as LinkIcon,
 } from "@mui/icons-material";
+import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router-dom";
 import { User, Transaction, TransactionStatus } from "../generated/graphql";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import ReceiptImageUploadDialog from "./ReceiptImageUploadDialog";
 
 // Create a custom icon using Leaflet's default marker
 const customIcon = new L.Icon({
@@ -76,6 +94,7 @@ const GET_TRANSACTION = gql`
           longitude
         }
       }
+      details
       requestor {
         id
         nickname
@@ -110,6 +129,7 @@ const GET_TRANSACTION = gql`
         latitude
         longitude
       }
+      images
     }
   }
 `;
@@ -135,11 +155,12 @@ const TRANSFER_TRANSACTION = gql`
 `;
 
 const RECEIVE_TRANSACTION = gql`
-  mutation ReceiveTransaction($id: ID!) {
-    receiveTransaction(id: $id) {
+  mutation ReceiveTransaction($id: ID!, $images: [String!]!) {
+    receiveTransaction(id: $id, images: $images) {
       id
       status
       updatedAt
+      images
     }
   }
 `;
@@ -155,12 +176,387 @@ interface OutletContext {
   user?: User;
 }
 
+// Add this helper function before the TransactionDetailPage component
+const parseTransactionDetails = (details: string | null | undefined) => {
+  if (!details) return null;
+
+  try {
+    return JSON.parse(details);
+  } catch (error) {
+    console.error("Error parsing transaction details:", error);
+    return null;
+  }
+};
+
+// Add this component before TransactionDetailPage to display JSON data nicely
+interface JsonViewerProps {
+  data: any;
+  level?: number;
+}
+
+const JsonViewer: React.FC<JsonViewerProps> = ({ data, level = 0 }) => {
+  const { t } = useTranslation();
+
+  if (data === null || data === undefined) {
+    return (
+      <Typography
+        variant="body2"
+        sx={{ color: "text.secondary", fontStyle: "italic" }}
+      >
+        {t("common.null", "null")}
+      </Typography>
+    );
+  }
+
+  if (typeof data !== "object") {
+    return (
+      <Typography variant="body2" sx={{ color: "text.primary" }}>
+        {String(data)}
+      </Typography>
+    );
+  }
+
+  if (Array.isArray(data)) {
+    return (
+      <Box sx={{ pl: level * 2 }}>
+        {data.map((item, index) => (
+          <Box key={index} sx={{ mb: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: "medium", color: "text.secondary" }}
+            >
+              [{index}]:
+            </Typography>
+            <Box sx={{ pl: 2 }}>
+              <JsonViewer data={item} level={level + 1} />
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ pl: level * 2 }}>
+      {Object.entries(data).map(([key, value]) => (
+        <Box key={key} sx={{ mb: 1 }}>
+          <Typography
+            variant="body2"
+            component="span"
+            sx={{ fontWeight: "medium", color: "primary.main" }}
+          >
+            {key}:
+          </Typography>{" "}
+          {typeof value === "object" ? (
+            <Box sx={{ mt: 0.5 }}>
+              <JsonViewer data={value} level={level + 1} />
+            </Box>
+          ) : (
+            <Typography
+              variant="body2"
+              component="span"
+              sx={{ color: "text.primary" }}
+            >
+              {String(value)}
+            </Typography>
+          )}
+        </Box>
+      ))}
+    </Box>
+  );
+};
+
+interface ShareTransactionDialogProps {
+  open: boolean;
+  onClose: () => void;
+  transactionUrl: string;
+  itemName: string;
+}
+
+const ShareTransactionDialog: React.FC<ShareTransactionDialogProps> = ({
+  open,
+  onClose,
+  transactionUrl,
+  itemName,
+}) => {
+  const { t } = useTranslation();
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const shareMessage = t(
+    "transactions.shareMessage",
+    "Check out this transaction for {{itemName}}",
+    { itemName }
+  );
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(transactionUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 3000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = transactionUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 3000);
+      } catch (err) {
+        console.error("Fallback copy failed:", err);
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: t("transactions.shareTitle", "Transaction Details"),
+          text: shareMessage,
+          url: transactionUrl,
+        });
+      } catch (err) {
+        // User cancelled or error occurred
+        console.log("Share cancelled or failed:", err);
+      }
+    }
+  };
+
+  const shareViaWhatsApp = () => {
+    const url = `https://wa.me/?text=${encodeURIComponent(
+      `${shareMessage}\n${transactionUrl}`
+    )}`;
+    window.open(url, "_blank");
+  };
+
+  const shareViaTelegram = () => {
+    const url = `https://t.me/share/url?url=${encodeURIComponent(
+      transactionUrl
+    )}&text=${encodeURIComponent(shareMessage)}`;
+    window.open(url, "_blank");
+  };
+
+  const shareViaFacebook = () => {
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      transactionUrl
+    )}`;
+    window.open(url, "_blank");
+  };
+
+  const shareViaTwitter = () => {
+    const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
+      transactionUrl
+    )}&text=${encodeURIComponent(shareMessage)}`;
+    window.open(url, "_blank");
+  };
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  return (
+    <>
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 2 },
+        }}
+      >
+        <DialogTitle>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <ShareIcon sx={{ mr: 1 }} />
+            {t("transactions.shareTransaction", "Share Transaction")}
+          </Box>
+        </DialogTitle>
+
+        <DialogContent>
+          {/* Instructions */}
+          <Alert severity="info" sx={{ mb: 3 }}>
+            <Typography variant="body2">
+              {t(
+                "transactions.shareInstructions",
+                "Share this transaction link with the other party for face-to-face exchange. They can scan the QR code or use the link to view the transaction details."
+              )}
+            </Typography>
+          </Alert>
+
+          {/* QR Code */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 3,
+              p: 3,
+              bgcolor: "white",
+              borderRadius: 2,
+              border: 1,
+              borderColor: "divider",
+            }}
+          >
+            <QRCodeSVG
+              value={transactionUrl}
+              size={200}
+              level="H"
+              includeMargin={true}
+            />
+          </Box>
+
+          {/* URL Display and Copy Button */}
+          <Box sx={{ mb: 3 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              sx={{ mb: 1 }}
+            >
+              {t("transactions.transactionLink", "Transaction Link")}
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                alignItems: "center",
+              }}
+            >
+              <Box
+                sx={{
+                  flexGrow: 1,
+                  p: 1.5,
+                  bgcolor: "grey.100",
+                  borderRadius: 1,
+                  border: 1,
+                  borderColor: "divider",
+                  overflow: "auto",
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontFamily: "monospace",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {transactionUrl}
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                onClick={handleCopyLink}
+                startIcon={<ContentCopyIcon />}
+                sx={{ minWidth: "auto", whiteSpace: "nowrap" }}
+              >
+                {t("common.copy", "Copy")}
+              </Button>
+            </Box>
+          </Box>
+
+          {/* Native Share Button (Mobile) */}
+          {isMobile && (
+            <Box sx={{ mb: 2 }}>
+              <Button
+                variant="contained"
+                fullWidth
+                startIcon={<ShareIcon />}
+                onClick={handleNativeShare}
+                size="large"
+              >
+                {t("transactions.shareVia", "Share via...")}
+              </Button>
+            </Box>
+          )}
+
+          {/* Share via Messaging Apps */}
+          <Box>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              sx={{ mb: 2 }}
+            >
+              {t("transactions.shareViaApps", "Share via Messaging Apps")}
+            </Typography>
+            <Grid container spacing={1}>
+              <Grid size={{ xs: 6 }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<WhatsAppIcon sx={{ color: "#25D366" }} />}
+                  onClick={shareViaWhatsApp}
+                >
+                  WhatsApp
+                </Button>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<TelegramIcon sx={{ color: "#0088cc" }} />}
+                  onClick={shareViaTelegram}
+                >
+                  Telegram
+                </Button>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<FacebookIcon sx={{ color: "#1877F2" }} />}
+                  onClick={shareViaFacebook}
+                >
+                  Facebook
+                </Button>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<TwitterIcon sx={{ color: "#1DA1F2" }} />}
+                  onClick={shareViaTwitter}
+                >
+                  Twitter
+                </Button>
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={onClose} variant="contained">
+            {t("common.close", "Close")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Copy Success Snackbar */}
+      <Snackbar
+        open={copySuccess}
+        autoHideDuration={3000}
+        onClose={() => setCopySuccess(false)}
+        message={t("transactions.linkCopied", "Link copied to clipboard!")}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
+    </>
+  );
+};
+
 const TransactionDetailPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { transactionId } = useParams<{ transactionId: string }>();
   const { user } = useOutletContext<OutletContext>();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Add state for receipt image upload dialog
+  const [receiptImageDialogOpen, setReceiptImageDialogOpen] = useState(false);
+
+  // Add state for share dialog
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+
+  // Add state for showing raw JSON
+  const [showRawJson, setShowRawJson] = useState(false);
 
   const { data, loading, error, refetch } = useQuery<{
     transaction: Transaction;
@@ -285,6 +681,44 @@ const TransactionDetailPage: React.FC = () => {
     ? { id: transaction.item.holderId }
     : null;
 
+  // Parse transaction details
+  const transactionDetails = parseTransactionDetails(transaction.details);
+
+  // Update the receive handler to open dialog instead of direct mutation
+  const handleReceiveClick = () => {
+    setReceiptImageDialogOpen(true);
+  };
+
+  const handleConfirmReceive = async (images: string[]) => {
+    if (!transactionId) return;
+
+    setActionLoading("receive");
+    try {
+      await receiveTransaction({
+        variables: {
+          id: transactionId,
+          images: images.length > 0 ? images : null,
+        },
+      });
+      await refetch();
+      setReceiptImageDialogOpen(false);
+    } catch (err) {
+      console.error("Error confirming receipt:", err);
+      alert(t("transactions.receiveError", "Failed to confirm receipt"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCloseReceiptDialog = () => {
+    if (actionLoading !== "receive") {
+      setReceiptImageDialogOpen(false);
+    }
+  };
+
+  // Generate the full transaction URL
+  const transactionUrl = `${window.location.origin}/transaction/${transactionId}`;
+
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       {/* Header */}
@@ -295,6 +729,17 @@ const TransactionDetailPage: React.FC = () => {
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           {t("transactions.transactionDetail", "Transaction Detail")}
         </Typography>
+
+        {/* Share Button - Add to header */}
+        <Button
+          variant="outlined"
+          startIcon={<ShareIcon />}
+          onClick={() => setShareDialogOpen(true)}
+          sx={{ mr: 2 }}
+        >
+          {t("transactions.share", "Share")}
+        </Button>
+
         <Chip
           icon={getStatusIcon(transaction.status)}
           label={t(
@@ -341,6 +786,78 @@ const TransactionDetailPage: React.FC = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      {/* Transaction Details Section - Add this new section */}
+      {transactionDetails && (
+        <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ display: "flex", alignItems: "center" }}
+            >
+              <AccountBoxIcon sx={{ mr: 1 }} />
+              {t("transactions.details", "Transaction Details")}
+            </Typography>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => setShowRawJson(!showRawJson)}
+            >
+              {showRawJson
+                ? t("transactions.showFormatted", "Show Formatted")
+                : t("transactions.showRaw", "Show Raw JSON")}
+            </Button>
+          </Box>
+
+          <Divider sx={{ mb: 2 }} />
+
+          {showRawJson ? (
+            <Box
+              sx={{
+                bgcolor: "grey.100",
+                p: 2,
+                borderRadius: 1,
+                overflow: "auto",
+                maxHeight: 400,
+              }}
+            >
+              <Typography
+                component="pre"
+                variant="body2"
+                sx={{
+                  fontFamily: "monospace",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  m: 0,
+                }}
+              >
+                {JSON.stringify(transactionDetails, null, 2)}
+              </Typography>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                bgcolor: "background.default",
+                p: 2,
+                borderRadius: 1,
+                border: 1,
+                borderColor: "divider",
+                maxHeight: 400,
+                overflow: "auto",
+              }}
+            >
+              <JsonViewer data={transactionDetails} />
+            </Box>
+          )}
+        </Paper>
+      )}
 
       {/* Item Info */}
       <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
@@ -644,6 +1161,61 @@ const TransactionDetailPage: React.FC = () => {
         </Paper>
       )}
 
+      {/* Add Receipt Images Section - Show when completed */}
+      {transaction.status === TransactionStatus.Completed &&
+        transaction.images &&
+        transaction.images.length > 0 && (
+          <Paper elevation={1} sx={{ p: 3, mb: 3 }}>
+            <Typography
+              variant="h6"
+              sx={{ mb: 2, display: "flex", alignItems: "center" }}
+            >
+              <ImageIcon sx={{ mr: 1 }} />
+              {t("transactions.receiptImages", "Item Condition at Receipt")}
+            </Typography>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {t(
+                "transactions.receiptImagesDescription",
+                "Photos taken when the item was received, documenting its condition."
+              )}
+            </Typography>
+
+            <ImageList
+              sx={{ width: "100%", maxHeight: 500 }}
+              cols={3}
+              rowHeight={200}
+            >
+              {transaction.images.map((image, index) => (
+                <ImageListItem key={index}>
+                  <img
+                    src={image}
+                    alt={`Receipt ${index + 1}`}
+                    loading="lazy"
+                    style={{
+                      objectFit: "cover",
+                      width: "100%",
+                      height: "100%",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => window.open(image, "_blank")}
+                  />
+                  <ImageListItemBar
+                    title={t(
+                      "transactions.receiptImage",
+                      "Receipt Image {{number}}",
+                      {
+                        number: index + 1,
+                      }
+                    )}
+                    subtitle={t("common.clickToEnlarge", "Click to enlarge")}
+                  />
+                </ImageListItem>
+              ))}
+            </ImageList>
+          </Paper>
+        )}
+
       {/* Action Buttons */}
       <Paper elevation={1} sx={{ p: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>
@@ -651,6 +1223,15 @@ const TransactionDetailPage: React.FC = () => {
         </Typography>
 
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+          {/* Share Button - Also add here for easier access */}
+          <Button
+            variant="outlined"
+            startIcon={<ShareIcon />}
+            onClick={() => setShareDialogOpen(true)}
+          >
+            {t("transactions.share", "Share Transaction")}
+          </Button>
+
           {/* Owner Actions */}
           {isOwner && transaction.status === TransactionStatus.Pending && (
             <>
@@ -729,7 +1310,7 @@ const TransactionDetailPage: React.FC = () => {
               <Button
                 variant="contained"
                 color="success"
-                onClick={() => handleAction("receive", receiveTransaction)}
+                onClick={handleReceiveClick}
                 disabled={actionLoading === "receive"}
                 startIcon={
                   actionLoading === "receive" ? (
@@ -749,7 +1330,7 @@ const TransactionDetailPage: React.FC = () => {
               <Button
                 variant="contained"
                 color="success"
-                onClick={() => handleAction("receive", receiveTransaction)}
+                onClick={handleReceiveClick}
                 disabled={actionLoading === "receive"}
                 startIcon={
                   actionLoading === "receive" ? (
@@ -801,6 +1382,22 @@ const TransactionDetailPage: React.FC = () => {
           )}
         </Box>
       </Paper>
+
+      {/* Receipt Image Upload Dialog */}
+      <ReceiptImageUploadDialog
+        open={receiptImageDialogOpen}
+        onClose={handleCloseReceiptDialog}
+        onConfirm={handleConfirmReceive}
+        loading={actionLoading === "receive"}
+      />
+
+      {/* Share Transaction Dialog */}
+      <ShareTransactionDialog
+        open={shareDialogOpen}
+        onClose={() => setShareDialogOpen(false)}
+        transactionUrl={transactionUrl}
+        itemName={transaction.item?.name || ""}
+      />
     </Container>
   );
 };
