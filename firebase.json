@@ -1,21 +1,4 @@
 {
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "graphql",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ],
-      "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run build"
-      ],
-      "runtime": "nodejs22"
-    }
-  ],
   "hosting": {
     "public": "client/dist",
     "predeploy": [
@@ -31,6 +14,35 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "headers": [
+      {
+        "source": "**/*.js",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/javascript"
+          }
+        ]
+      },
+      {
+        "source": "**/*.mjs",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/javascript"
+          }
+        ]
+      },
+      {
+        "source": "**/*.css",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "text/css"
+          }
+        ]
+      }
+    ],
     "rewrites": [
       {
         "source": "/graphql*",
@@ -38,6 +50,10 @@
       },
       {
         "source": "/item/**",
+        "function": "graphql"
+      },
+      {
+        "source": "/item",
         "function": "graphql"
       },
       {
@@ -57,5 +73,22 @@
         "destination": "/index.html"
       }
     ]
-  }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "graphql",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ],
+      "runtime": "nodejs22"
+    }
+  ]
 }
