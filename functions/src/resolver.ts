@@ -146,6 +146,20 @@ export const resolvers: Resolvers = {
         offset
       );
     },
+    itemsOnLoanByHolder: async (
+      _: any,
+      { userId, category, status, keyword, limit = 20, offset = 0 }: any,
+      __: any
+    ): Promise<Item[]> => {
+      return itemService.itemsOnLoanByHolder(
+        userId,
+        category,
+        status,
+        keyword,
+        limit,
+        offset
+      );
+    },
     item: async (_: any, { id }: any, __: any): Promise<Item | null> => {
       return itemService.itemById(id);
     },
