@@ -76,7 +76,7 @@ export class ItemService {
     return filteredItems;
   }
 
-  async itemsOnLoanByUser(
+  async itemsOnLoanByOwner(
     userId: string,
     category: string[],
     status?: string,
