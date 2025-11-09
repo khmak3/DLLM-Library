@@ -212,6 +212,12 @@ type Query {
     limit: Int
     offset: Int
   ): [Item!]! # 按條件篩選藏品（舊方式）
+  totalItemsCount(
+    category: [String!]
+    address: String # 備用字段
+    status: ItemStatus
+    keyword: String
+  ): Int! # 符合條件的藏品總數
   recommendedItems(
     type: RecommendationType!
     category: String
@@ -227,6 +233,14 @@ type Query {
     limit: Int
     offset: Int
   ): [Item!]! # 基於當前位置的搜尋
+  totalItemsCountByLocation(
+    latitude: Float!
+    longitude: Float!
+    radiusKm: Float! # 搜尋半徑（公里）
+    category: [String!]
+    status: ItemStatus
+    keyword: String
+  ): Int! # 基於當前位置的藏品總數
   itemsByUser(
     userId: ID!
     category: [String!]
@@ -236,7 +250,14 @@ type Query {
     offset: Int
     isExchangePointItem: Boolean
   ): [Item!]! # 基於User的搜尋
-  itemsOnLoanByOwner(
+  totalItemsCountByUser(
+    userId: ID!
+    category: [String!]
+    status: ItemStatus
+    keyword: String
+    isExchangePointItem: Boolean
+  ): Int! # 基於User的藏品總數
+  itemsOnLoanByUser(
     userId: ID!
     category: [String!]
     status: ItemStatus
@@ -244,6 +265,14 @@ type Query {
     limit: Int
     offset: Int
   ): [Item!]! # 查詢用戶借出的藏品
+  itemsOnLoanByOwner(
+    userId: ID!
+    category: [String!]
+    status: ItemStatus
+    keyword: String
+    limit: Int
+    offset: Int
+  ): [Item!]!
   itemsOnLoanByHolder(
     userId: ID!
     category: [String!]
