@@ -236,7 +236,7 @@ type Query {
     offset: Int
     isExchangePointItem: Boolean
   ): [Item!]! # 基於User的搜尋
-  itemsOnLoanByUser(
+  itemsOnLoanByOwner(
     userId: ID!
     category: [String!]
     status: ItemStatus

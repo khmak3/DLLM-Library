@@ -31,7 +31,7 @@ import { formatDistanceToNow } from "date-fns";
 
 const GET_ON_LOAN_ITEMS = gql`
   query GetOnLoanItems($userId: ID!, $limit: Int!, $offset: Int!) {
-    itemsOnLoanByUser(userId: $userId, limit: $limit, offset: $offset) {
+    itemsOnLoanByOwner(userId: $userId, limit: $limit, offset: $offset) {
       id
       name
       description
@@ -72,7 +72,7 @@ interface OnLoanItem {
 }
 
 interface OnLoanItemsData {
-  itemsOnLoanByUser: OnLoanItem[];
+  itemsOnLoanByOwner: OnLoanItem[];
 }
 
 interface UserData {
@@ -122,7 +122,7 @@ const OnLoanItemsView: React.FC = () => {
   // Fetch user details for owners and holders
   useEffect(() => {
     const fetchUserDetails = async () => {
-      if (!data?.itemsOnLoanByUser || data.itemsOnLoanByUser.length === 0) {
+      if (!data?.itemsOnLoanByOwner || data.itemsOnLoanByOwner.length === 0) {
         setEnrichedItems([]);
         return;
       }
@@ -132,7 +132,7 @@ const OnLoanItemsView: React.FC = () => {
       try {
         // Get unique user IDs
         const userIds = new Set<string>();
-        data.itemsOnLoanByUser.forEach((item) => {
+        data.itemsOnLoanByOwner.forEach((item) => {
           userIds.add(item.ownerId);
           if (item.holderId) {
             userIds.add(item.holderId);
@@ -158,7 +158,7 @@ const OnLoanItemsView: React.FC = () => {
         });
 
         // Enrich items with user details
-        const enriched: EnrichedItem[] = data.itemsOnLoanByUser.map((item) => ({
+        const enriched: EnrichedItem[] = data.itemsOnLoanByOwner.map((item) => ({
           ...item,
           owner: userMap.get(item.ownerId) || undefined,
           holder: item.holderId
@@ -170,7 +170,7 @@ const OnLoanItemsView: React.FC = () => {
       } catch (error) {
         console.error("Error enriching items with user details:", error);
         // Fallback: use items without user details
-        setEnrichedItems(data.itemsOnLoanByUser.map((item) => ({ ...item })));
+        setEnrichedItems(data.itemsOnLoanByOwner.map((item) => ({ ...item })));
       } finally {
         setLoadingUsers(false);
       }
@@ -202,7 +202,7 @@ const OnLoanItemsView: React.FC = () => {
   };
 
   // Since we don't have total count from the query, we'll estimate based on returned items
-  const hasMoreItems = data?.itemsOnLoanByUser.length === pageSize;
+  const hasMoreItems = data?.itemsOnLoanByOwner.length === pageSize;
   const canShowPagination = page > 1 || hasMoreItems;
 
   if (!user) {

@@ -339,7 +339,7 @@ export type Query = {
   items: Array<Item>;
   itemsByLocation: Array<Item>;
   itemsByUser: Array<Item>;
-  itemsOnLoanByUser: Array<Item>;
+  itemsOnLoanByOwner: Array<Item>;
   me?: Maybe<User>;
   newsPost?: Maybe<NewsPost>;
   newsRecentPosts: Array<NewsPost>;
@@ -869,7 +869,7 @@ export type GetOnLoanItemsQueryVariables = Exact<{
 }>;
 
 
-export type GetOnLoanItemsQuery = { __typename?: 'Query', itemsOnLoanByUser: Array<{ __typename?: 'Item', id: string, name: string, description?: string | null, condition: ItemCondition, images?: Array<string> | null, updatedAt: any, createdAt: any, ownerId: string, holderId?: string | null, status: ItemStatus, deposit?: number | null }> };
+export type GetOnLoanItemsQuery = { __typename?: 'Query', itemsOnLoanByOwner: Array<{ __typename?: 'Item', id: string, name: string, description?: string | null, condition: ItemCondition, images?: Array<string> | null, updatedAt: any, createdAt: any, ownerId: string, holderId?: string | null, status: ItemStatus, deposit?: number | null }> };
 
 export type GetUserQueryVariables = Exact<{
   id: Scalars['ID']['input'];
@@ -2549,7 +2549,7 @@ export type DefaultCategoriesSuspenseQueryHookResult = ReturnType<typeof useDefa
 export type DefaultCategoriesQueryResult = Apollo.QueryResult<DefaultCategoriesQuery, DefaultCategoriesQueryVariables>;
 export const GetOnLoanItemsDocument = gql`
     query GetOnLoanItems($userId: ID!, $limit: Int!, $offset: Int!) {
-  itemsOnLoanByUser(userId: $userId, limit: $limit, offset: $offset) {
+  itemsOnLoanByOwner(userId: $userId, limit: $limit, offset: $offset) {
     id
     name
     description
