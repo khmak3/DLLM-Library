@@ -30,8 +30,8 @@ import { User } from "../generated/graphql";
 import { formatDistanceToNow } from "date-fns";
 
 const GET_ON_LOAN_ITEMS = gql`
-  query GetOnLoanItemsByOwner($userId: ID!, $limit: Int!, $offset: Int!) {
-    itemsOnLoanByOwner(userId: $userId, limit: $limit, offset: $offset) {
+  query GetOnLoanItemsByHolder($userId: ID!, $limit: Int!, $offset: Int!) {
+    itemsOnLoanByHolder(userId: $userId, limit: $limit, offset: $offset) {
       id
       name
       description
@@ -72,7 +72,7 @@ interface OnLoanItem {
 }
 
 interface OnLoanItemsData {
-  itemsOnLoanByOwner: OnLoanItem[];
+  itemsOnLoanByHolder: OnLoanItem[];
 }
 
 interface UserData {
@@ -92,7 +92,7 @@ interface EnrichedItem extends OnLoanItem {
   holder?: UserData["user"];
 }
 
-const OnLoanItemsView: React.FC = () => {
+const BorrowedItemsView: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useOutletContext<OutletContext>();
@@ -122,7 +122,7 @@ const OnLoanItemsView: React.FC = () => {
   // Fetch user details for owners and holders
   useEffect(() => {
     const fetchUserDetails = async () => {
-      if (!data?.itemsOnLoanByOwner || data.itemsOnLoanByOwner.length === 0) {
+      if (!data?.itemsOnLoanByHolder || data.itemsOnLoanByHolder.length === 0) {
         setEnrichedItems([]);
         return;
       }
@@ -132,7 +132,7 @@ const OnLoanItemsView: React.FC = () => {
       try {
         // Get unique user IDs
         const userIds = new Set<string>();
-        data.itemsOnLoanByOwner.forEach((item) => {
+        data.itemsOnLoanByHolder.forEach((item) => {
           userIds.add(item.ownerId);
           if (item.holderId) {
             userIds.add(item.holderId);
@@ -158,7 +158,7 @@ const OnLoanItemsView: React.FC = () => {
         });
 
         // Enrich items with user details
-        const enriched: EnrichedItem[] = data.itemsOnLoanByOwner.map((item) => ({
+        const enriched: EnrichedItem[] = data.itemsOnLoanByHolder.map((item) => ({
           ...item,
           owner: userMap.get(item.ownerId) || undefined,
           holder: item.holderId
@@ -170,7 +170,7 @@ const OnLoanItemsView: React.FC = () => {
       } catch (error) {
         console.error("Error enriching items with user details:", error);
         // Fallback: use items without user details
-        setEnrichedItems(data.itemsOnLoanByOwner.map((item) => ({ ...item })));
+        setEnrichedItems(data.itemsOnLoanByHolder.map((item) => ({ ...item })));
       } finally {
         setLoadingUsers(false);
       }
@@ -202,7 +202,7 @@ const OnLoanItemsView: React.FC = () => {
   };
 
   // Since we don't have total count from the query, we'll estimate based on returned items
-  const hasMoreItems = data?.itemsOnLoanByOwner.length === pageSize;
+  const hasMoreItems = data?.itemsOnLoanByHolder.length === pageSize;
   const canShowPagination = page > 1 || hasMoreItems;
 
   if (!user) {
@@ -211,7 +211,7 @@ const OnLoanItemsView: React.FC = () => {
         <Alert severity="error">
           {t(
             "common.loginRequired",
-            "Please log in to view your lent items"
+            "Please log in to view your borrowed items"
           )}
         </Alert>
       </Container>
@@ -232,7 +232,7 @@ const OnLoanItemsView: React.FC = () => {
           sx={{ flexGrow: 1, display: "flex", alignItems: "center", gap: 1 }}
         >
           <BorrowedIcon />
-          {t("item.myLentItems", "Items I've lent")}
+          {t("item.myBorrowedItems", "Items I've borrowed")}
         </Typography>
       </Box>
 
@@ -242,7 +242,7 @@ const OnLoanItemsView: React.FC = () => {
           <CircularProgress />
           <Typography sx={{ ml: 2 }}>
             {loading
-              ? t("item.loadingLentItems", "Loading your lent items...")
+              ? t("item.loadingBorrowedItems", "Loading your borrowed items...")
               : t("item.loadingUserDetails", "Loading user details...")}
           </Typography>
         </Box>
@@ -251,7 +251,7 @@ const OnLoanItemsView: React.FC = () => {
       {/* Error State */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          {t("item.errorLoadingLentItems", "Error loading lent items")}:{" "}
+          {t("item.errorLoadingBorrowedItems", "Error loading borrowed items")}:{" "}
           {error.message}
           <Button onClick={() => refetch()} sx={{ ml: 2 }}>
             {t("common.retry", "Retry")}
@@ -265,12 +265,12 @@ const OnLoanItemsView: React.FC = () => {
           <Typography variant="body1" color="text.secondary">
             {enrichedItems.length === 0
               ? t(
-                  "item.noLentItems",
-                  "You currently have no lent items"
+                  "item.noBorrowedItems",
+                  "You currently have no borrowed items"
                 )
               : t(
-                  "item.lentItemsCount",
-                  "You have {{count}} lent item(s)",
+                  "item.borrowedItemsCount",
+                  "You have {{count}} borrowed item(s)",
                   {
                     count: enrichedItems.length,
                   }
@@ -497,14 +497,14 @@ const OnLoanItemsView: React.FC = () => {
             />
             <Typography variant="h6" sx={{ mb: 1 }}>
               {t(
-                "item.noLentItems",
-                "You currently have no lent items"
+                "item.noBorrowedItems",
+                "You currently have no borrowed items"
               )}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               {t(
-                "item.noLentItemsDescription",
-                "When you lend items to other users, they will appear here."
+                "item.noBorrowedItemsDescription",
+                "When you borrow items from other users, they will appear here."
               )}
             </Typography>
             <Button variant="contained" onClick={() => navigate("/item/all")}>
@@ -517,4 +517,4 @@ const OnLoanItemsView: React.FC = () => {
   );
 };
 
-export default OnLoanItemsView;
+export default BorrowedItemsView;

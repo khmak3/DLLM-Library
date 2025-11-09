@@ -250,14 +250,7 @@ type Query {
     offset: Int
     isExchangePointItem: Boolean
   ): [Item!]! # 基於User的搜尋
-  totalItemsCountByUser(
-    userId: ID!
-    category: [String!]
-    status: ItemStatus
-    keyword: String
-    isExchangePointItem: Boolean
-  ): Int! # 基於User的藏品總數
-  itemsOnLoanByUser(
+  itemsOnLoanByOwner(
     userId: ID!
     category: [String!]
     status: ItemStatus
@@ -265,6 +258,14 @@ type Query {
     limit: Int
     offset: Int
   ): [Item!]! # 查詢用戶借出的藏品
+  itemsOnLoanByHolder(
+    userId: ID!
+    category: [String!]
+    status: ItemStatus
+    keyword: String
+    limit: Int
+    offset: Int
+  ): [Item!]! # 查詢用戶借入的藏品
   recentAddedItems(limit: Int, offset: Int, category: [String!]): [Item!]! # 最近新增的藏品
   # 交易相關
   transaction(id: ID!): Transaction

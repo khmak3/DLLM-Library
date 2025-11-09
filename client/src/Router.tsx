@@ -43,9 +43,7 @@ import ItemForm from "./components/ItemForm";
 import NewsForm from "./components/NewsForm";
 import { gql, useMutation, useApolloClient } from "@apollo/client";
 import OnLoanItemsView from "./routes/OnLoanItemsView";
-import MainLayout from "./components/MainLayout";
-import ExchangePointsPage from "./routes/ExchangePoints";
-import ProfilePage from "./routes/Profile";
+import BorrowedItemsView from "./routes/BorrowedItemsView";
 
 const GET_USER_OPEN_TRANSACTIONS_FOR_COUNT = gql`
   query GetUserOpenTransactionsForCount($userId: ID!) {
@@ -123,6 +121,11 @@ const Layout: React.FC<LayoutProps> = ({ email, emailVerified, user }) => {
 
   const handleOnLoanItems = () => {
     navigate("/items/on-loan");
+    handleMenuClose();
+  };
+  
+  const handleBorrowedItems = () => {
+    navigate("/items/borrowed-items");
     handleMenuClose();
   };
 
@@ -208,7 +211,16 @@ const Layout: React.FC<LayoutProps> = ({ email, emailVerified, user }) => {
                     <BookmarkIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText>
-                    {t("item.onLoanItems", "Items On Loan")}
+                    {t("item.myLentItems", "My lent items")}
+                  </ListItemText>
+                </MenuItem>
+
+                <MenuItem onClick={handleBorrowedItems}>
+                  <ListItemIcon>
+                    <BookmarkIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>
+                    {t("item.myBorrowedItems", "My borrowed items")}
                   </ListItemText>
                 </MenuItem>
 
@@ -335,6 +347,10 @@ export const createRouter = (
         {
           path: "items/on-loan",
           element: <OnLoanItemsView />,
+        },
+        {
+          path: "items/borrowed-items",
+          element: <BorrowedItemsView />,
         },
       ],
     },

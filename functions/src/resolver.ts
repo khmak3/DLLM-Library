@@ -159,12 +159,26 @@ export const resolvers: Resolvers = {
         isExchangePointItem
       );
     },
-    itemsOnLoanByUser: async (
+    itemsOnLoanByOwner: async (
       _: any,
       { userId, category, status, keyword, limit = 20, offset = 0 }: any,
       __: any
     ): Promise<Item[]> => {
-      return itemService.itemsOnLoanByUser(
+      return itemService.itemsOnLoanByOwner(
+        userId,
+        category,
+        status,
+        keyword,
+        limit,
+        offset
+      );
+    },
+    itemsOnLoanByHolder: async (
+      _: any,
+      { userId, category, status, keyword, limit = 20, offset = 0 }: any,
+      __: any
+    ): Promise<Item[]> => {
+      return itemService.itemsOnLoanByHolder(
         userId,
         category,
         status,

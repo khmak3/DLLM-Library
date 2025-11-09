@@ -76,31 +76,7 @@ export class ItemService {
     return filteredItems;
   }
 
-  async totalItemsCountByLocation(
-    latitude: number,
-    longitude: number,
-    radiusKm: number,
-    category: string[],
-    status: string,
-    keyword: string
-  ): Promise<number> {
-    let query = db.collection("items").where("geohash", ">=", "");
-    if (category)
-      query = query.where("category", "array-contains-any", category);
-    if (status) query = query.where("status", "==", status);
-    if (keyword)
-      query = query
-        .where("name", ">=", keyword)
-        .where("name", "<=", keyword + "\uf8ff");
-    const count = await this.mapService.getLocationsByRadiusCount(
-      query,
-      { latitude, longitude },
-      radiusKm
-    );
-    return count;
-  }
-
-  async itemsOnLoanByUser(
+  async itemsOnLoanByOwner(
     userId: string,
     category: string[],
     status?: string,
@@ -121,6 +97,39 @@ export class ItemService {
       query = query
         .where("name", ">=", keyword)
         .where("name", "<=", keyword + "\uf8ff");
+    const snapshot = await query.limit(limit).offset(offset).get();
+    const results: Item[] = [];
+    await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const item = await this._itemQueryToItem(doc);
+        results.push(item);
+      })
+    );
+    return results;
+  }
+
+  async itemsOnLoanByHolder(
+    userId: string,
+    category: string[],
+    status?: string,
+    keyword?: string,
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<Item[]> {
+    let query = db
+      .collection("items")
+      .where("holderId", "==", userId)
+      .orderBy("updated", "desc");
+    if (category && category.length > 0)
+      query = query.where("category", "array-contains-any", category);
+    if (status) query = query.where("status", "==", status);
+    if (keyword)
+      query = query
+        .where("name", ">=", keyword)
+        .where("name", "<=", keyword + "\uf8ff");
+
+    
+
     const snapshot = await query.limit(limit).offset(offset).get();
     const results: Item[] = [];
     await Promise.all(
