@@ -48,7 +48,6 @@ import MainLayout from "./components/MainLayout";
 import ExchangePointsPage from "./routes/ExchangePoints";
 import ProfilePage from "./routes/Profile";
 
-
 const GET_USER_OPEN_TRANSACTIONS_FOR_COUNT = gql`
   query GetUserOpenTransactionsForCount($userId: ID!) {
     openTransactionsByUser(userId: $userId) {
@@ -67,9 +66,15 @@ interface LayoutProps {
   email?: string | null;
   emailVerified?: boolean | null;
   user?: User;
+  onSignOut: () => Promise<void>;
 }
 
-const Layout: React.FC<LayoutProps> = ({ email, emailVerified, user }) => {
+const Layout: React.FC<LayoutProps> = ({
+  email,
+  emailVerified,
+  user,
+  onSignOut,
+}) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -286,14 +291,20 @@ const Layout: React.FC<LayoutProps> = ({ email, emailVerified, user }) => {
 export const createRouter = (
   email?: string | null,
   emailVerified?: boolean | null,
-  user?: User
+  user?: User,
+  onSignOut?: () => Promise<void>
   //  initialPath?: string | null
 ) => {
   return createBrowserRouter([
     {
       path: "/",
       element: (
-        <MainLayout email={email} emailVerified={emailVerified} user={user} />
+        <MainLayout
+          email={email}
+          emailVerified={emailVerified}
+          user={user}
+          onSignOut={onSignOut}
+        />
       ),
       children: [
         {

@@ -55,12 +55,14 @@ interface MainLayoutProps {
   email?: string | null;
   emailVerified?: boolean | null;
   user?: User;
+  onSignOut?: () => Promise<void>;
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({
   email,
   emailVerified,
   user,
+  onSignOut,
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -162,7 +164,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   const handleLogout = async () => {
-    await auth.signOut();
+    if (onSignOut) {
+      await onSignOut();
+    }
     handleMenuClose();
   };
 

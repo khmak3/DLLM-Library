@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useQuery, gql } from "@apollo/client";
-import { auth } from "../firebase";
 import {
   Button,
   Box,
@@ -53,11 +52,13 @@ interface OutletContext {
   email?: string | undefined | null;
   emailVerified?: boolean | undefined | null;
   user?: User;
+  onSignOut: () => Promise<void>;
 }
 
 const HomePage: React.FC = () => {
   const { t } = useTranslation();
-  const { user, emailVerified, email } = useOutletContext<OutletContext>();
+  const { user, emailVerified, email, onSignOut } =
+    useOutletContext<OutletContext>();
   const navigate = useNavigate();
 
   const [showCreateUser, setShowCreateUser] = useState(false);
@@ -107,10 +108,6 @@ const HomePage: React.FC = () => {
     variables: { limit: 3 },
   });
 
-  const signOut = async () => {
-    await auth.signOut();
-  };
-
   const handleUserCreated = () => {
     setShowCreateUser(false);
     window.location.reload();
@@ -118,6 +115,14 @@ const HomePage: React.FC = () => {
 
   const handleViewAllItems = () => {
     navigate("/item/all");
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await onSignOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   return (
@@ -169,7 +174,11 @@ const HomePage: React.FC = () => {
                       )}
                     </Button>
                   )}
-                  <Button variant="outlined" onClick={signOut} size="large">
+                  <Button
+                    variant="outlined"
+                    onClick={handleSignOut}
+                    size="large"
+                  >
                     {t("auth.signOut")}
                   </Button>
                 </Box>
