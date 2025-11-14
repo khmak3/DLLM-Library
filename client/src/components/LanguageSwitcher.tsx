@@ -23,7 +23,7 @@ const LanguageSwitcher: React.FC = () => {
         <Select
           value={i18n.language}
           onChange={handleLanguageChange}
-          displayEmpty={true}
+          displayEmpty
           variant="outlined"
           sx={{
             color: "#757575", // Grey color for selected value
