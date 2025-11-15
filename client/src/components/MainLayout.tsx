@@ -300,14 +300,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         defaultIsSignUp={false}
       />
 
-      {showItemForm && (
-        <ItemForm
-          open={showItemForm}
-          onClose={() => setShowItemForm(false)}
-          onItemCreated={handleItemCreated}
-        />
-      )}
-
       {showNewsForm && (
         <NewsForm
           open={showNewsForm}
