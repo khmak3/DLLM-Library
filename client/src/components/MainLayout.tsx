@@ -23,6 +23,7 @@ import {
   Menu as MenuIcon,
   Article as ArticleIcon,
   SwapHoriz as LoanIcon,
+  Label as ClassificationIcon,
 } from "@mui/icons-material";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -31,6 +32,7 @@ import { User, Role } from "../generated/graphql";
 import { AuthDialog } from "./Auth";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NewsForm from "./NewsForm";
+import ClassificationAssignment from "./ClassificationAssignment";
 
 const GET_USER_OPEN_TRANSACTIONS_FOR_COUNT = gql`
   query GetUserOpenTransactionsForCount($userId: ID!) {
@@ -68,6 +70,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [showItemForm, setShowItemForm] = useState(false);
   const [showNewsForm, setShowNewsForm] = useState(false);
+  const [showClassificationAssignment, setShowClassificationAssignment] =
+    useState(false);
 
   // Query for user's open transactions
   const { data: transactionsData } = useQuery(
@@ -155,6 +159,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     handleMenuClose();
   };
 
+  const handleClassificationAssignment = () => {
+    setShowClassificationAssignment(true);
+    handleMenuClose();
+  };
+
   const handleNotificationsClick = () => {
     navigate("/transactions");
   };
@@ -196,7 +205,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             </IconButton>
           )}
 
-          {/* Menu Button - only show for active users */}
+          {/* Menu Button - only show for Admin users */}
           {user && user?.role === Role.Admin && (
             <>
               <IconButton
@@ -225,6 +234,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     <ArticleIcon fontSize="small" />
                   </ListItemIcon>
                   <ListItemText>{t("news.create", "Add News")}</ListItemText>
+                </MenuItem>
+
+                <MenuItem onClick={handleClassificationAssignment}>
+                  <ListItemIcon>
+                    <ClassificationIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>
+                    {t(
+                      "classification.assignClassifications",
+                      "Assign Classifications"
+                    )}
+                  </ListItemText>
                 </MenuItem>
               </Menu>
             </>
@@ -301,6 +322,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           onNewsCreated={handleNewsCreated}
         />
       )}
+
+      <ClassificationAssignment
+        open={showClassificationAssignment}
+        onClose={() => setShowClassificationAssignment(false)}
+      />
     </Box>
   );
 };

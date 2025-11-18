@@ -346,6 +346,13 @@ export const resolvers: Resolvers = {
         categoryMaps,
       };
     },
+    recentItemsWithoutClassifications: async (
+      _: any,
+      { limit = 20 }: any,
+      __: any
+    ): Promise<Item[]> => {
+      return itemService.recentItemsWithoutClassifications(limit, 0);
+    },
   },
   Mutation: {
     createUser: async (
@@ -410,7 +417,8 @@ export const resolvers: Resolvers = {
         args.language,
         args.description,
         args.images,
-        args.deposit
+        args.deposit,
+        args.classifications
       );
     },
     pinItem: async (

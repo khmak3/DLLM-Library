@@ -76,7 +76,6 @@ export class ItemService {
     return filteredItems;
   }
 
-
   async totalItemsCountByLocation(
     latitude: number,
     longitude: number,
@@ -132,7 +131,7 @@ export class ItemService {
     );
     return results;
   }
-  
+
   async itemsOnLoanByOwner(
     userId: string,
     category: string[],
@@ -184,8 +183,6 @@ export class ItemService {
       query = query
         .where("name", ">=", keyword)
         .where("name", "<=", keyword + "\uf8ff");
-
-    
 
     const snapshot = await query.limit(limit).offset(offset).get();
     const results: Item[] = [];
@@ -614,7 +611,8 @@ export class ItemService {
     language?: Language,
     description?: string,
     images?: string[],
-    deposit?: number
+    deposit?: number,
+    clssfctns?: string[]
   ): Promise<Item> {
     // First, get the existing item to verify ownership
     const itemDoc = await db.collection("items").doc(itemId).get();
@@ -689,6 +687,11 @@ export class ItemService {
     if (deposit !== undefined && existingData.deposit !== deposit) {
       updateData.deposit = deposit;
       existingData.deposit = deposit;
+    }
+
+    if (clssfctns !== undefined) {
+      updateData.clssfctns = clssfctns;
+      existingData.clssfctns = clssfctns;
     }
 
     // Handle category changes with comparison
@@ -900,6 +903,50 @@ export class ItemService {
       snapshot.docs.map(async (doc) => {
         const rv = await this._itemQueryToItem(doc);
         items.push(rv);
+      })
+    );
+    return items;
+  }
+
+  async recentItemsWithoutClassifications(
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<Item[]> {
+    // for the eariest items with classifications
+    let query = db
+      .collection("items")
+      .orderBy("clssfctns")
+      .orderBy("updated", "asc");
+    const snapshot = await query.limit(1).offset(offset).get();
+    const items: Item[] = [];
+
+    let earliestClassificationsUpdatedAt: Timestamp | null = null;
+    await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const data = doc.data() as ItemModel;
+        if (data.updated) {
+          earliestClassificationsUpdatedAt = data.updated;
+        }
+      })
+    );
+    let itemsQuery = db.collection("items").orderBy("updated", "desc");
+
+    if (earliestClassificationsUpdatedAt) {
+      // now get items which are older than earliest classifications updated at
+      itemsQuery = itemsQuery.where(
+        "updated",
+        "<",
+        earliestClassificationsUpdatedAt
+      );
+    }
+    const itemsSnapshot = await itemsQuery.limit(limit).get();
+    await Promise.all(
+      itemsSnapshot.docs.map(async (doc) => {
+        const data = doc.data() as ItemModel;
+        if (data.clssfctns === undefined || data.clssfctns === null) {
+          const rv = await this._itemQueryToItem(doc);
+          items.push(rv);
+        }
       })
     );
     return items;

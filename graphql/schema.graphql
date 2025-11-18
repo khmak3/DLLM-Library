@@ -58,7 +58,7 @@ input CategoryMapInput {
 }
 
 type ItemConfig {
-  defaultCategoryTrees: [String!]! # e.g. ["Fiction/Science Fiction", "Non-Fiction/History"]
+  defaultCategoryTrees: [String!]! # e.g. ["Fiction/Science Fiction", "Fiction/History", "Fiction/Fantasy", "Non-Fiction/History"]
   categoryMaps: [[CategoryMap!]!]!
 }
 
@@ -341,7 +341,11 @@ type Query {
     startAfterDate: Date
   ): ItemCommentsByUserConnection!
 
+  # Get Item Configurations to build category selection UI
   itemConfig: ItemConfig!
+
+  # Get recent items without classifications assigned for admin review
+  recentItemsWithoutClassifications(limit: Int): [Item!]
 }
 
 # 變更
@@ -379,6 +383,7 @@ type Mutation {
     publishedYear: Int
     deposit: Int
     language: Language
+    classifications: [String!]
   ): Item!
   deleteItem(id: ID!): Boolean!
   pinItem(itemId: ID!): Boolean!
