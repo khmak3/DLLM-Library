@@ -48,6 +48,21 @@ type Category {
   count: Int!
 }
 
+type CategoryMap {
+  language: String!
+  value: String!
+}
+
+input CategoryMapInput {
+  language: String!
+  value: String!
+}
+
+type ItemConfig {
+  defaultCategoryTrees: [String!]! # e.g. ["Fiction/Science Fiction", "Fiction/History", "Fiction/Fantasy", "Non-Fiction/History"]
+  categoryMaps: [[CategoryMap!]!]!
+}
+
 enum RecommendationType {
   USER_PICKED
   NEW_ARRIVALS
@@ -96,6 +111,7 @@ type Item {
   location: Location # 藏品所在地（繼承自擁有者）
   createdAt: Date!
   updatedAt: Date!
+  clssfctns: [String!] # Classifications 分類標籤 with ordering assigned by admin
 }
 
 interface ItemCommentBase {
@@ -206,7 +222,7 @@ type Query {
   # 藏品相關
   item(id: ID!): Item
   items(
-    category: [String!]
+    classifications: [String!]
     address: String # 備用字段
     status: ItemStatus
     keyword: String
@@ -214,7 +230,7 @@ type Query {
     offset: Int
   ): [Item!]! # 按條件篩選藏品（舊方式）
   totalItemsCount(
-    category: [String!]
+    classifications: [String!]
     address: String # 備用字段
     status: ItemStatus
     keyword: String
@@ -228,6 +244,7 @@ type Query {
     latitude: Float!
     longitude: Float!
     radiusKm: Float! # 搜尋半徑（公里）
+    classifications: [String!]
     category: [String!]
     status: ItemStatus
     keyword: String
@@ -237,13 +254,12 @@ type Query {
   #
   # Keep this implementation separate until it is ready.
   #
-  itemsByKeywordExperimental(
-    keyword: String
-  ): [Item!]!
+  itemsByKeywordExperimental(keyword: String): [Item!]!
   totalItemsCountByLocation(
     latitude: Float!
     longitude: Float!
     radiusKm: Float! # 搜尋半徑（公里）
+    classifications: [String!]
     category: [String!]
     status: ItemStatus
     keyword: String
@@ -264,7 +280,7 @@ type Query {
     keyword: String
     isExchangePointItem: Boolean
   ): Int! # 基於User的藏品總數
-  itemsOnLoanByUser( 
+  itemsOnLoanByUser(
     userId: ID!
     category: [String!]
     status: ItemStatus
@@ -331,6 +347,12 @@ type Query {
     startAfterId: ID
     startAfterDate: Date
   ): ItemCommentsByUserConnection!
+
+  # Get Item Configurations to build category selection UI
+  itemConfig: ItemConfig!
+
+  # Get recent items without classifications assigned for admin review
+  recentItemsWithoutClassifications(limit: Int): [Item!]
 }
 
 # 變更
@@ -368,6 +390,7 @@ type Mutation {
     publishedYear: Int
     deposit: Int
     language: Language
+    classifications: [String!]
   ): Item!
   deleteItem(id: ID!): Boolean!
   pinItem(itemId: ID!): Boolean!
@@ -411,6 +434,15 @@ type Mutation {
     tags: [String!]
   ): NewsPost!
   hideNewsPost(id: ID!): Boolean!
+
+  upsertCategoryMap(
+    en: String!
+    categoryMaps: [CategoryMapInput!]!
+  ): [CategoryMap!]
+
+  addCategoryTree(parentPath: String, leafCategory: String!): String!
+
+  deleteCategoryTree(categoryPath: String!): Boolean!
 
   generateSignedUrl(
     fileName: String!
