@@ -21,8 +21,7 @@ export class SystemService {
     en = en.trim().toLowerCase();
     const categoryMapsRef = await SYSTEM_DB.doc("category")
       .collection("categoryMaps")
-      .doc(en)
-      .get();
+      .doc("categoryMap");
 
     let categoryMapData: any = {};
     let foundEn = false;
@@ -33,11 +32,10 @@ export class SystemService {
       }
       categoryMapData[categoryMap.language] = categoryMap.value;
     }
+    let updatedCategoryMaps: any = {};
+    updatedCategoryMaps[en] = categoryMapData;
 
-    await categoryMapsRef.ref.set(categoryMapData);
-    if (!foundEn) {
-      categoryMaps.push({ language: "en", value: en });
-    }
+    await categoryMapsRef.set(updatedCategoryMaps, { merge: true });
     return categoryMaps;
   }
   async addCategoryTree(
@@ -90,17 +88,25 @@ export class SystemService {
   }
 
   async getAllCategoryMaps(): Promise<CategoryMap[][]> {
-    const categoryMapsRef =
-      SYSTEM_DB.doc("category").collection("categoryMaps");
+    const categoryMapsRef = await SYSTEM_DB.doc("category")
+      .collection("categoryMaps")
+      .doc("categoryMap")
+      .get();
 
-    const snapshot = await categoryMapsRef.get();
+    if (!categoryMapsRef.exists) {
+      return [];
+    }
+    const doc = categoryMapsRef.data();
+    if (!doc) {
+      return [];
+    }
     const categoryMaps: CategoryMap[][] = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
+    for (const endKey in doc) {
+      const data = doc[endKey];
       const categoryMap: [CategoryMap] = [
         {
           language: "en",
-          value: doc.id,
+          value: endKey,
         },
       ];
       for (const key in data) {
@@ -110,7 +116,7 @@ export class SystemService {
         });
       }
       categoryMaps.push(categoryMap);
-    });
+    }
     return categoryMaps;
   }
 }
