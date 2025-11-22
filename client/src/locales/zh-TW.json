@@ -26,6 +26,7 @@
     "viewAllItems": "查看附近物品",
     "profile": "個人檔案",
     "exchangePoints": "交換點",
+    "loanItems": "借出物品",
     "allNews": "新聞列表"
   },
   "home": {
@@ -93,7 +94,13 @@
     "pageNum": "第 {{page}} 頁",
     "previous": "上一頁",
     "next": "下一頁",
-    "showing": "顯示 {{start}}-{{end}} 共 {{total}} 項"
+    "showing": "顯示 {{start}}-{{end}} 共 {{total}} 項",
+    "submit": "提交",
+    "submitting": "提交中...",
+    "selectOption": "請選擇...",
+    "notAvailable": "不適用",
+    "noCategory": "無分類",
+    "errorLoading": "載入資料時發生錯誤"
   },
   "time": {
     "secondsAgo": "幾秒鐘前",
@@ -194,6 +201,16 @@
       "GIFT": "贈送物",
       "RESERVED": "已預留",
       "TRANSFERRED": "已轉讓"
+    },
+    "recent": {
+      "recentInCategory": "新番 - {{category}}",
+      "hotInCategory": "熱門 - {{category}}",
+      "recommendedForYou": "推薦物品",
+      "recentItems": "新番物品",
+      "latestAdditions": "本類別最新添加",
+      "basedOnInterests": "根據您的興趣和活動",
+      "browseRecent": "瀏覽最近添加的物品",
+      "showingItems": "顯示 {{count}} 項中的多項物品"
     },
     "viewDetails": "查看詳情",
     "relatedItems": "相關物品",
@@ -300,7 +317,9 @@
     "confirmTransfer": "確認轉移",
     "creating": "創建中...",
     "itemName": "物品",
-    "browseItems": "瀏覽可用物品"
+    "browseItems": "瀏覽可用物品",
+    "name": "物品名稱",
+    "updated": "已更新"
   },
   "userProfile": {
     "nickname": "暱稱",
@@ -535,37 +554,5 @@
     "translationHelper": "此語言的翻譯",
     "addingUnder": "新增到：{{path}}",
     "addingRoot": "新增為根分類"
-  },
-  "common": {
-    "close": "關閉",
-    "cancel": "取消",
-    "submit": "提交",
-    "submitting": "提交中...",
-    "loading": "載入中...",
-    "searching": "搜尋中...",
-    "search": "搜尋",
-    "clearAll": "清除全部",
-    "selectOption": "請選擇...",
-    "notAvailable": "不適用",
-    "noCategory": "無分類",
-    "error": "錯誤",
-    "errorLoading": "載入資料時發生錯誤"
-  },
-  "languages": {
-    "en": "英文",
-    "zh-TW": "繁體中文",
-    "zh-CN": "簡體中文"
-  },
-  "item": {
-    "name": "物品名稱",
-    "description": "描述",
-    "category": "分類",
-    "condition": "狀況",
-    "status": "狀態",
-    "language": "語言",
-    "publishedYear": "出版年份",
-    "lastUpdated": "最後更新",
-    "updated": "已更新",
-    "allItems": "所有物品"
   }
 }

@@ -139,26 +139,26 @@ const RecentItemBanner: React.FC<RecentItemBannerProps> = ({
     if (titleOverride) return titleOverride;
     if (category) {
       return isRecent
-        ? t("item.recentInCategory", "Recent in {{category}}", { category })
-        : t("item.hotInCategory", "Hot in {{category}}", { category });
+        ? t("item.recent.recentInCategory", "Recent in {{category}}", { category })
+        : t("item.recent.hotInCategory", "Hot in {{category}}", { category });
     }
     if (recommendationType === RecommendationType.UserPicked) {
-      return t("item.recommendedForYou", "Recommended for You");
+      return t("item.recent.recommendedForYou", "Recommended for You");
     }
-    return t("item.recentItems", "Recent Items");
+    return t("item.recent.recentItems", "Recent Items");
   };
 
   const getDescription = () => {
     if (descriptionOverride) return descriptionOverride;
     if (category) {
       return isRecent
-        ? t("item.latestAdditions", "Latest additions in this category")
-        : t("item.popularItems", "Popular items in this category");
+        ? t("item.recent.latestAdditions", "Latest additions in this category")
+        : t("home.popularItems", "Popular items in this category");
     }
     if (recommendationType === RecommendationType.UserPicked) {
-      return t("item.basedOnInterests", "Based on your interests and activity");
+      return t("item.recent.basedOnInterests", "Based on your interests and activity");
     }
-    return t("item.browseRecent", "Browse recently added items");
+    return t("item.recent.browseRecent", "Browse recently added items");
   };
 
   if (loading) {
@@ -247,7 +247,7 @@ const RecentItemBanner: React.FC<RecentItemBannerProps> = ({
       {category && items.length === maxItems && (
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <Typography variant="caption" color="text.secondary">
-            {t("item.showingItems", "Showing {{count}} of many items", {
+            {t("item.recent.showingItems", "Showing {{count}} of many items", {
               count: maxItems,
             })}
           </Typography>
