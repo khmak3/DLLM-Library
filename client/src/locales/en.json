@@ -36,6 +36,10 @@
     "news": "News",
     "exchangePoints": "Exchange Points",
     "profile": "Profile",
+    "viewNews": "View News",
+    "viewAllNews": "View All News",
+    "loanItems": "Loans",
+    "allNews": "All News",
     "viewAllItems": "View All Items"
   },
   "home": {
@@ -104,7 +108,13 @@
     "previous": "previous",
     "next": "Next",
     "showing": "showing {{start}}-{{end}} of {{total}}",
-    "or": "or"
+    "or": "or",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "selectOption": "Select...",
+    "notAvailable": "N/A",
+    "noCategory": "No category",
+    "errorLoading": "Error loading data"
   },
   "location": {
     "latitude": "Latitude",
@@ -175,6 +185,38 @@
     "publishedYear": "Published Year",
     "publishedYearHelper": "Optional: Enter a 4-digit year, e.g. 2024",
     "status": "Status",
+    "conditions": {
+      "NEW": "New",
+      "LIKE_NEW": "Like New",
+      "GOOD": "Good",
+      "FAIR": "Fair",
+      "AFFORDABLE": "Affordable",
+      "POOR": "Poor"
+    },
+    "conditionDescription": {
+      "FAIR": "Fair condition with noticeable signs of use. There are some scratches and marks, but it still works fine.",
+      "GOOD": "In good condition, shows minimal signs of wear. No visible damage or defects. Functions like new.",
+      "NEW": "This item is brand new, never used, and still in the original packaging.",
+      "POOR": "In poor condition with major wear. There are cracks/scratches, and some parts may be damaged. Still functional but has noticeable flaws.",
+      "LIKE_NEW": "Like new, barely used, with no visible damage or signs of wear."
+    },
+    "statuses": {
+      "AVAILABLE": "Available",
+      "EXCHANGEABLE": "Exchangeable",
+      "GIFT": "Gift",
+      "RESERVED": "Reserved",
+      "TRANSFERRED": "Transferred"
+    },
+    "recent": {
+      "recentInCategory": "Recent in {{category}}",
+      "hotInCategory": "Hot in {{category}}",
+      "recommendedForYou": "Recommended for You",
+      "recentItems": "Recent Items",
+      "latestAdditions": "Latest additions in this category",
+      "basedOnInterests": "Based on your interests and activity",
+      "browseRecent": "Browse recently added items",
+      "showingItems": "Showing {{count}} of many items"
+    },
     "nameAndCategoryRequired": "Name and category are required.",
     "nameRequired": "Item name is required",
     "createItemError": "Error creating item",
@@ -282,11 +324,14 @@
     "alreadyRequested": "You have already requested this item.",
     "deposit": "Deposit",
     "depositHelper": "Required: Set a deposit amount to ensure the item's safety.",
-    "descriptionHelper": "Optional: Supports tags (e.g., #tag1 #tag2) for categorization."
+    "descriptionHelper": "Optional: Supports tags (e.g., #tag1 #tag2) for categorization.",
+    "updated": "Updated"
   },
   "languages": {
     "en": "English",
     "zh-TW": "繁體中文",
+    "EN": "English",
+    "ZH_HK": "繁體中文",
     "zh-CN": "简体中文"
   },
   "userProfile": {
@@ -511,37 +556,5 @@
     "translationHelper": "Translation for this language",
     "addingUnder": "Adding under: {{path}}",
     "addingRoot": "Adding as root category"
-  },
-  "common": {
-    "close": "Close",
-    "cancel": "Cancel",
-    "submit": "Submit",
-    "submitting": "Submitting...",
-    "loading": "Loading...",
-    "searching": "Searching...",
-    "search": "Search",
-    "clearAll": "Clear All",
-    "selectOption": "Select...",
-    "notAvailable": "N/A",
-    "noCategory": "No category",
-    "error": "Error",
-    "errorLoading": "Error loading data"
-  },
-  "languages": {
-    "en": "English",
-    "zh-TW": "Traditional Chinese",
-    "zh-CN": "Simplified Chinese"
-  },
-  "item": {
-    "name": "Item Name",
-    "description": "Description",
-    "category": "Category",
-    "condition": "Condition",
-    "status": "Status",
-    "language": "Language",
-    "publishedYear": "Published Year",
-    "lastUpdated": "Last Updated",
-    "updated": "Updated",
-    "allItems": "All Items"
   }
 }

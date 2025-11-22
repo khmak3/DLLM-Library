@@ -26,6 +26,7 @@
     "viewAllItems": "查看附近物品",
     "profile": "個人檔案",
     "exchangePoints": "交換點",
+    "loanItems": "借出物品",
     "allNews": "新聞列表"
   },
   "home": {
@@ -93,7 +94,13 @@
     "pageNum": "第 {{page}} 頁",
     "previous": "上一頁",
     "next": "下一頁",
-    "showing": "顯示 {{start}}-{{end}} 共 {{total}} 項"
+    "showing": "顯示 {{start}}-{{end}} 共 {{total}} 項",
+    "submit": "提交",
+    "submitting": "提交中...",
+    "selectOption": "請選擇...",
+    "notAvailable": "不適用",
+    "noCategory": "無分類",
+    "errorLoading": "載入資料時發生錯誤"
   },
   "time": {
     "secondsAgo": "幾秒鐘前",
@@ -174,19 +181,36 @@
     "takePhoto": "拍攝照片",
     "invalidFileType": "{{fileName}} 不是有效的圖片文件",
     "conditions": {
-      "New": "全新",
-      "LikeNew": "幾乎全新",
-      "VeryGood": "非常好",
-      "Good": "良好",
-      "Acceptable": "尚可",
-      "Poor": "差"
+      "NEW": "全新",
+      "LIKE_NEW": "幾乎全新",
+      "GOOD": "良好",
+      "FAIR": "一般",
+      "AFFORDABLE": "尚可",
+      "POOR": "差"
+    },
+    "conditionDescription": {
+      "FAIR": "狀況一般，有明顯的使用痕跡。有一些刮痕和印記，但功能正常。",
+      "GOOD": "狀況良好，磨損痕跡極少。無可見損壞或缺陷。功能如新。",
+      "NEW": "全新未使用，仍保留原包裝。",
+      "POOR": "狀況差，磨損嚴重。有裂痕/刮痕，部分零件可能損壞。功能正常，但有明顯缺陷。",
+      "LIKE_NEW": "近乎全新，幾乎未使用，無可見損壞或磨損痕跡。"
     },
     "statuses": {
-      "Available": "可用",
-      "Borrowed": "已借出",
-      "Maintenance": "維修中",
-      "Lost": "遺失",
-      "Damaged": "損壞"
+      "AVAILABLE": "可用",
+      "EXCHANGEABLE": "可交換",
+      "GIFT": "贈送物",
+      "RESERVED": "已預留",
+      "TRANSFERRED": "已轉讓"
+    },
+    "recent": {
+      "recentInCategory": "新番 - {{category}}",
+      "hotInCategory": "熱門 - {{category}}",
+      "recommendedForYou": "推薦物品",
+      "recentItems": "新番物品",
+      "latestAdditions": "本類別最新添加",
+      "basedOnInterests": "根據您的興趣和活動",
+      "browseRecent": "瀏覽最近添加的物品",
+      "showingItems": "顯示 {{count}} 項中的多項物品"
     },
     "viewDetails": "查看詳情",
     "relatedItems": "相關物品",
@@ -293,7 +317,9 @@
     "confirmTransfer": "確認轉移",
     "creating": "創建中...",
     "itemName": "物品",
-    "browseItems": "瀏覽可用物品"
+    "browseItems": "瀏覽可用物品",
+    "name": "物品名稱",
+    "updated": "已更新"
   },
   "userProfile": {
     "nickname": "暱稱",
@@ -370,7 +396,9 @@
   },
   "languages": {
     "en": "English",
-    "zh-TW": "繁體中文"
+    "zh-TW": "繁體中文",
+    "EN": "English",
+    "ZH_HK": "繁體中文"
   },
   "user": {
     "itemCategories": "物品類別",
@@ -526,37 +554,5 @@
     "translationHelper": "此語言的翻譯",
     "addingUnder": "新增到：{{path}}",
     "addingRoot": "新增為根分類"
-  },
-  "common": {
-    "close": "關閉",
-    "cancel": "取消",
-    "submit": "提交",
-    "submitting": "提交中...",
-    "loading": "載入中...",
-    "searching": "搜尋中...",
-    "search": "搜尋",
-    "clearAll": "清除全部",
-    "selectOption": "請選擇...",
-    "notAvailable": "不適用",
-    "noCategory": "無分類",
-    "error": "錯誤",
-    "errorLoading": "載入資料時發生錯誤"
-  },
-  "languages": {
-    "en": "英文",
-    "zh-TW": "繁體中文",
-    "zh-CN": "簡體中文"
-  },
-  "item": {
-    "name": "物品名稱",
-    "description": "描述",
-    "category": "分類",
-    "condition": "狀況",
-    "status": "狀態",
-    "language": "語言",
-    "publishedYear": "出版年份",
-    "lastUpdated": "最後更新",
-    "updated": "已更新",
-    "allItems": "所有物品"
   }
 }
