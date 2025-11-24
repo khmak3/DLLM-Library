@@ -561,6 +561,16 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                     />
                   )}
                 </IconButton>
+                {/* Pin Status Indicator */}
+                {isOwner && ownerData?.user?.pinItems && (
+                  <Chip
+                    label={t("item.pinnedItemsStatus", "Pinned: {{count}}/5", {
+                      count: ownerData.user.pinItems.length,
+                    })}
+                    size="small"
+                    sx={{ ml: 1 }}
+                  />
+                )}
               </>
             ) : (
               <>
@@ -1024,17 +1034,6 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
 
             {isOwner && (
               <>
-                {/* Pin Status Indicator */}
-                {ownerData?.user?.pinItems && (
-                  <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t("item.pinnedItemsStatus", "Pinned: {{count}}/5", {
-                        count: ownerData.user.pinItems.length,
-                      })}
-                    </Typography>
-                  </Box>
-                )}
-
                 <Button
                   variant="contained"
                   color="secondary"

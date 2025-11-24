@@ -5,7 +5,6 @@ import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import theme from "./theme";
 import * as serviceWorker from "./serviceWorker";
-import "./index.css";
 import "./i18n";
 
 const root = ReactDOM.createRoot(

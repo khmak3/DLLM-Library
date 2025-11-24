@@ -20,8 +20,8 @@ const theme = createTheme({
       secondary: "#424242", // Dark grey for secondary text
     },
     info: {
-      main: "#000000",
-      contrastText: "#25975d",
+      main: "#db036b",
+      contrastText: "#ffffff",
     },
     success: {
       main: "#2e7d32", // Keep success colors reasonable
