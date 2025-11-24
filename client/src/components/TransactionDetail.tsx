@@ -1489,61 +1489,70 @@ const TransactionDetailPage: React.FC = () => {
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {/* Owner Actions - Pending */}
-          {isOwner && transaction.status === TransactionStatus.Pending && (
-            <>
-              <Box>
-                <Button
-                  variant="contained"
-                  color="success"
-                  onClick={() => handleAction("approve", approveTransaction)}
-                  disabled={actionLoading === "approve"}
-                  startIcon={
-                    actionLoading === "approve" ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      <CheckCircleIcon />
-                    )
-                  }
-                  fullWidth
-                >
-                  {t("transactions.approve", "Approve")}
-                </Button>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "block", mt: 0.5, px: 1 }}
-                >
-                  {getActionButtonDescription(t, "approve", transaction.status)}
-                </Typography>
-              </Box>
+          {(isOwner || isRequestor) &&
+            transaction.status === TransactionStatus.Pending && (
+              <>
+                <Box>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={() => handleAction("approve", approveTransaction)}
+                    disabled={actionLoading === "approve"}
+                    startIcon={
+                      actionLoading === "approve" ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <CheckCircleIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {t("transactions.approve", "Approve")}
+                  </Button>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mt: 0.5, px: 1 }}
+                  >
+                    {getActionButtonDescription(
+                      t,
+                      "approve",
+                      transaction.status
+                    )}
+                  </Typography>
+                </Box>
 
-              <Box>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => handleAction("cancel", cancelTransaction)}
-                  disabled={actionLoading === "cancel"}
-                  startIcon={
-                    actionLoading === "cancel" ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      <CancelIcon />
-                    )
-                  }
-                  fullWidth
-                >
-                  {t("transactions.cancel", "Cancel")}
-                </Button>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "block", mt: 0.5, px: 1 }}
-                >
-                  {getActionButtonDescription(t, "cancel", transaction.status)}
-                </Typography>
-              </Box>
-            </>
-          )}
+                <Box>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleAction("cancel", cancelTransaction)}
+                    disabled={actionLoading === "cancel"}
+                    startIcon={
+                      actionLoading === "cancel" ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <CancelIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {t("transactions.cancel", "Cancel")}
+                  </Button>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mt: 0.5, px: 1 }}
+                  >
+                    {getActionButtonDescription(
+                      t,
+                      "cancel",
+                      transaction.status
+                    )}
+                  </Typography>
+                </Box>
+              </>
+            )}
 
           {/* Owner and Requestor Actions - Approved */}
           {transaction.status === TransactionStatus.Approved && (
@@ -1654,35 +1663,6 @@ const TransactionDetailPage: React.FC = () => {
                 )}
               </>
             )}
-
-          {/* Cancel button for requestor when pending */}
-          {isRequestor && transaction.status === TransactionStatus.Pending && (
-            <Box>
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={() => handleAction("cancel", cancelTransaction)}
-                disabled={actionLoading === "cancel"}
-                startIcon={
-                  actionLoading === "cancel" ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    <CancelIcon />
-                  )
-                }
-                fullWidth
-              >
-                {t("transactions.cancel", "Cancel Request")}
-              </Button>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: "block", mt: 0.5, px: 1 }}
-              >
-                {getActionButtonDescription(t, "cancel", transaction.status)}
-              </Typography>
-            </Box>
-          )}
 
           {/* No actions available */}
           {!(
