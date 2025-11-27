@@ -39,7 +39,7 @@ import {
 import { User, Item, CategoryMap } from "../generated/graphql";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import ItemPreview2 from "../components/ItemPreview2";
+import ItemPreview from "../components/ItemPreview";
 import { calculateDistance } from "../utils/geoProcessor";
 import { useNavigate } from "react-router";
 import PaginationControls from "../components/PaginationControls";
@@ -596,11 +596,11 @@ const ItemAllPage: React.FC = () => {
       distance:
         item.location && location
           ? calculateDistance(
-              item.location.latitude,
-              item.location.longitude,
-              location.latitude,
-              location.longitude
-            )
+            item.location.latitude,
+            item.location.longitude,
+            location.latitude,
+            location.longitude
+          )
           : 0,
     })) || [];
 
@@ -1103,10 +1103,10 @@ const ItemAllPage: React.FC = () => {
                 {itemsLoading || totalItemsLoading
                   ? t("common.loading", "Loading...")
                   : totalItemsData?.totalItemsCountByLocation
-                  ? t("itemsAll.resultsFoundTotal", "Found {{count}} item(s)", {
+                    ? t("itemsAll.resultsFoundTotal", "Found {{count}} item(s)", {
                       count: totalItemsData.totalItemsCountByLocation,
                     })
-                  : t("itemsAll.resultsFound", "Found {{count}} item(s)", {
+                    : t("itemsAll.resultsFound", "Found {{count}} item(s)", {
                       count: itemsWithDistance.length,
                     })}
               </Typography>
@@ -1139,7 +1139,7 @@ const ItemAllPage: React.FC = () => {
                 >
                   {itemsWithDistance.map((item) => (
                     <Grid key={item.id} size={{ xs: 4, sm: 3, md: 2 }}>
-                      <ItemPreview2
+                      <ItemPreview
                         item={item}
                         distance={item.distance}
                         onClick={handleItemClick}
