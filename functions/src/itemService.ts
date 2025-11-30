@@ -1115,12 +1115,22 @@ export class ItemService {
   // New helper: apply keyword name range filter to a Firestore query
   private applyKeywordNameFilter(
     query: firebase.firestore.Query<firebase.firestore.DocumentData>,
-    keyword?: string | null
+    keyword: string
   ): firebase.firestore.Query<firebase.firestore.DocumentData> {
+
+    /* Keep the classical implementation for reference
     if (keyword && String(keyword).trim().length > 0) {
       const k = String(keyword);
       return query.where("name", ">=", k).where("name", "<=", k + "\uf8ff");
     }
+    */
+
+    // Tokenize and normalize to lowercase for matching
+    const tokens = this.tokenizeName(keyword)
+      .map((t) => t.toLowerCase())
+      .filter(Boolean);
+    if (tokens.length === 0) return query;
+    query.where("nameIndex", "array-contains", tokens[1]);
     return query;
   }
 
