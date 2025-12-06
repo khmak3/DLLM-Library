@@ -19,7 +19,6 @@ import {
 } from "@mui/icons-material";
 import { useOutletContext } from "react-router-dom";
 import { User, HostConfig } from "../generated/graphql";
-import RecentNewsBanner from "../components/RecentNewsBanner";
 import TransactionFlowDiagrams from "../components/TransactionFlowDiagrams";
 
 interface OutletContext {
