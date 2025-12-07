@@ -222,23 +222,55 @@ const TransactionsPage: React.FC = () => {
 
     if (!transactions || transactions.length === 0) {
       return (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          {activeTab === 0
-            ? t(
-              "transactions.noOpenTransactions",
-              "No open transactions found."
-            )
-            : t("transactions.noTransactions", "No transactions found.")}
-        </Alert>
+        <Box
+          sx={{
+            textAlign: "center",
+            py: 8,
+            px: 2,
+          }}
+        >
+          <SwapHorizIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            {activeTab === 0
+              ? t(
+                "transactions.noOpenTransactions",
+                "No open transactions found."
+              )
+              : t("transactions.noTransactions", "No transactions found.")}
+          </Typography>
+          <Typography variant="body2" color="text.disabled">
+            {activeTab === 0
+              ? t(
+                "transactions.noOpenTransactionsHint",
+                "All your transactions are completed or cancelled."
+              )
+              : t(
+                "transactions.noTransactionsHint",
+                "Start by borrowing or lending items in the community."
+              )}
+          </Typography>
+        </Box>
       );
     }
 
     return (
-      <List>
+      <List sx={{ py: 0 }}>
         {transactions.map((transaction) => (
-          <Paper key={transaction.id} elevation={1} sx={{ mb: 1 }}>
+          <Paper
+            key={transaction.id}
+            elevation={2}
+            sx={{
+              mb: 2,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                transform: "translateY(-2px)",
+                boxShadow: 4,
+              },
+            }}
+          >
             <ListItemButton
               onClick={() => handleTransactionClick(transaction.id)}
+              sx={{ p: 2 }}
             >
               <ListItemAvatar>
                 <Avatar
@@ -247,15 +279,22 @@ const TransactionsPage: React.FC = () => {
                     transaction.item?.images?.[0]
                   }
                   alt={transaction.item?.name}
-                  sx={{ width: 60, height: 60 }}
+                  sx={{
+                    width: 70,
+                    height: 70,
+                    borderRadius: 2, // square?
+                    border: "2px solid",
+                    borderColor: "divider",
+                  }}
                 >
-                  <SwapHorizIcon />
+                  <SwapHorizIcon sx={{ fontSize: 32 }} />
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
+                sx={{ ml: 2 }}
                 primary={
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography variant="subtitle1" component="span">
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                    <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
                       {transaction.item?.name}
                     </Typography>
                     <Chip
@@ -266,30 +305,31 @@ const TransactionsPage: React.FC = () => {
                       )}
                       color={getStatusColor(transaction.status) as any}
                       size="small"
+                      sx={{ fontWeight: 600 }}
                     />
                   </Box>
                 }
                 secondary={
-                  <Box>
-                    <Typography variant="body2" color="text.secondary">
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="text.primary" sx={{ mb: 0.5 }}>
                       {t("transactions.requestedBy", "Requested by")}:{" "}
-                      {transaction.requestor?.nickname ||
-                        transaction.requestor?.email}
+                      <strong>
+                        {transaction.requestor?.nickname ||
+                          transaction.requestor?.email}
+                      </strong>
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {t("transactions.created", "Created")}:{" "}
-                      {formatDate(transaction.createdAt)}
-                    </Typography>
-                    {transaction.updatedAt !== transaction.createdAt && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ ml: 2 }}
-                      >
-                        {t("transactions.updated", "Updated")}:{" "}
-                        {formatDate(transaction.updatedAt)}
+                    <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {t("transactions.created", "Created")}:{" "}
+                        {formatDate(transaction.createdAt)}
                       </Typography>
-                    )}
+                      {transaction.updatedAt !== transaction.createdAt && (
+                        <Typography variant="caption" color="text.secondary">
+                          {t("transactions.updated", "Updated")}:{" "}
+                          {formatDate(transaction.updatedAt)}
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
                 }
               />
@@ -318,17 +358,45 @@ const TransactionsPage: React.FC = () => {
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
-        <IconButton onClick={handleBack} sx={{ mr: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          mb: 4,
+          pb: 2,
+        }}
+      >
+        <IconButton
+          onClick={handleBack}
+          sx={{
+            mr: 2,
+            backgroundColor: "background.paper",
+            "&:hover": {
+              backgroundColor: "action.hover",
+            },
+          }}
+        >
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          {t("transactions.title", "My Transactions")}
-        </Typography>
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="h4" sx={{ fontWeight: "bold", mb: 0.5 }}>
+            {t("transactions.title", "My Transactions")}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {t("transactions.subtitle", "View and manage your item exchange records")}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Tabs */}
-      <Paper elevation={0} sx={{ mb: 3 }}>
+      <Paper
+        elevation={2}
+        sx={{
+          mb: 3,
+          borderRadius: 2,
+          overflow: "hidden",
+        }}
+      >
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
@@ -337,18 +405,22 @@ const TransactionsPage: React.FC = () => {
         >
           <Tab
             label={
-              <Badge badgeContent={openTransactionsCount} color="error">
-                {t("transactions.openTransactions", "Open Transactions")}
-              </Badge>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Badge badgeContent={openTransactionsCount} color="error">
+                  <Box>{t("transactions.openTransactions", "Open Transactions")}</Box>
+                </Badge>
+              </Box>
             }
             id="transactions-tab-0"
             aria-controls="transactions-tabpanel-0"
           />
           <Tab
             label={
-              <Badge badgeContent={allTransactionsCount} color="primary">
-                {t("transactions.allTransactions", "All Transactions")}
-              </Badge>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Badge badgeContent={allTransactionsCount} color="primary">
+                  <Box>{t("transactions.allTransactions", "All Transactions")}</Box>
+                </Badge>
+              </Box>
             }
             id="transactions-tab-1"
             aria-controls="transactions-tabpanel-1"

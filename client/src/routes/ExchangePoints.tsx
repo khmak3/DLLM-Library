@@ -166,7 +166,7 @@ const ExchangePointsPage: React.FC = () => {
             {t("userProfile.noExchangePoints", "No exchange points available.")}
           </Alert >
         )}
-    </Container >
+    </Container>
   );
 };
 
