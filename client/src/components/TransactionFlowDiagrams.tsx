@@ -1698,7 +1698,15 @@ export const TransactionFlowDiagrams: React.FC = () => {
               )}
             </Typography>
             <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto" }}>
-              <FaceToFaceDiagram />
+              {/*<FaceToFaceDiagram />*/}
+              <img
+                src={"/images/Face-to-Face.jpg"}
+                alt={t(
+                  "transactions.faceToFaceDiagramAlt",
+                  "Face-to-Face Transaction Diagram"
+                )}
+                style={{ width: "100%", height: "auto" }}
+              />
             </Box>
 
             {/* Key Features */}
@@ -1758,7 +1766,15 @@ export const TransactionFlowDiagrams: React.FC = () => {
               )}
             </Typography>
             <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto" }}>
-              <DirectExchangeDiagram />
+              {/*<DirectExchangeDiagram />*/}
+              <img
+                src={"/images/Direct-exchange.jpg"}
+                alt={t(
+                  "transactions.directExchangeDiagramAlt",
+                  "Direct Exchange Diagram"
+                )}
+                style={{ width: "100%", height: "auto" }}
+              />
             </Box>
           </Paper>
         </Grid>
@@ -1779,7 +1795,15 @@ export const TransactionFlowDiagrams: React.FC = () => {
               )}
             </Typography>
             <Box sx={{ width: "100%", maxWidth: "800px", mx: "auto" }}>
-              <ExchangePointDiagram />
+              {/*<ExchangePointDiagram />*/}
+              <img
+                src={"/images/Public-Exchange.jpg"}
+                alt={t(
+                  "transactions.exchangePointDiagramAlt",
+                  "Exchange Point Diagram"
+                )}
+                style={{ width: "100%", height: "auto" }}
+              />
             </Box>
           </Paper>
         </Grid>
