@@ -32,6 +32,7 @@ import {
   NavigateNext as NextIcon,
   PushPin as PinIcon, // Add this import
   ChevronRight as ChevronRightIcon,
+  Article as ArticleIcon,
 } from "@mui/icons-material";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import {
@@ -41,6 +42,7 @@ import {
   TransactionStatus,
   TransactionLocation,
   CategoryMap,
+  Role,
 } from "../generated/graphql";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -53,6 +55,7 @@ import { convertLinksToClickable } from "../utils/helpers";
 import { AuthDialog } from "./Auth";
 import ImageGalleryModal from "./ImageGalleryModal";
 import { translateCategory } from "../utils/categoryTranslation";
+import NewsForm from "./NewsForm";
 
 const ITEM_DETAIL_QUERY = gql`
   query Item($itemId: ID!) {
@@ -204,6 +207,9 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
   // Add state for Face-to-Face dialog
   const [faceToFaceDialogOpen, setFaceToFaceDialogOpen] = useState(false);
 
+  // Add state for news form dialog
+  const [newsFormOpen, setNewsFormOpen] = useState(false);
+
   const { data, loading, error, refetch } = useQuery<{ item: Item }>(
     ITEM_DETAIL_QUERY,
     {
@@ -306,6 +312,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
   );
 
   const isOwner = user && data?.item.ownerId === user.id;
+  const isAdmin = user && user.role === Role.Admin;
   const isHolder =
     user &&
     (data?.item.holderId === user.id ||
@@ -388,6 +395,10 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
 
   const handleFaceToFaceClick = () => {
     setFaceToFaceDialogOpen(true);
+  };
+
+  const handleCreateNewsClick = () => {
+    setNewsFormOpen(true);
   };
 
   const handleConfirmRequest = async (
@@ -604,7 +615,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                   </React.Fragment>
                 ))}
                 {index < clssfctns.length - 1 && (
-                  <Box sx={{ mx: 1, color: "text.secondary" }}>|</Box>
+                  <Box sx={{ mx: 1, color: "text.secondary" }}>/</Box>
                 )}
               </Box>
             );
@@ -680,8 +691,9 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                 {/* Show owner name if user is not the owner */}
                 {ownerData?.user && (
                   <Chip
-                    label={`${t("item.owner", "Owner")}: ${ownerData.user.nickname || ownerData.user.email
-                      }`}
+                    label={`${t("item.owner", "Owner")}: ${
+                      ownerData.user.nickname || ownerData.user.email
+                    }`}
                     color="primary"
                     size="small"
                     sx={{ ml: 2, cursor: "pointer" }}
@@ -701,8 +713,9 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                   holderData?.user &&
                   data.item.holderId !== data.item.ownerId && (
                     <Chip
-                      label={`${t("item.holder", "Holder")}: ${holderData.user.nickname || holderData.user.email
-                        }`}
+                      label={`${t("item.holder", "Holder")}: ${
+                        holderData.user.nickname || holderData.user.email
+                      }`}
                       color="secondary"
                       size="small"
                       sx={{ ml: 2, cursor: "pointer" }}
@@ -710,8 +723,9 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                     />
                   )}
                 <Chip
-                  label={`${t("item.deposit", "deposit")}: ${data.item.deposit
-                    }`}
+                  label={`${t("item.deposit", "deposit")}: ${
+                    data.item.deposit
+                  }`}
                   color="secondary"
                   size="small"
                   sx={{ ml: 2, cursor: "pointer" }}
@@ -958,40 +972,40 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
           {/* Images */}
           {((data.item.thumbnails && data.item.thumbnails.length > 0) ||
             (data.item.images && data.item.images.length > 0)) && (
-              <Box sx={{ mb: 4 }}>
-                <Grid container spacing={2}>
-                  {(data.item.thumbnails && data.item.thumbnails.length > 0
-                    ? data.item.thumbnails
-                    : data.item.images || []
-                  ).map((image, index) => (
-                    <Grid key={index} size={{ xs: 6, sm: 4, md: 3 }}>
-                      <Paper
-                        elevation={2}
-                        sx={{
-                          overflow: "hidden",
-                          cursor: "pointer",
-                          transition: "transform 0.2s",
-                          "&:hover": {
-                            transform: "scale(1.05)",
-                          },
+            <Box sx={{ mb: 4 }}>
+              <Grid container spacing={2}>
+                {(data.item.thumbnails && data.item.thumbnails.length > 0
+                  ? data.item.thumbnails
+                  : data.item.images || []
+                ).map((image, index) => (
+                  <Grid key={index} size={{ xs: 6, sm: 4, md: 3 }}>
+                    <Paper
+                      elevation={2}
+                      sx={{
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        transition: "transform 0.2s",
+                        "&:hover": {
+                          transform: "scale(1.05)",
+                        },
+                      }}
+                      onClick={() => handleThumbnailClick(index)}
+                    >
+                      <img
+                        src={image}
+                        alt={`${data.item.name} - Thumbnail ${index + 1}`}
+                        style={{
+                          width: "100%",
+                          height: "120px",
+                          objectFit: "cover",
                         }}
-                        onClick={() => handleThumbnailClick(index)}
-                      >
-                        <img
-                          src={image}
-                          alt={`${data.item.name} - Thumbnail ${index + 1}`}
-                          style={{
-                            width: "100%",
-                            height: "120px",
-                            objectFit: "cover",
-                          }}
-                        />
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
-            )}
+                      />
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
 
           {/* Item Info Grid */}
           <Box sx={{ mb: 4 }}>
@@ -1019,10 +1033,10 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                       data.item.status === "AVAILABLE"
                         ? "success"
                         : data.item.status === "EXCHANGEABLE"
-                          ? "info"
-                          : data.item.status === "GIFT"
-                            ? "warning"
-                            : "default"
+                        ? "info"
+                        : data.item.status === "GIFT"
+                        ? "warning"
+                        : "default"
                     }
                     size="small"
                     sx={{ ml: 1 }}
@@ -1148,7 +1162,20 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
               </Button>
             )}
 
-            {isOwner && (
+            {/* Create News Button - Show for admins only */}
+            {isAdmin && (
+              <Button
+                variant="contained"
+                color="secondary"
+                size="large"
+                onClick={handleCreateNewsClick}
+                startIcon={<ArticleIcon />}
+              >
+                {t("item.createNews", "Create News")}
+              </Button>
+            )}
+
+            {(isOwner || isAdmin) && (
               <>
                 <Button
                   variant="contained"
@@ -1180,14 +1207,16 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
       )}
 
       {/* Edit Item Dialog */}
-      <ItemForm
-        open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        item={data?.item || null}
-        onItemUpdated={handleEditSuccess}
-        onError={handleEditError}
-      />
-
+      {user && (
+        <ItemForm
+          open={editDialogOpen}
+          user={user}
+          onClose={() => setEditDialogOpen(false)}
+          item={data?.item || null}
+          onItemUpdated={handleEditSuccess}
+          onError={handleEditError}
+        />
+      )}
       {/* Unified Authentication Dialog */}
       <AuthDialog
         open={authDialogOpen}
@@ -1273,6 +1302,17 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
         <Box sx={{ mt: 4 }}>
           <ItemComments itemId={itemId!} currentUser={user} />
         </Box>
+      )}
+
+      {/* News Form Dialog - For admins to create news related to the item */}
+      {user && isAdmin && (
+        <NewsForm
+          open={newsFormOpen}
+          onClose={() => setNewsFormOpen(false)}
+          relatedItem={data?.item || null}
+          onSuccess={handleEditSuccess}
+          onError={handleEditError}
+        />
       )}
     </Container>
   );

@@ -1,32 +1,38 @@
-import React, { useState, useEffect } from "react";
-import { gql, useMutation, useApolloClient } from "@apollo/client";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Button,
-  TextField,
   Dialog,
-  DialogActions,
-  DialogContent,
   DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
   Box,
-  Typography,
-  CircularProgress,
   Alert,
-  IconButton,
   Grid,
+  Card,
+  CardMedia,
+  IconButton,
   LinearProgress,
+  Snackbar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
   Chip,
+  Typography,
 } from "@mui/material";
-import { CloudUpload, Delete, PhotoCamera, Info } from "@mui/icons-material";
 import {
-  CreateNewsPostMutation,
-  CreateNewsPostMutationVariables,
-} from "../generated/graphql";
+  Delete,
+  PhotoCamera,
+  PhotoLibrary,
+  CameraAlt,
+  ExpandMore as ArrowDropDownIcon,
+  Article as ArticleIcon,
+} from "@mui/icons-material";
+import { gql, useMutation, useApolloClient } from "@apollo/client";
 import { useTranslation } from "react-i18next";
-import {
-  processImage,
-  batchProcessImages,
-  ProcessedImage,
-} from "../utils/ImageProcessor";
+import { Item } from "../generated/graphql";
+import { batchProcessImages, ProcessedImage } from "../utils/ImageProcessor";
 import { GCSUploadService, UploadProgress } from "../services/UploadService";
 
 const CREATE_NEWS_MUTATION = gql`
@@ -44,95 +50,246 @@ const CREATE_NEWS_MUTATION = gql`
       relatedItemIds: $relatedItemIds
       tags: $tags
     ) {
-      content
-      createdAt
       id
+      title
+      content
       images
-      isVisible
+      createdAt
+      updatedAt
       relatedItems {
         id
-        description
         name
-        ownerId
+        thumbnails
+        images
       }
-      tags
-      title
     }
   }
 `;
 
-interface NewsFormProps {
-  open: boolean;
-  onClose?: () => void;
-  onNewsCreated?: (data: CreateNewsPostMutation) => void;
-  maxImageSize?: number;
-  imageQuality?: number;
-}
+const UPDATE_NEWS_MUTATION = gql`
+  mutation UpdateNewsPost(
+    $id: ID!
+    $title: String
+    $content: String
+    $images: [String!]
+    $relatedItemIds: [ID!]
+    $tags: [String!]
+  ) {
+    updateNewsPost(
+      id: $id
+      title: $title
+      content: $content
+      images: $images
+      relatedItemIds: $relatedItemIds
+      tags: $tags
+    ) {
+      id
+      title
+      content
+      images
+      isVisible
+      updatedAt
+      relatedItems {
+        id
+        name
+        thumbnails
+        images
+      }
+    }
+  }
+`;
 
 interface ImagePreview extends ProcessedImage {
   uploadProgress?: number;
   isUploading?: boolean;
   uploadError?: string;
   gsUrl?: string;
+  isExisting?: boolean;
+}
+
+interface NewsFormProps {
+  open: boolean;
+  onClose: () => void;
+  relatedItem?: Item | null; // Pre-populate with an item
+  newsPost?: any; // For edit mode
+  onSuccess?: () => void;
+  onError?: (message: string) => void;
 }
 
 const NewsForm: React.FC<NewsFormProps> = ({
   open,
   onClose,
-  onNewsCreated,
-  maxImageSize = 2000,
-  imageQuality = 0.5,
+  relatedItem,
+  newsPost,
+  onSuccess,
+  onError,
 }) => {
-  const { t } = useTranslation();
   const apolloClient = useApolloClient();
-  const [dialogOpen, setDialogOpen] = useState(open);
+  const { t } = useTranslation();
+  const isEditMode = !!newsPost;
+
+  // Refs for file inputs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Form state
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [imageFiles, setImageFiles] = useState<ImagePreview[]>([]);
-  const [relatedItemIds, setRelatedItemIds] = useState("");
-  const [tags, setTags] = useState("");
+  const [relatedItems, setRelatedItems] = useState<Item[]>([]);
+  const [tags, setTags] = useState<string>("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+
+  // Image menu states
+  const [imageMenuAnchor, setImageMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+
+  // Processing states
   const [isProcessingImages, setIsProcessingImages] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Initialize GCS service with Apollo Client
-  const gcsService = new GCSUploadService(apolloClient);
+  // Store original values for edit mode comparison
+  const [originalValues, setOriginalValues] = useState<{
+    title: string;
+    content: string;
+    images: string[];
+    relatedItemIds: string[];
+  } | null>(null);
 
-  const [createNewsPost, { data, loading, error: mutationError }] = useMutation<
-    CreateNewsPostMutation,
-    CreateNewsPostMutationVariables
-  >(CREATE_NEWS_MUTATION);
+  // Image processing settings
+  const maxImageSize = 1920;
+  const imageQuality = 0.5;
 
-  const handleClickOpen = () => {
-    setDialogOpen(true);
-  };
+  // Initialize form with relatedItem or newsPost
+  useEffect(() => {
+    if (open) {
+      if (newsPost) {
+        // Edit mode
+        setTitle(newsPost.title || "");
+        setContent(newsPost.content || "");
+        setRelatedItems(newsPost.relatedItems || []);
+
+        const existingImages: ImagePreview[] = (newsPost.images || []).map(
+          (url: string, index: number) => ({
+            url,
+            file: new File([], `existing-${index}`),
+            originalFile: new File([], `existing-${index}`),
+            width: 0,
+            height: 0,
+            size: 0,
+            compressionApplied: false,
+            finalQuality: 1,
+            isExisting: true,
+            gsUrl: url,
+          })
+        );
+        setImageFiles(existingImages);
+
+        setOriginalValues({
+          title: newsPost.title || "",
+          content: newsPost.content || "",
+          images: newsPost.images || [],
+          relatedItemIds: (newsPost.relatedItems || []).map(
+            (item: Item) => item.id
+          ),
+        });
+      } else if (relatedItem) {
+        // Create mode with pre-populated item
+        setTitle(
+          t("news.newsAboutItem", "News about {{itemName}}", {
+            itemName: relatedItem.name,
+          })
+        );
+        setRelatedItems([relatedItem]);
+      }
+    }
+  }, [open, newsPost, relatedItem, t]);
+
+  const [createNews, { loading: createLoading }] = useMutation(
+    CREATE_NEWS_MUTATION,
+    {
+      onCompleted: () => {
+        setShowSuccessSnackbar(true);
+        onSuccess?.();
+        handleClose();
+      },
+      onError: (error) => {
+        setFormError(error.message);
+        onError?.(error.message);
+      },
+    }
+  );
+
+  const [updateNews, { loading: updateLoading }] = useMutation(
+    UPDATE_NEWS_MUTATION,
+    {
+      onCompleted: () => {
+        setShowSuccessSnackbar(true);
+        onSuccess?.();
+        handleClose();
+      },
+      onError: (error) => {
+        setFormError(error.message);
+        onError?.(error.message);
+      },
+    }
+  );
+
+  const loading = createLoading || updateLoading;
 
   const handleClose = () => {
-    onClose?.();
-    setDialogOpen(false);
-    // Cleanup object URLs
+    onClose();
+
+    // Cleanup object URLs for new images only
     imageFiles.forEach((image) => {
-      URL.revokeObjectURL(image.url);
+      if (!image.isExisting) {
+        URL.revokeObjectURL(image.url);
+      }
     });
-    // Reset form
+
+    // Reset form state
     setTitle("");
     setContent("");
     setImageFiles([]);
-    setRelatedItemIds("");
+    setRelatedItems([]);
     setTags("");
     setFormError(null);
     setIsProcessingImages(false);
     setProcessingProgress(0);
     setIsUploading(false);
     setUploadProgress(0);
+    setImageMenuAnchor(null);
+    setOriginalValues(null);
   };
 
-  const handleFileSelect = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const files = event.target.files;
+  const handleRemoveRelatedItem = (itemId: string) => {
+    setRelatedItems((prev) => prev.filter((item) => item.id !== itemId));
+  };
+
+  // Image menu handlers
+  const handleImageMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setImageMenuAnchor(event.currentTarget);
+  };
+
+  const handleImageMenuClose = () => {
+    setImageMenuAnchor(null);
+  };
+
+  const handleSelectFromGallery = () => {
+    handleImageMenuClose();
+    fileInputRef.current?.click();
+  };
+
+  const handleTakePhoto = () => {
+    handleImageMenuClose();
+    cameraInputRef.current?.click();
+  };
+
+  const processFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
     setFormError(null);
@@ -140,19 +297,25 @@ const NewsForm: React.FC<NewsFormProps> = ({
     setProcessingProgress(0);
 
     try {
-      // Validate files first
       const validFiles: File[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
         if (!file.type.startsWith("image/")) {
-          setFormError(`File ${file.name} is not an image`);
+          setFormError(
+            t("news.fileNotImage", "{{fileName}} is not an image file", {
+              fileName: file.name,
+            })
+          );
           continue;
         }
 
         if (file.size > 50 * 1024 * 1024) {
-          // 50MB limit before processing
-          setFormError(`File ${file.name} is too large. Maximum size is 50MB`);
+          setFormError(
+            t("news.fileTooLarge", "{{fileName}} is too large (max 50MB)", {
+              fileName: file.name,
+            })
+          );
           continue;
         }
 
@@ -164,7 +327,6 @@ const NewsForm: React.FC<NewsFormProps> = ({
         return;
       }
 
-      // Process images
       const processedImages = await batchProcessImages(
         validFiles,
         {
@@ -179,23 +341,40 @@ const NewsForm: React.FC<NewsFormProps> = ({
         }
       );
 
-      // Add to preview list
       const newImagePreviews: ImagePreview[] = processedImages.map((img) => ({
         ...img,
         uploadProgress: 0,
         isUploading: false,
+        isExisting: false,
       }));
 
       setImageFiles((prev) => [...prev, ...newImagePreviews]);
     } catch (error) {
       console.error("Image processing error:", error);
-      setFormError(`Failed to process images: ${error}`);
+      setFormError(
+        t("news.imageProcessingError", "Image processing error: {{error}}", {
+          error: String(error),
+        })
+      );
     } finally {
       setIsProcessingImages(false);
       setProcessingProgress(0);
     }
+  };
 
-    // Clear input
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    await processFiles(files);
+    event.target.value = "";
+  };
+
+  const handleCameraCapture = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+    await processFiles(files);
     event.target.value = "";
   };
 
@@ -204,61 +383,64 @@ const NewsForm: React.FC<NewsFormProps> = ({
       const newFiles = [...prev];
       const removedImage = newFiles[index];
 
-      // Cleanup object URLs
-      URL.revokeObjectURL(removedImage.url);
+      if (!removedImage.isExisting) {
+        URL.revokeObjectURL(removedImage.url);
+      }
 
       newFiles.splice(index, 1);
       return newFiles;
     });
   };
 
-  const uploadImages = async (images: ImagePreview[]): Promise<string[]> => {
-    const totalFiles = images.length;
-    const uploadedGsUrls: string[] = [];
+  const uploadImages = async (
+    imagesToUpload: ImagePreview[]
+  ): Promise<string[]> => {
+    const gcsService = new GCSUploadService(apolloClient);
+    const totalFiles = imagesToUpload.length;
 
     try {
-      const filesToUpload = images.map((img) => img.file);
+      const filesToUpload = imagesToUpload.map((img) => img.file);
 
       const gsUrls = await gcsService.batchUploadToGCS(
         filesToUpload,
         "news",
         (fileIndex: number, progress: UploadProgress) => {
-          // Update individual file progress
           setImageFiles((prev) =>
-            prev.map((img, idx) =>
-              idx === fileIndex
+            prev.map((img, idx) => {
+              const uploadStartIndex = prev.findIndex((p) => !p.isExisting);
+              const actualIndex = uploadStartIndex + fileIndex;
+
+              return idx === actualIndex
                 ? {
                     ...img,
                     isUploading: true,
                     uploadProgress: progress.percentage,
                   }
-                : img
-            )
+                : img;
+            })
           );
 
-          // Update overall progress
           const overallProgress = Math.round(
             ((fileIndex + progress.percentage / 100) / totalFiles) * 100
           );
           setUploadProgress(overallProgress);
         },
         (fileIndex: number, gsUrl: string) => {
-          // Mark file as completed
           setImageFiles((prev) =>
-            prev.map((img, idx) =>
-              idx === fileIndex
+            prev.map((img, idx) => {
+              const uploadStartIndex = prev.findIndex((p) => !p.isExisting);
+              const actualIndex = uploadStartIndex + fileIndex;
+
+              return idx === actualIndex
                 ? {
                     ...img,
                     isUploading: false,
                     uploadProgress: 100,
                     gsUrl: gsUrl,
                   }
-                : img
-            )
+                : img;
+            })
           );
-
-          uploadedGsUrls[fileIndex] = gsUrl;
-          console.log(`File ${fileIndex + 1}/${totalFiles} uploaded: ${gsUrl}`);
         }
       );
 
@@ -266,10 +448,9 @@ const NewsForm: React.FC<NewsFormProps> = ({
     } catch (error) {
       console.error("Batch upload error:", error);
 
-      // Mark failed uploads
       setImageFiles((prev) =>
-        prev.map((img, _) =>
-          !img.gsUrl
+        prev.map((img) =>
+          !img.isExisting && !img.gsUrl
             ? {
                 ...img,
                 isUploading: false,
@@ -283,415 +464,393 @@ const NewsForm: React.FC<NewsFormProps> = ({
     }
   };
 
-  const validateForm = () => {
-    if (!title.trim()) {
-      setFormError(t("news.titleRequired"));
-      return false;
-    }
-    if (!content.trim()) {
-      setFormError(t("news.contentRequired"));
-      return false;
-    }
-    setFormError(null);
-    return true;
-  };
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!validateForm()) {
+
+    if (!title.trim()) {
+      setFormError(t("news.titleRequired", "Title is required"));
       return;
     }
 
-    try {
-      setIsUploading(true);
-      setUploadProgress(0);
+    if (!content.trim()) {
+      setFormError(t("news.contentRequired", "Content is required"));
+      return;
+    }
 
-      // Upload images to GCS and get GS URLs
-      let gsUrls: string[] = [];
-      if (imageFiles.length > 0) {
-        gsUrls = await uploadImages(imageFiles);
-        console.log("All images uploaded to GCS:", gsUrls);
+    setFormError(null);
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const existingImages = imageFiles.filter((img) => img.isExisting);
+      const newImages = imageFiles.filter((img) => !img.isExisting);
+
+      let newImageUrls: string[] = [];
+      if (newImages.length > 0) {
+        newImageUrls = await uploadImages(newImages);
       }
 
-      const relatedItemIdsArray = relatedItemIds
-        .split(",")
-        .map((id) => id.trim())
-        .filter((id) => id);
-
-      const tagsArray = [
-        ...tags
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter((tag) => tag),
-        ...content
-          .split("#")
-          .slice(1)
-          .map((c) => c.split(/\s/)[0].trim())
-          .filter(Boolean),
+      const allImageUrls = [
+        ...existingImages.map((img) => img.gsUrl || img.url),
+        ...newImageUrls,
       ];
 
-      // Create news post with GS URLs
-      const result = await createNewsPost({
-        variables: {
-          title,
-          content,
-          images: gsUrls,
-          relatedItemIds: relatedItemIdsArray,
-          tags: tagsArray,
-        },
-      });
+      const relatedItemIds = relatedItems.map((item) => item.id);
 
-      if (result.data && onNewsCreated) {
-        onNewsCreated(result.data);
+      if (isEditMode && newsPost) {
+        // Update mode
+        const variables: any = {
+          id: newsPost.id,
+        };
+
+        if (originalValues) {
+          if (title.trim() !== originalValues.title) {
+            variables.title = title.trim();
+          }
+
+          if (content.trim() !== originalValues.content) {
+            variables.content = content.trim();
+          }
+
+          const hasImageChanges =
+            newImages.length > 0 ||
+            allImageUrls.length !== originalValues.images.length ||
+            JSON.stringify(allImageUrls) !==
+              JSON.stringify(originalValues.images);
+
+          if (hasImageChanges) {
+            variables.images = allImageUrls;
+          }
+
+          const hasRelatedItemsChanges =
+            JSON.stringify(relatedItemIds.sort()) !==
+            JSON.stringify(originalValues.relatedItemIds.sort());
+
+          if (hasRelatedItemsChanges) {
+            variables.relatedItemIds = relatedItemIds;
+          }
+
+          const hasChanges = Object.keys(variables).length > 1;
+
+          if (!hasChanges) {
+            setFormError(t("news.noChangesDetected", "No changes detected"));
+            setIsUploading(false);
+            return;
+          }
+        }
+
+        await updateNews({ variables });
+      } else {
+        // Create mode
+        const variables: any = {
+          title: title.trim(),
+          content: content.trim(),
+        };
+
+        if (allImageUrls.length > 0) {
+          variables.images = allImageUrls;
+        }
+
+        if (relatedItemIds.length > 0) {
+          variables.relatedItemIds = relatedItemIds;
+        }
+        const tagsArray = [
+          ...tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag),
+          ...content
+            .split("#")
+            .slice(1)
+            .map((c) => c.split(/\s/)[0].trim())
+            .filter(Boolean),
+        ];
+
+        if (tagsArray.length > 0) {
+          variables.tags = tagsArray;
+        }
+
+        await createNews({ variables });
       }
-      handleClose();
-    } catch (e) {
-      console.error("Submission error:", e);
-      setFormError(`Failed to create news post: ${e}`);
+    } catch (err) {
+      console.error("Submit error:", err);
+      setFormError(
+        isEditMode
+          ? t("news.updateError", "Error updating news")
+          : t("news.createError", "Error creating news")
+      );
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
     }
   };
 
-  useEffect(() => {
-    if (mutationError) {
-      setFormError(`Error creating post: ${mutationError.message}`);
-    }
-  }, [mutationError]);
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  const isCameraAvailable = () => {
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   };
 
   return (
-    <Box>
-      {dialogOpen ? (
-        <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth="md">
-          <DialogTitle>{t("news.createPost")}</DialogTitle>
-          <form onSubmit={handleSubmit}>
-            <DialogContent>
-              {formError && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {formError}
-                </Alert>
-              )}
+    <>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <ArticleIcon />
+          {isEditMode
+            ? t("news.editNews", "Edit News")
+            : t("news.createNews", "Create News")}
+        </DialogTitle>
 
-              <TextField
-                autoFocus
-                margin="dense"
-                id="title"
-                label={t("news.title")}
-                type="text"
-                fullWidth
-                variant="outlined"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-                disabled={isProcessingImages || isUploading}
-              />
+        <form onSubmit={handleSubmit}>
+          <DialogContent>
+            {formError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {formError}
+              </Alert>
+            )}
 
-              <TextField
-                margin="dense"
-                id="content"
-                label={t("news.content")}
-                type="text"
-                fullWidth
-                variant="outlined"
-                multiline
-                rows={4}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required
-                disabled={isProcessingImages || isUploading}
-              />
-
-              {/* Image Upload Section */}
-              <Box sx={{ mt: 2, mb: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  {t("common.images")}
-                  <IconButton size="small" sx={{ ml: 1 }}>
-                    <Info fontSize="small" />
-                  </IconButton>
-                </Typography>
-
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  {t("news.imageUploadInfo", { maxImageSize })}
-                </Alert>
-
-                {/* Image Processing Progress */}
-                {isProcessingImages && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">
-                      {t("common.processingImages")}
-                    </Typography>
-                    <LinearProgress
-                      variant="determinate"
-                      value={processingProgress}
-                      sx={{ mt: 1 }}
-                    />
-                    <Typography variant="caption" color="textSecondary">
-                      {t("news.progressComplete", {
-                        progress: processingProgress,
-                      })}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Upload Progress */}
-                {isUploading && (
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" color="textSecondary">
-                      {t("news.uploadingToGCS")}
-                    </Typography>
-                    <LinearProgress
-                      variant="determinate"
-                      value={uploadProgress}
-                      sx={{ mt: 1 }}
-                    />
-                    <Typography variant="caption" color="textSecondary">
-                      {t("news.progressComplete", { progress: uploadProgress })}
-                    </Typography>
-                  </Box>
-                )}
-
-                {/* Upload Button */}
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<PhotoCamera />}
-                  sx={{ mb: 2 }}
-                  disabled={isProcessingImages || isUploading}
+            {/* Related Items Display */}
+            {relatedItems.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  gutterBottom
                 >
-                  {t("common.addImages")}
-                  <input
-                    type="file"
-                    hidden
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                  />
-                </Button>
-
-                {/* Image Previews */}
-                {imageFiles.length > 0 && (
-                  <Grid container spacing={2}>
-                    {imageFiles.map((image, index) => (
-                      <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
-                        <Box sx={{ position: "relative" }}>
+                  {t("news.relatedItems", "Related Items")}:
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {relatedItems.map((item) => (
+                    <Chip
+                      key={item.id}
+                      label={item.name}
+                      onDelete={() => handleRemoveRelatedItem(item.id)}
+                      avatar={
+                        item.thumbnails?.[0] || item.images?.[0] ? (
                           <img
-                            src={image.url}
-                            alt={t("news.imagePreview", { index: index + 1 })}
+                            src={item.thumbnails?.[0] || item.images?.[0]}
+                            alt={item.name}
                             style={{
                               width: "100%",
-                              height: "120px",
+                              height: "100%",
                               objectFit: "cover",
-                              borderRadius: "8px",
-                              border: "1px solid #ddd",
                             }}
                           />
+                        ) : undefined
+                      }
+                      color="primary"
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
 
-                          {/* Upload Status Indicators */}
+            <TextField
+              label={t("news.title", "Title")}
+              fullWidth
+              margin="normal"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+
+            <TextField
+              label={t("news.content", "Content")}
+              fullWidth
+              margin="normal"
+              required
+              multiline
+              rows={6}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+            />
+
+            {/* Image Upload Section */}
+            <Box sx={{ mt: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={handleImageMenuClick}
+                startIcon={<PhotoCamera />}
+                endIcon={<ArrowDropDownIcon />}
+                disabled={isProcessingImages || isUploading}
+                sx={{ mb: 2 }}
+              >
+                {t("news.addImages", "Add Images")}
+              </Button>
+
+              <Menu
+                anchorEl={imageMenuAnchor}
+                open={Boolean(imageMenuAnchor)}
+                onClose={handleImageMenuClose}
+              >
+                <MenuItem onClick={handleSelectFromGallery}>
+                  <ListItemIcon>
+                    <PhotoLibrary fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>
+                    {t("news.selectFromGallery", "Select from Gallery")}
+                  </ListItemText>
+                </MenuItem>
+
+                {isCameraAvailable() && (
+                  <MenuItem onClick={handleTakePhoto}>
+                    <ListItemIcon>
+                      <CameraAlt fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>
+                      {t("news.takePhoto", "Take Photo")}
+                    </ListItemText>
+                  </MenuItem>
+                )}
+              </Menu>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+              />
+
+              <input
+                ref={cameraInputRef}
+                type="file"
+                hidden
+                accept="image/*"
+                capture="environment"
+                onChange={handleCameraCapture}
+              />
+
+              {isProcessingImages && (
+                <Box sx={{ mb: 2 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={processingProgress}
+                  />
+                  <Box sx={{ textAlign: "center", mt: 1 }}>
+                    {t("common.processingImages", "Processing images...")}{" "}
+                    {processingProgress}%
+                  </Box>
+                </Box>
+              )}
+
+              {isUploading && (
+                <Box sx={{ mb: 2 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={uploadProgress}
+                  />
+                  <Box sx={{ textAlign: "center", mt: 1 }}>
+                    {t("news.uploadingImages", "Uploading images...")}{" "}
+                    {uploadProgress}%
+                  </Box>
+                </Box>
+              )}
+
+              {imageFiles.length > 0 && (
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                  {imageFiles.map((image, index) => (
+                    <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
+                      <Card>
+                        <CardMedia
+                          component="img"
+                          height="120"
+                          image={image.url}
+                          alt={`Preview ${index + 1}`}
+                        />
+                        <Box sx={{ p: 1, textAlign: "center" }}>
+                          {image.isExisting && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {t("news.existing", "Existing")}
+                            </Typography>
+                          )}
                           {image.isUploading && (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                backgroundColor: "rgba(25, 118, 210, 0.9)",
-                                color: "white",
-                                padding: "4px 8px",
-                                borderRadius: "0 0 8px 8px",
-                              }}
-                            >
-                              <LinearProgress
-                                variant="determinate"
-                                value={image.uploadProgress || 0}
-                                sx={{
-                                  mb: 0.5,
-                                  "& .MuiLinearProgress-bar": {
-                                    backgroundColor: "white",
-                                  },
-                                }}
-                              />
-                              <Typography variant="caption">
-                                {t("news.uploadingProgress", {
-                                  progress: image.uploadProgress || 0,
-                                })}
-                              </Typography>
-                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={image.uploadProgress || 0}
+                              sx={{ mb: 1 }}
+                            />
                           )}
-
-                          {/* Success Indicator */}
-                          {image.gsUrl && !image.isUploading && (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                backgroundColor: "rgba(76, 175, 80, 0.9)",
-                                color: "white",
-                                padding: "4px 8px",
-                                borderRadius: "0 0 8px 8px",
-                              }}
-                            >
-                              <Typography variant="caption">
-                                {t("news.uploadedToGCS")}
-                              </Typography>
-                            </Box>
-                          )}
-
-                          {/* Error Overlay */}
                           {image.uploadError && (
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                backgroundColor: "rgba(244, 67, 54, 0.9)",
-                                color: "white",
-                                padding: "4px 8px",
-                                borderRadius: "0 0 8px 8px",
-                              }}
+                            <Alert
+                              severity="error"
+                              sx={{ mb: 1, fontSize: "0.75rem" }}
                             >
-                              <Typography variant="caption">
-                                {t("news.uploadFailed")}
-                              </Typography>
-                            </Box>
+                              {image.uploadError}
+                            </Alert>
                           )}
-
-                          {/* Delete Button */}
                           <IconButton
-                            sx={{
-                              position: "absolute",
-                              top: 4,
-                              right: 4,
-                              backgroundColor: "rgba(255, 255, 255, 0.8)",
-                              "&:hover": {
-                                backgroundColor: "rgba(255, 255, 255, 0.9)",
-                              },
-                            }}
                             size="small"
                             onClick={() => handleRemoveImage(index)}
-                            disabled={isProcessingImages || isUploading}
+                            disabled={image.isUploading}
                           >
-                            <Delete fontSize="small" />
+                            <Delete />
                           </IconButton>
-
-                          {/* Image Info */}
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              top: 4,
-                              left: 4,
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 0.5,
-                            }}
-                          >
-                            <Chip
-                              label={`${image.width}×${image.height}`}
-                              size="small"
-                              sx={{
-                                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                                color: "white",
-                                fontSize: "0.6rem",
-                                height: 16,
-                              }}
-                            />
-                            <Chip
-                              label={formatFileSize(image.size)}
-                              size="small"
-                              sx={{
-                                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                                color: "white",
-                                fontSize: "0.6rem",
-                                height: 16,
-                              }}
-                            />
-                          </Box>
                         </Box>
-                      </Grid>
-                    ))}
-                  </Grid>
-                )}
-              </Box>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Box>
+            <TextField
+              margin="dense"
+              id="tags"
+              label={t("common.tags")}
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              helperText={t("news.tagsHelper")}
+              disabled={isProcessingImages || isUploading}
+            />
+          </DialogContent>
 
-              <TextField
-                margin="dense"
-                id="relatedItemIds"
-                label={t("news.relatedItemIds")}
-                type="text"
-                fullWidth
-                variant="outlined"
-                value={relatedItemIds}
-                onChange={(e) => setRelatedItemIds(e.target.value)}
-                helperText={t("news.relatedItemIdsHelper")}
-                disabled={isProcessingImages || isUploading}
-              />
+          <DialogActions>
+            <Button onClick={handleClose} disabled={loading}>
+              {t("common.cancel", "Cancel")}
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={isProcessingImages || isUploading || loading}
+            >
+              {isProcessingImages
+                ? t("common.processingImages", "Processing...")
+                : isUploading
+                ? t("common.uploading", "Uploading...")
+                : loading
+                ? isEditMode
+                  ? t("common.updating", "Updating...")
+                  : t("common.creating", "Creating...")
+                : isEditMode
+                ? t("common.save", "Save")
+                : t("news.publish", "Publish")}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
-              <TextField
-                margin="dense"
-                id="tags"
-                label={t("common.tags")}
-                type="text"
-                fullWidth
-                variant="outlined"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                helperText={t("news.tagsHelper")}
-                disabled={isProcessingImages || isUploading}
-              />
-            </DialogContent>
-
-            <DialogActions sx={{ padding: "16px 24px" }}>
-              <Button
-                onClick={handleClose}
-                color="secondary"
-                disabled={isProcessingImages || isUploading}
-              >
-                {t("common.cancel")}
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={
-                  loading ||
-                  isProcessingImages ||
-                  isUploading ||
-                  !title.trim() ||
-                  !content.trim()
-                }
-              >
-                {loading || isProcessingImages || isUploading ? (
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <CircularProgress size={20} sx={{ mr: 1 }} />
-                    {isProcessingImages
-                      ? t("common.processingImages")
-                      : isUploading
-                      ? t("common.uploading")
-                      : t("common.creating")}
-                  </Box>
-                ) : (
-                  t("news.createPost")
-                )}
-              </Button>
-            </DialogActions>
-          </form>
-        </Dialog>
-      ) : (
-        <Button variant="contained" onClick={handleClickOpen}>
-          {t("news.create")}
-        </Button>
-      )}
-    </Box>
+      <Snackbar
+        open={showSuccessSnackbar}
+        autoHideDuration={4000}
+        onClose={() => setShowSuccessSnackbar(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShowSuccessSnackbar(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          {isEditMode
+            ? t("news.updateSuccess", "News updated successfully!")
+            : t("news.createSuccess", "News created successfully!")}
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
 

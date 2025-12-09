@@ -322,7 +322,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         <NewsForm
           open={showNewsForm}
           onClose={() => setShowNewsForm(false)}
-          onNewsCreated={handleNewsCreated}
+          onSuccess={handleNewsCreated}
         />
       )}
 

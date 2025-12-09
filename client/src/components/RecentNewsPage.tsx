@@ -34,14 +34,9 @@ const NEWS_RECENT_QUERY = gql`
 interface RecentNewsPageProps {
   user: User | undefined;
   onBack: () => void;
-  onNewsCreated: (data: CreateNewsPostMutation) => void;
 }
 
-const RecentNewsPage: React.FC<RecentNewsPageProps> = ({
-  user,
-  onBack,
-  onNewsCreated,
-}) => {
+const RecentNewsPage: React.FC<RecentNewsPageProps> = ({ user, onBack }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data, loading, error, refetch } = useNewsRecentPostsQuery({
@@ -52,8 +47,7 @@ const RecentNewsPage: React.FC<RecentNewsPageProps> = ({
     } as NewsRecentPostsQueryVariables,
   });
 
-  const handleNewsCreated = (data: CreateNewsPostMutation) => {
-    onNewsCreated(data);
+  const handleNewsCreated = () => {
     refetch();
   };
 
@@ -74,7 +68,11 @@ const RecentNewsPage: React.FC<RecentNewsPageProps> = ({
           {t("news.viewAll")}→
         </Typography>
         {user?.role === Role.Admin && (
-          <NewsForm open={false} onNewsCreated={handleNewsCreated} />
+          <NewsForm
+            open={false}
+            onSuccess={handleNewsCreated}
+            onClose={handleNewsCreated}
+          />
         )}
       </Box>
 

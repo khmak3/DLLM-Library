@@ -1222,9 +1222,37 @@ const TransactionDetailPage: React.FC = () => {
               bgcolor: "background.default",
             }}
           >
-            {transactionType === "faceToFace" && <FaceToFaceDiagram />}
-            {transactionType === "directExchange" && <DirectExchangeDiagram />}
-            {transactionType === "exchangePoint" && <ExchangePointDiagram />}
+            {transactionType === "faceToFace" && (
+              <img
+                src={"/images/Face-to-Face.jpg"}
+                alt={t(
+                  "transactions.faceToFaceDiagramAlt",
+                  "Face-to-Face Transaction Diagram"
+                )}
+                style={{ width: "100%", height: "auto" }}
+              />
+            )}
+            {transactionType === "directExchange" && (
+              <img
+                src={"/images/Direct-exchange.jpg"}
+                alt={t(
+                  "transactions.directExchangeDiagramAlt",
+                  "Direct Exchange Diagram"
+                )}
+                style={{ width: "100%", height: "auto" }}
+              />
+            )}
+            {transactionType === "exchangePoint" && (
+              <img
+                src={"/images/Public-Exchange.jpg"}
+                alt={t(
+                  "transactions.exchangePointDiagramAlt",
+                  "Exchange Point Diagram"
+                )}
+                style={{ width: "100%", height: "auto" }}
+              />
+            )}
+            npm
           </Box>
 
           {/* Current Status Indicator */}

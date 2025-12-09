@@ -116,7 +116,6 @@
     "notAvailable": "N/A",
     "noCategory": "No category",
     "errorLoading": "Error loading data",
-    "edit": "Edit",
     "saving": "Saving..."
   },
   "location": {
@@ -176,23 +175,7 @@
     "uploadFailed": "Upload Failed",
     "relatedItemIds": "Related Item IDs (comma-separated)",
     "relatedItemIdsHelper": "e.g., itemID1,itemID2",
-    "tagsHelper": "e.g., #tag1 #tag2",
-    "aboutUs": "About Us",
-    "adminDescription": "Manage community information and chat links",
-    "userDescription": "Learn more about our community library",
-    "communityChat": "Community Chat",
-    "chatLink": "Chat Link",
-    "chatLinkPlaceholder": "e.g., https://t.me/your-group",
-    "chatLinkHelper": "Enter the link to your community chat (Telegram, Discord, etc.)",
-    "joinOurChat": "Join our community chat to connect with other members:",
-    "joinChat": "Join Community Chat",
-    "noChatLink": "No community chat link configured yet.",
-    "aboutUsText": "About Us Text",
-    "aboutUsPlaceholder": "Tell your community about your library, mission, and values...",
-    "aboutUsHelper": "Describe your community library, its purpose, and how it works",
-    "noAboutUsText": "No information available yet. Please check back later.",
-    "errorUpdating": "Error updating configuration",
-    "changesSaved": "All changes saved successfully"
+    "tagsHelper": "e.g., #tag1 #tag2"
   },
   "shortStatus": {
     "available": "Available",

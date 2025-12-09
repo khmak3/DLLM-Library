@@ -18,9 +18,10 @@ import {
   Cancel as CancelIcon,
   Chat as ChatIcon,
 } from "@mui/icons-material";
-import { useOutletContext } from "react-router-dom";
-import { User, HostConfig } from "../generated/graphql";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { User, HostConfig, CreateNewsPostMutation } from "../generated/graphql";
 import TransactionFlowDiagrams from "../components/TransactionFlowDiagrams";
+import RecentNewsBanner from "../components/RecentNewsBanner";
 
 interface OutletContext {
   email?: string | undefined | null;
@@ -139,6 +140,7 @@ const NewsPage: React.FC = () => {
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       {/* Header */}
+      <RecentNewsBanner user={user} />
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: "bold", mb: 1 }}>
           {t("news.aboutUs", "About Us")}
@@ -146,166 +148,158 @@ const NewsPage: React.FC = () => {
         <Typography variant="body2" color="text.secondary">
           {isAdmin
             ? t(
-              "news.adminDescription",
-              "Manage community information and chat links"
-            )
+                "news.adminDescription",
+                "Manage community information and chat links"
+              )
             : t(
-              "news.userDescription",
-              "Learn more about our community library"
-            )}
+                "news.userDescription",
+                "Learn more about our community library"
+              )}
         </Typography>
       </Box>
 
       {/* Admin Edit Controls */}
-      {
-        isAdmin && !isEditing && (
-          <Box
+      {isAdmin && !isEditing && (
+        <Box
+          sx={{
+            mb: 3,
+            display: "flex",
+            justifyContent: "flex-end",
+            position: "sticky",
+            top: 70,
+            zIndex: 10,
+            backgroundColor: "background.default",
+            py: 2,
+            borderRadius: 1,
+          }}
+        >
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            startIcon={<EditIcon />}
+            onClick={handleEdit}
             sx={{
-              mb: 3,
-              display: "flex",
-              justifyContent: "flex-end",
-              position: "sticky",
-              top: 70,
-              zIndex: 10,
-              backgroundColor: "background.default",
-              py: 2,
-              borderRadius: 1,
+              px: 4,
+              py: 1.5,
+              fontWeight: 600,
+              boxShadow: 3,
+              "&:hover": {
+                boxShadow: 6,
+              },
             }}
           >
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              startIcon={<EditIcon />}
-              onClick={handleEdit}
-              sx={{
-                px: 4,
-                py: 1.5,
-                fontWeight: 600,
-                boxShadow: 3,
-                "&:hover": {
-                  boxShadow: 6,
-                },
-              }}
-            >
-              {t("common.edit", "Edit")}
-            </Button>
-          </Box>
-        )
-      }
+            {t("common.edit", "Edit")}
+          </Button>
+        </Box>
+      )}
 
       {/* Update Error */}
-      {
-        updateError && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {t("news.errorUpdating", "Error updating configuration")}:{" "}
-            {updateError.message}
-          </Alert>
-        )
-      }
+      {updateError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {t("news.errorUpdating", "Error updating configuration")}:{" "}
+          {updateError.message}
+        </Alert>
+      )}
 
       {/* Save Success Indicator */}
-      {
-        showSuccess && (
-          <Alert
-            severity="success"
-            sx={{ mt: 2 }}
-            onClose={() => setShowSuccess(false)}
-          >
-            {t("news.changesSaved", "All changes saved successfully")}
-          </Alert>
-        )
-      }
+      {showSuccess && (
+        <Alert
+          severity="success"
+          sx={{ mt: 2 }}
+          onClose={() => setShowSuccess(false)}
+        >
+          {t("news.changesSaved", "All changes saved successfully")}
+        </Alert>
+      )}
 
       {/* Chat Link Section - Visible to all users */}
-      {
-        (chatLink || isAdmin) && (
-          <Card
-            elevation={2}
-            sx={{
-              mb: 4,
-              borderRadius: 2,
-              border: "2px solid",
-              borderColor: "secondary.main",
-              overflow: "hidden",
-            }}
-          >
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
-                {t("news.communityChat", "Community Chat")}
-              </Typography>
+      {(chatLink || isAdmin) && (
+        <Card
+          elevation={2}
+          sx={{
+            mb: 4,
+            borderRadius: 2,
+            border: "2px solid",
+            borderColor: "secondary.main",
+            overflow: "hidden",
+          }}
+        >
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
+              {t("news.communityChat", "Community Chat")}
+            </Typography>
 
-              {isEditing && isAdmin ? (
-                <TextField
-                  fullWidth
-                  label={t("news.chatLink", "Chat Link")}
-                  placeholder={t(
-                    "news.chatLinkPlaceholder",
-                    "e.g., https://t.me/your-group"
-                  )}
-                  value={chatLink}
-                  onChange={handleChatLinkChange}
-                  helperText={t(
-                    "news.chatLinkHelper",
-                    "Enter the link to your community chat (Telegram, Discord, etc.)"
-                  )}
-                  disabled={updateLoading}
-                />
-              ) : (
-                <Box>
-                  {chatLink ? (
-                    <Box>
-                      <Typography
-                        variant="body1"
-                        color="text.secondary"
-                        sx={{
-                          mb: 2,
-                          lineHeight: 1.6,
-                        }}
-                      >
-                        {t(
-                          "news.joinOurChat",
-                          "Join our community chat to connect with other members, share ideas, and stay updated!"
-                        )}
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        href={chatLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        size="large"
-                        startIcon={<ChatIcon />}
-                        sx={{
-                          px: 3,
-                          py: 1.5,
-                          fontSize: "1rem",
-                          borderRadius: 2,
-                          textTransform: "none",
-                          fontWeight: 600,
-                          boxShadow: 2,
-                          "&:hover": {
-                            boxShadow: 4,
-                          },
-                        }}
-                      >
-                        {t("news.joinChat", "Join Community Chat")}
-                      </Button>
-                    </Box>
-                  ) : isAdmin ? (
-                    <Typography variant="body2" color="text.secondary">
+            {isEditing && isAdmin ? (
+              <TextField
+                fullWidth
+                label={t("news.chatLink", "Chat Link")}
+                placeholder={t(
+                  "news.chatLinkPlaceholder",
+                  "e.g., https://t.me/your-group"
+                )}
+                value={chatLink}
+                onChange={handleChatLinkChange}
+                helperText={t(
+                  "news.chatLinkHelper",
+                  "Enter the link to your community chat (Telegram, Discord, etc.)"
+                )}
+                disabled={updateLoading}
+              />
+            ) : (
+              <Box>
+                {chatLink ? (
+                  <Box>
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      sx={{
+                        mb: 2,
+                        lineHeight: 1.6,
+                      }}
+                    >
                       {t(
-                        "news.noChatLink",
-                        "No community chat link configured yet."
+                        "news.joinOurChat",
+                        "Join our community chat to connect with other members, share ideas, and stay updated!"
                       )}
                     </Typography>
-                  ) : null}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        )
-      }
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      href={chatLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="large"
+                      startIcon={<ChatIcon />}
+                      sx={{
+                        px: 3,
+                        py: 1.5,
+                        fontSize: "1rem",
+                        borderRadius: 2,
+                        textTransform: "none",
+                        fontWeight: 600,
+                        boxShadow: 2,
+                        "&:hover": {
+                          boxShadow: 4,
+                        },
+                      }}
+                    >
+                      {t("news.joinChat", "Join Community Chat")}
+                    </Button>
+                  </Box>
+                ) : isAdmin ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {t(
+                      "news.noChatLink",
+                      "No community chat link configured yet."
+                    )}
+                  </Typography>
+                ) : null}
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* About Us Section */}
       <Card
@@ -370,34 +364,32 @@ const NewsPage: React.FC = () => {
       )}
 
       {/* Edit Action Buttons */}
-      {
-        isEditing && (
-          <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
-            <Button
-              fullWidth
-              variant="contained"
-              startIcon={
-                updateLoading ? <CircularProgress size={20} /> : <SaveIcon />
-              }
-              onClick={handleSave}
-              disabled={updateLoading || !hasChanges}
-            >
-              {updateLoading
-                ? t("common.saving", "Saving...")
-                : t("common.save", "Save Changes")}
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<CancelIcon />}
-              onClick={handleCancel}
-              disabled={updateLoading}
-            >
-              {t("common.cancel", "Cancel")}
-            </Button>
-          </Box>
-        )
-      }
+      {isEditing && (
+        <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={
+              updateLoading ? <CircularProgress size={20} /> : <SaveIcon />
+            }
+            onClick={handleSave}
+            disabled={updateLoading || !hasChanges}
+          >
+            {updateLoading
+              ? t("common.saving", "Saving...")
+              : t("common.save", "Save Changes")}
+          </Button>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<CancelIcon />}
+            onClick={handleCancel}
+            disabled={updateLoading}
+          >
+            {t("common.cancel", "Cancel")}
+          </Button>
+        </Box>
+      )}
     </Container>
   );
 };

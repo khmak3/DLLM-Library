@@ -726,11 +726,6 @@ export type RecentItemsWithoutClassificationsQueryVariables = Exact<{
 
 export type RecentItemsWithoutClassificationsQuery = { __typename?: 'Query', recentItemsWithoutClassifications?: Array<{ __typename?: 'Item', id: string, name: string, description?: string | null, category: Array<string>, updatedAt: any, images?: Array<string> | null, thumbnails?: Array<string> | null, condition: ItemCondition, status: ItemStatus, language: Language, publishedYear?: number | null, clssfctns?: Array<string> | null }> | null };
 
-export type GetItemConfigQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetItemConfigQuery = { __typename?: 'Query', itemConfig: { __typename?: 'ItemConfig', defaultCategoryTrees: Array<string>, categoryMaps: Array<Array<{ __typename?: 'CategoryMap', language: string, value: string }>> } };
-
 export type UpdateItemClassificationMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   classifications?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
@@ -738,6 +733,11 @@ export type UpdateItemClassificationMutationVariables = Exact<{
 
 
 export type UpdateItemClassificationMutation = { __typename?: 'Mutation', updateItem: { __typename?: 'Item', id: string, clssfctns?: Array<string> | null } };
+
+export type GetItemConfigQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetItemConfigQuery = { __typename?: 'Query', itemConfig: { __typename?: 'ItemConfig', defaultCategoryTrees: Array<string>, categoryMaps: Array<Array<{ __typename?: 'CategoryMap', language: string, value: string }>> } };
 
 export type UpsertCategoryMapMutationVariables = Exact<{
   en: Scalars['String']['input'];
@@ -843,6 +843,7 @@ export type UpdateItemMutationVariables = Exact<{
   id: Scalars['ID']['input'];
   name?: InputMaybe<Scalars['String']['input']>;
   category?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  classifications?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
   condition?: InputMaybe<ItemCondition>;
   description?: InputMaybe<Scalars['String']['input']>;
   images?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
@@ -878,7 +879,19 @@ export type CreateNewsPostMutationVariables = Exact<{
 }>;
 
 
-export type CreateNewsPostMutation = { __typename?: 'Mutation', createNewsPost: { __typename?: 'NewsPost', content: string, createdAt: any, id: string, images?: Array<string> | null, isVisible: boolean, tags?: Array<string> | null, title: string, relatedItems?: Array<{ __typename?: 'Item', id: string, description?: string | null, name: string, ownerId: string }> | null } };
+export type CreateNewsPostMutation = { __typename?: 'Mutation', createNewsPost: { __typename?: 'NewsPost', id: string, title: string, content: string, images?: Array<string> | null, createdAt: any, updatedAt: any, relatedItems?: Array<{ __typename?: 'Item', id: string, name: string, thumbnails?: Array<string> | null, images?: Array<string> | null }> | null } };
+
+export type UpdateNewsPostMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  title?: InputMaybe<Scalars['String']['input']>;
+  content?: InputMaybe<Scalars['String']['input']>;
+  images?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+  relatedItemIds?: InputMaybe<Array<Scalars['ID']['input']> | Scalars['ID']['input']>;
+  tags?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
+}>;
+
+
+export type UpdateNewsPostMutation = { __typename?: 'Mutation', updateNewsPost: { __typename?: 'NewsPost', id: string, title: string, content: string, images?: Array<string> | null, isVisible: boolean, updatedAt: any, relatedItems?: Array<{ __typename?: 'Item', id: string, name: string, thumbnails?: Array<string> | null, images?: Array<string> | null }> | null } };
 
 export type RecentItemsQueryVariables = Exact<{
   category?: InputMaybe<Array<Scalars['String']['input']> | Scalars['String']['input']>;
@@ -1271,6 +1284,41 @@ export type RecentItemsWithoutClassificationsQueryHookResult = ReturnType<typeof
 export type RecentItemsWithoutClassificationsLazyQueryHookResult = ReturnType<typeof useRecentItemsWithoutClassificationsLazyQuery>;
 export type RecentItemsWithoutClassificationsSuspenseQueryHookResult = ReturnType<typeof useRecentItemsWithoutClassificationsSuspenseQuery>;
 export type RecentItemsWithoutClassificationsQueryResult = Apollo.QueryResult<RecentItemsWithoutClassificationsQuery, RecentItemsWithoutClassificationsQueryVariables>;
+export const UpdateItemClassificationDocument = gql`
+    mutation UpdateItemClassification($id: ID!, $classifications: [String!]) {
+  updateItem(id: $id, classifications: $classifications) {
+    id
+    clssfctns
+  }
+}
+    `;
+export type UpdateItemClassificationMutationFn = Apollo.MutationFunction<UpdateItemClassificationMutation, UpdateItemClassificationMutationVariables>;
+
+/**
+ * __useUpdateItemClassificationMutation__
+ *
+ * To run a mutation, you first call `useUpdateItemClassificationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateItemClassificationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateItemClassificationMutation, { data, loading, error }] = useUpdateItemClassificationMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      classifications: // value for 'classifications'
+ *   },
+ * });
+ */
+export function useUpdateItemClassificationMutation(baseOptions?: Apollo.MutationHookOptions<UpdateItemClassificationMutation, UpdateItemClassificationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateItemClassificationMutation, UpdateItemClassificationMutationVariables>(UpdateItemClassificationDocument, options);
+      }
+export type UpdateItemClassificationMutationHookResult = ReturnType<typeof useUpdateItemClassificationMutation>;
+export type UpdateItemClassificationMutationResult = Apollo.MutationResult<UpdateItemClassificationMutation>;
+export type UpdateItemClassificationMutationOptions = Apollo.BaseMutationOptions<UpdateItemClassificationMutation, UpdateItemClassificationMutationVariables>;
 export const GetItemConfigDocument = gql`
     query GetItemConfig {
   itemConfig {
@@ -1314,41 +1362,6 @@ export type GetItemConfigQueryHookResult = ReturnType<typeof useGetItemConfigQue
 export type GetItemConfigLazyQueryHookResult = ReturnType<typeof useGetItemConfigLazyQuery>;
 export type GetItemConfigSuspenseQueryHookResult = ReturnType<typeof useGetItemConfigSuspenseQuery>;
 export type GetItemConfigQueryResult = Apollo.QueryResult<GetItemConfigQuery, GetItemConfigQueryVariables>;
-export const UpdateItemClassificationDocument = gql`
-    mutation UpdateItemClassification($id: ID!, $classifications: [String!]) {
-  updateItem(id: $id, classifications: $classifications) {
-    id
-    clssfctns
-  }
-}
-    `;
-export type UpdateItemClassificationMutationFn = Apollo.MutationFunction<UpdateItemClassificationMutation, UpdateItemClassificationMutationVariables>;
-
-/**
- * __useUpdateItemClassificationMutation__
- *
- * To run a mutation, you first call `useUpdateItemClassificationMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useUpdateItemClassificationMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [updateItemClassificationMutation, { data, loading, error }] = useUpdateItemClassificationMutation({
- *   variables: {
- *      id: // value for 'id'
- *      classifications: // value for 'classifications'
- *   },
- * });
- */
-export function useUpdateItemClassificationMutation(baseOptions?: Apollo.MutationHookOptions<UpdateItemClassificationMutation, UpdateItemClassificationMutationVariables>) {
-        const options = {...defaultOptions, ...baseOptions}
-        return Apollo.useMutation<UpdateItemClassificationMutation, UpdateItemClassificationMutationVariables>(UpdateItemClassificationDocument, options);
-      }
-export type UpdateItemClassificationMutationHookResult = ReturnType<typeof useUpdateItemClassificationMutation>;
-export type UpdateItemClassificationMutationResult = Apollo.MutationResult<UpdateItemClassificationMutation>;
-export type UpdateItemClassificationMutationOptions = Apollo.BaseMutationOptions<UpdateItemClassificationMutation, UpdateItemClassificationMutationVariables>;
 export const UpsertCategoryMapDocument = gql`
     mutation UpsertCategoryMap($en: String!, $categoryMaps: [CategoryMapInput!]!) {
   upsertCategoryMap(en: $en, categoryMaps: $categoryMaps) {
@@ -1866,11 +1879,12 @@ export type CreateItemMutationHookResult = ReturnType<typeof useCreateItemMutati
 export type CreateItemMutationResult = Apollo.MutationResult<CreateItemMutation>;
 export type CreateItemMutationOptions = Apollo.BaseMutationOptions<CreateItemMutation, CreateItemMutationVariables>;
 export const UpdateItemDocument = gql`
-    mutation UpdateItem($id: ID!, $name: String, $category: [String!], $condition: ItemCondition, $description: String, $images: [String!], $language: Language, $publishedYear: Int, $status: ItemStatus, $deposit: Int) {
+    mutation UpdateItem($id: ID!, $name: String, $category: [String!], $classifications: [String!], $condition: ItemCondition, $description: String, $images: [String!], $language: Language, $publishedYear: Int, $status: ItemStatus, $deposit: Int) {
   updateItem(
     id: $id
     name: $name
     category: $category
+    classifications: $classifications
     condition: $condition
     description: $description
     images: $images
@@ -1913,6 +1927,7 @@ export type UpdateItemMutationFn = Apollo.MutationFunction<UpdateItemMutation, U
  *      id: // value for 'id'
  *      name: // value for 'name'
  *      category: // value for 'category'
+ *      classifications: // value for 'classifications'
  *      condition: // value for 'condition'
  *      description: // value for 'description'
  *      images: // value for 'images'
@@ -2041,19 +2056,18 @@ export const CreateNewsPostDocument = gql`
     relatedItemIds: $relatedItemIds
     tags: $tags
   ) {
-    content
-    createdAt
     id
+    title
+    content
     images
-    isVisible
+    createdAt
+    updatedAt
     relatedItems {
       id
-      description
       name
-      ownerId
+      thumbnails
+      images
     }
-    tags
-    title
   }
 }
     `;
@@ -2087,6 +2101,62 @@ export function useCreateNewsPostMutation(baseOptions?: Apollo.MutationHookOptio
 export type CreateNewsPostMutationHookResult = ReturnType<typeof useCreateNewsPostMutation>;
 export type CreateNewsPostMutationResult = Apollo.MutationResult<CreateNewsPostMutation>;
 export type CreateNewsPostMutationOptions = Apollo.BaseMutationOptions<CreateNewsPostMutation, CreateNewsPostMutationVariables>;
+export const UpdateNewsPostDocument = gql`
+    mutation UpdateNewsPost($id: ID!, $title: String, $content: String, $images: [String!], $relatedItemIds: [ID!], $tags: [String!]) {
+  updateNewsPost(
+    id: $id
+    title: $title
+    content: $content
+    images: $images
+    relatedItemIds: $relatedItemIds
+    tags: $tags
+  ) {
+    id
+    title
+    content
+    images
+    isVisible
+    updatedAt
+    relatedItems {
+      id
+      name
+      thumbnails
+      images
+    }
+  }
+}
+    `;
+export type UpdateNewsPostMutationFn = Apollo.MutationFunction<UpdateNewsPostMutation, UpdateNewsPostMutationVariables>;
+
+/**
+ * __useUpdateNewsPostMutation__
+ *
+ * To run a mutation, you first call `useUpdateNewsPostMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateNewsPostMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateNewsPostMutation, { data, loading, error }] = useUpdateNewsPostMutation({
+ *   variables: {
+ *      id: // value for 'id'
+ *      title: // value for 'title'
+ *      content: // value for 'content'
+ *      images: // value for 'images'
+ *      relatedItemIds: // value for 'relatedItemIds'
+ *      tags: // value for 'tags'
+ *   },
+ * });
+ */
+export function useUpdateNewsPostMutation(baseOptions?: Apollo.MutationHookOptions<UpdateNewsPostMutation, UpdateNewsPostMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<UpdateNewsPostMutation, UpdateNewsPostMutationVariables>(UpdateNewsPostDocument, options);
+      }
+export type UpdateNewsPostMutationHookResult = ReturnType<typeof useUpdateNewsPostMutation>;
+export type UpdateNewsPostMutationResult = Apollo.MutationResult<UpdateNewsPostMutation>;
+export type UpdateNewsPostMutationOptions = Apollo.BaseMutationOptions<UpdateNewsPostMutation, UpdateNewsPostMutationVariables>;
 export const RecentItemsDocument = gql`
     query RecentItems($category: [String!], $limit: Int) {
   recentAddedItems(category: $category, limit: $limit) {
