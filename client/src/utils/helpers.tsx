@@ -84,7 +84,7 @@ export const hasMarkdownSyntax = (text: string): boolean => {
     /(\*\*|__).+?\1/,
 
     // Italic (*text* or _text_)
-    /([*_]).+?\1/,
+    /(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)|(?<!_)_(?!_)([^_]+?)(?<!_)_(?!_)/,
 
     // Strikethrough (~~text~~)
     /~~.+?~~/,
