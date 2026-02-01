@@ -6,6 +6,7 @@ import { createRouter } from "./Router";
 import { RouterProvider } from "react-router";
 import SplashScreen from "./components/SplashScreen";
 import { CircularProgress, Box } from "@mui/material";
+import { getCookie, setCookie } from "./utils/cookies";
 
 const ME_QUERY = gql`
   query Me {
@@ -56,8 +57,16 @@ const App: React.FC<AppProps> = ({ user, onSignOut }) => {
   );
   const [initialPath, setInitialPath] = useState<string | null>(null);
   const previousUserIdRef = useRef<string | null>(null);
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false); // Changed to false by default
   const [splashCompleted, setSplashCompleted] = useState(false);
+
+  // Check if splash screen should be shown based on cookie
+  useEffect(() => {
+    const splashCookie = getCookie("dllm_splash_shown");
+    console.log("Splash cookie:", splashCookie);
+    const shouldShowSplash = !splashCookie;
+    setShowSplash(shouldShowSplash);
+  }, []);
 
   // Refetch ME_QUERY when user changes
   useEffect(() => {
@@ -102,9 +111,6 @@ const App: React.FC<AppProps> = ({ user, onSignOut }) => {
       sessionStorage.removeItem("viewUserId");
     } else if (viewTransactionId) {
       setInitialPath(`/transaction/${viewTransactionId}`);
-      sessionStorage.removeItem("viewTransactionId");
-    } else if (redirectPath) {
-      setInitialPath(redirectPath);
       sessionStorage.removeItem("redirectPath");
     }
   }, []);
@@ -112,6 +118,12 @@ const App: React.FC<AppProps> = ({ user, onSignOut }) => {
   const handleSplashComplete = () => {
     setSplashCompleted(true);
     setShowSplash(false);
+    // Set cookie to expire in 14 days (2 weeks)
+    setCookie("dllm_splash_shown", "true", {
+      expires: 14,
+      path: "/",
+      sameSite: "Lax",
+    });
   };
 
   const router = createRouter(

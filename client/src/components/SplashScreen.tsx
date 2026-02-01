@@ -49,7 +49,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "background.default",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: "linear-gradient(135deg, #db036b 0%, #25975d 100%)",
         }}
       >
         {/* Dismiss Button */}

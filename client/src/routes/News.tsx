@@ -259,7 +259,7 @@ const NewsPage: React.FC = () => {
           [splashScreenImage],
           {
             folder: "splash-screen",
-            onFileProgress: (fileIndex, progress) => {
+            onFileProgress: (_, progress) => {
               setSplashScreenImage((prev) =>
                 prev
                   ? {
@@ -270,7 +270,7 @@ const NewsPage: React.FC = () => {
                   : null
               );
             },
-            onFileComplete: (fileIndex, gsUrl) => {
+            onFileComplete: (_, gsUrl) => {
               setSplashScreenImage((prev) =>
                 prev
                   ? {
@@ -285,7 +285,7 @@ const NewsPage: React.FC = () => {
             onOverallProgress: (percentage) => {
               setUploadProgress(percentage);
             },
-            onError: (fileIndex, error) => {
+            onError: (_, error) => {
               setSplashScreenImage((prev) =>
                 prev
                   ? {
