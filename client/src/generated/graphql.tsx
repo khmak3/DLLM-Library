@@ -73,7 +73,6 @@ export type HostConfigInput = {
 
 export type Item = {
   __typename?: 'Item';
-  ISBN?: Maybe<Scalars['String']['output']>;
   category: Array<Scalars['String']['output']>;
   clssfctns?: Maybe<Array<Scalars['String']['output']>>;
   condition: ItemCondition;
@@ -83,6 +82,7 @@ export type Item = {
   holderId?: Maybe<Scalars['ID']['output']>;
   id: Scalars['ID']['output'];
   images?: Maybe<Array<Scalars['String']['output']>>;
+  isbn?: Maybe<Scalars['String']['output']>;
   language: Language;
   location?: Maybe<Location>;
   name: Scalars['String']['output'];
@@ -231,12 +231,12 @@ export type MutationCancelTransactionArgs = {
 
 
 export type MutationCreateItemArgs = {
-  ISBN?: InputMaybe<Scalars['String']['input']>;
   category: Array<Scalars['String']['input']>;
   condition: ItemCondition;
   deposit?: Scalars['Int']['input'];
   description?: InputMaybe<Scalars['String']['input']>;
   images?: InputMaybe<Array<Scalars['String']['input']>>;
+  isbn?: InputMaybe<Scalars['String']['input']>;
   language: Language;
   name: Scalars['String']['input'];
   publishedYear?: InputMaybe<Scalars['Int']['input']>;
@@ -347,7 +347,6 @@ export type MutationUpdateHostConfigArgs = {
 
 
 export type MutationUpdateItemArgs = {
-  ISBN?: InputMaybe<Scalars['String']['input']>;
   category?: InputMaybe<Array<Scalars['String']['input']>>;
   classifications?: InputMaybe<Array<Scalars['String']['input']>>;
   condition?: InputMaybe<ItemCondition>;
@@ -355,6 +354,7 @@ export type MutationUpdateItemArgs = {
   description?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
   images?: InputMaybe<Array<Scalars['String']['input']>>;
+  isbn?: InputMaybe<Scalars['String']['input']>;
   language?: InputMaybe<Language>;
   name?: InputMaybe<Scalars['String']['input']>;
   publishedYear?: InputMaybe<Scalars['Int']['input']>;
@@ -797,7 +797,7 @@ export type ItemQueryVariables = Exact<{
 }>;
 
 
-export type ItemQuery = { __typename?: 'Query', item?: { __typename?: 'Item', id: string, name: string, description?: string | null, condition: ItemCondition, category: Array<string>, clssfctns?: Array<string> | null, status: ItemStatus, images?: Array<string> | null, thumbnails?: Array<string> | null, publishedYear?: number | null, language: Language, createdAt: any, ownerId: string, holderId?: string | null, deposit?: number | null, ISBN?: string | null } | null };
+export type ItemQuery = { __typename?: 'Query', item?: { __typename?: 'Item', id: string, name: string, description?: string | null, condition: ItemCondition, category: Array<string>, clssfctns?: Array<string> | null, status: ItemStatus, images?: Array<string> | null, thumbnails?: Array<string> | null, publishedYear?: number | null, language: Language, createdAt: any, ownerId: string, holderId?: string | null, deposit?: number | null, isbn?: string | null } | null };
 
 export type CreateTransactionMutationVariables = Exact<{
   itemId: Scalars['ID']['input'];
@@ -1569,7 +1569,7 @@ export const ItemDocument = gql`
     ownerId
     holderId
     deposit
-    ISBN
+    isbn
   }
 }
     `;

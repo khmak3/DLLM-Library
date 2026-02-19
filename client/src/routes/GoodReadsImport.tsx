@@ -28,7 +28,7 @@ interface OutletContext {
 }
 
 const DUPLICATE_TITLES_QUERY = gql`
-  query DuplicateTitlesByUser($userId: ID!, $names: [String!]) {
+  query DuplicateTitlesByUser($userId: ID!, $names: [String!]!) {
     duplicateTitlesByUser(userId: $userId, names: $names)
   }
 `;
@@ -125,6 +125,10 @@ const GoodReadsImport: React.FC = () => {
                   variables: { userId: user.id, names: batch },
                 });
                 if (data?.duplicateTitlesByUser) {
+                  console.log(
+                    "Existing titles in batch:",
+                    data.duplicateTitlesByUser,
+                  );
                   data.duplicateTitlesByUser.forEach((name) =>
                     existingNames.add(name),
                   );

@@ -75,7 +75,7 @@ const ITEM_DETAIL_QUERY = gql`
       ownerId
       holderId
       deposit
-      ISBN
+      isbn
     }
   }
 `;

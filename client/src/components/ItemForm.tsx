@@ -234,10 +234,10 @@ const ItemForm: React.FC<ItemFormProps> = ({
       const itemImages = item.images || [];
       const itemDeposit = item.deposit || 0;
       const itemClassifications = item.clssfctns || [];
-      console.log(`${item.name} isbn: ${item.ISBN}`);
+      console.log(`${item.name} isbn: ${item.isbn}`);
 
       setName(itemName);
-      setIsbn(item.ISBN || "");
+      setIsbn(item.isbn || "");
       setCondition(itemCondition);
       setDescription(itemDescription);
       setPublishedYear(itemPublishedYear);
@@ -257,7 +257,7 @@ const ItemForm: React.FC<ItemFormProps> = ({
         images: itemImages,
         deposit: itemDeposit,
         classifications: itemClassifications,
-        isbn: item.ISBN || "",
+        isbn: item.isbn || "",
       });
 
       // Convert existing images to ImagePreview format

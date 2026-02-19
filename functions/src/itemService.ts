@@ -604,7 +604,11 @@ export class ItemService {
     return newItem;
   }
 
-  async createItemsFromJSON(owner: User, bookJson: string[]): Promise<Item[]> {
+  async createItemsFromJSON(
+    owner: User,
+    bookJson: string[],
+    deposit: number = 0,
+  ): Promise<Item[]> {
     let hash = null;
     if (owner?.location) {
       hash = geofire.geohashForLocation([
@@ -630,16 +634,15 @@ export class ItemService {
       const status = ItemStatus.Available;
       let publishedYear = parseInt(book.publishedYear) || 0;
       const language = Language.ZhHk; // Default language, can be updated by user later
-      const deposit = 0; // Default deposit, can be updated by user later
-      const ISBN = book.isbn13 || book.isbn || null;
+      const isbn = book.isbn13 || book.isbn || null;
 
       console.debug(
-        `Creating item for book: ${name}, author: ${book.author}, publishedYear: ${publishedYear}, ISBN: ${ISBN}`,
+        `Creating item for book: ${name}, author: ${book.author}, publishedYear: ${publishedYear}, ISBN: ${isbn}`,
       );
-      if (ISBN) {
+      if (isbn) {
         try {
-          const bookInfo = await this._getBookInfoByISBN(ISBN);
-          console.debug(`Fetched book info for ISBN ${ISBN}:`, bookInfo);
+          const bookInfo = await this._getBookInfoByISBN(isbn);
+          console.debug(`Fetched book info for ISBN ${isbn}:`, bookInfo);
           if (bookInfo) {
             publishedYear =
               publishedYear !== 0 ? publishedYear : bookInfo.publishedYear;
@@ -653,7 +656,7 @@ export class ItemService {
             }
           }
         } catch (error) {
-          console.error(`Failed to fetch book info for ISBN ${ISBN}:`, error);
+          console.error(`Failed to fetch book info for ISBN ${isbn}:`, error);
         }
       }
 
@@ -669,7 +672,7 @@ export class ItemService {
         publishedYear,
         language,
         deposit,
-        ISBN,
+        isbn,
       );
       createdItems.push(newItem);
     }
@@ -688,7 +691,7 @@ export class ItemService {
     publishedYear: number,
     language: Language,
     deposit: number,
-    ISBN?: string | null | undefined,
+    isbn?: string | null | undefined,
   ): Promise<Item> {
     let gsImageUrls: string[] | null = null;
     let publicImageUrls: string[] | null = null;
@@ -734,7 +737,7 @@ export class ItemService {
       // Item indexing
       nameIndex: nameIndex,
       nameIndexVer: this.ITEM_INDEX_VER,
-      ISBN: ISBN || null,
+      isbn: isbn || null,
     };
 
     // Only add optional fields if they have valid values
@@ -1513,22 +1516,22 @@ export class ItemService {
     return results;
   }
 
-  async _getBookInfoByISBN(ISBN: string): Promise<{
+  async _getBookInfoByISBN(isbn: string): Promise<{
     title: string;
     authors: string[];
     publishedYear: number;
   } | null> {
     try {
-      const queryUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${ISBN}`;
+      const queryUrl = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`;
       console.debug(
-        `Fetching book info for ISBN ${ISBN} from Google Books API:`,
+        `Fetching book info for ISBN ${isbn} from Google Books API:`,
         {
           queryUrl,
         },
       );
       const response = await axios.get(queryUrl, { timeout: 10000 });
       console.debug(
-        `Google Books API response for ISBN ${ISBN}:`,
+        `Google Books API response for ISBN ${isbn}:`,
         response.data,
       );
       if (
@@ -1546,7 +1549,7 @@ export class ItemService {
         };
       }
     } catch (error) {
-      console.error(`Failed to fetch book info for ISBN ${ISBN}:`, error);
+      console.error(`Failed to fetch book info for ISBN ${isbn}:`, error);
     }
     return null;
   }
