@@ -574,6 +574,7 @@
     "authRequiredMessage": "To confirm receipt of this item, please sign in to your account or create a new one.",
     "signInToConfirm": "Please sign in or create an account to confirm receipt of this item.",
     "roleOwner": "Owner",
+    "roleHolder": "Holder",
     "roleRequestor": "Requestor",
     "roleReceiver": "Receiver",
     "ownerInstructionPending": "You have received a request for this item. Please review the requestor's information and decide whether to approve or cancel this transaction.",

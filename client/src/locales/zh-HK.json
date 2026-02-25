@@ -566,6 +566,7 @@
     "ownerHasItem": "物主擁有該物品",
     "participants": "相關人員",
     "roleOwner": "擁有者",
+    "roleHolder": "持有者",
     "roleRequestor": "請求者",
     "roleReceiver": "接收者",
     "ownerInstructionPending": "您收到了此物品的請求。請審查請求者的資訊並決定是否批准或取消此交易。",
@@ -682,7 +683,6 @@
       "exchangePoint": "交換",
       "exchangePoint2": "點",
       "intermediary": "（可信）",
-      
       "phaseATitle": "階段 A：放下交易",
       "phaseA1Title": "A1. 請求放下",
       "phaseA1Line1": "借閱者請求",
@@ -697,11 +697,9 @@
       "phaseA3Line2": "📸 雙方拍照",
       "phaseA3Line3": "點擊「已轉移」及「已收到」",
       "phaseAComplete": "✓ 階段 A 完成",
-      
       "itemCached": "📦 物品已快取",
       "waitingPickup": "等待",
       "waitingPickup2": "階段 B 取貨",
-      
       "phaseBTitle": "階段 B：取貨交易",
       "phaseB1Title": "B1. 請求取貨",
       "phaseB1Line1": "申請者提交",
@@ -716,7 +714,6 @@
       "phaseB3Line2": "📸 雙方拍照",
       "phaseB3Line3": "點擊「已轉移」及「已收到」",
       "phaseBComplete": "✓ 申請者成為新持有者",
-      
       "preferenceNote": "📍 交換點偏好設定：",
       "preferenceDesc": "用戶可選擇偏好的交換點。其他人可按交換點位置搜尋物品。",
       "timeNote": "⏱ 每個階段：14 天內完成，否則交易過期"

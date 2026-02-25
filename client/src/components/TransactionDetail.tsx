@@ -276,6 +276,7 @@ const getRoleInstructions = (
   t: any,
   status: TransactionStatus,
   isOwner: boolean,
+  isHolder: boolean,
   isRequestor: boolean,
   isReceiver: boolean,
   isQuickExchange: boolean
@@ -334,7 +335,20 @@ const getRoleInstructions = (
         };
     }
   }
-
+  // Holder instructions
+  if (isHolder) {
+    switch (status) {
+      case TransactionStatus.Approved:
+        return {
+          role: t("transactions.roleHolder", "Holder"),
+          instruction: t(
+            "transactions.ownerInstructionApproved",
+            "You have approved this transaction. Please arrange a meeting with the requestor at the exchange location shown below. Once you have handed over the item, click 'Mark as Transferred'."
+          ),
+          severity: "info",
+        };
+    }
+  }
   // Requestor instructions
   if (isRequestor) {
     switch (status) {
@@ -361,13 +375,13 @@ const getRoleInstructions = (
           role: t("transactions.roleRequestor", "Requestor"),
           instruction: isQuickExchange
             ? t(
-                "transactions.requestorInstructionTransferredQuick",
-                "The item has been marked as transferred to you. Please inspect the item and take photos if needed, then click 'Confirm Received' to complete the transaction."
-              )
+              "transactions.requestorInstructionTransferredQuick",
+              "The item has been marked as transferred to you. Please inspect the item and take photos if needed, then click 'Confirm Received' to complete the transaction."
+            )
             : t(
-                "transactions.requestorInstructionTransferred",
-                "The item has been marked as transferred. Waiting for the designated receiver to confirm receipt."
-              ),
+              "transactions.requestorInstructionTransferred",
+              "The item has been marked as transferred. Waiting for the designated receiver to confirm receipt."
+            ),
           severity: isQuickExchange ? "warning" : "info",
         };
       case TransactionStatus.Completed:
@@ -564,6 +578,7 @@ const TransactionDetailPage: React.FC = () => {
     (data?.transaction?.requestor &&
       data?.transaction?.requestor.role === Role.ExchangePointAdmin);
   const isOwner = user && user?.id === ownerId;
+  const isHolder = holderId ? user && user?.id === holderId : isOwner;
   const isRequestor = user && user.id === requestorId;
   const isReceiver = user && user.id === receiverId;
   const isQuickExchange =
@@ -595,9 +610,9 @@ const TransactionDetailPage: React.FC = () => {
         <Alert severity="error">
           {error
             ? `${t(
-                "transactions.errorLoading",
-                "Error loading transaction"
-              )}: ${error.message}`
+              "transactions.errorLoading",
+              "Error loading transaction"
+            )}: ${error.message}`
             : t("transactions.notFound", "Transaction not found")}
         </Alert>
       </Container>
@@ -680,6 +695,7 @@ const TransactionDetailPage: React.FC = () => {
     t,
     transaction.status,
     isOwner || false,
+    isHolder || false,
     isRequestor || false,
     isReceiver || false,
     isQuickExchange || false
@@ -985,9 +1001,9 @@ const TransactionDetailPage: React.FC = () => {
                     secondary={
                       holder
                         ? t(
-                            "transactions.holderIsRequestor",
-                            "Requestor has the item"
-                          )
+                          "transactions.holderIsRequestor",
+                          "Requestor has the item"
+                        )
                         : t("transactions.ownerHasItem", "Owner has the item")
                     }
                   />
@@ -1409,7 +1425,7 @@ const TransactionDetailPage: React.FC = () => {
           {/* Owner and Requestor Actions - Approved */}
           {transaction.status === TransactionStatus.Approved && (
             <>
-              <Box>
+              {(isOwner || isRequestor) && (<Box>
                 <Button
                   variant="outlined"
                   color="error"
@@ -1434,8 +1450,9 @@ const TransactionDetailPage: React.FC = () => {
                   {getActionButtonDescription(t, "cancel", transaction.status)}
                 </Typography>
               </Box>
+              )}
 
-              {isOwner && (
+              {isHolder && (
                 <Box>
                   <Button
                     variant="contained"
@@ -1524,16 +1541,19 @@ const TransactionDetailPage: React.FC = () => {
             (isRequestor &&
               (transaction.status === TransactionStatus.Pending ||
                 transaction.status === TransactionStatus.Transfered)) ||
-            ((isReceiver || isQuickExchange) &&
+            (isHolder &&
+              (transaction.status === TransactionStatus.Pending ||
+                transaction.status === TransactionStatus.Transfered)) ||
+            ((isReceiver || isQuickExchange || isHolder) &&
               transaction.status === TransactionStatus.Transfered)
           ) && (
-            <Alert severity="info">
-              {t(
-                "transactions.noActionsAvailable",
-                "No actions available for this transaction."
-              )}
-            </Alert>
-          )}
+              <Alert severity="info">
+                {t(
+                  "transactions.noActionsAvailable",
+                  "No actions available for this transaction."
+                )}
+              </Alert>
+            )}
 
           {/* Share Button - Always available */}
           <Divider sx={{ my: 1 }} />
