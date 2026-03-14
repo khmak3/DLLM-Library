@@ -53,7 +53,7 @@ const App: React.FC<AppProps> = ({ user, onSignOut }) => {
     HostConfigQuery,
     {
       fetchPolicy: "cache-first",
-    }
+    },
   );
   const [initialPath, setInitialPath] = useState<string | null>(null);
   const previousUserIdRef = useRef<string | null>(null);
@@ -111,6 +111,9 @@ const App: React.FC<AppProps> = ({ user, onSignOut }) => {
       sessionStorage.removeItem("viewUserId");
     } else if (viewTransactionId) {
       setInitialPath(`/transaction/${viewTransactionId}`);
+      sessionStorage.removeItem("viewTransactionId");
+    } else if (redirectPath) {
+      setInitialPath(redirectPath);
       sessionStorage.removeItem("redirectPath");
     }
   }, []);
@@ -131,7 +134,7 @@ const App: React.FC<AppProps> = ({ user, onSignOut }) => {
     user?.emailVerified,
     meOutput?.data?.me,
     hostConfigOutput?.data?.hostConfig,
-    onSignOut
+    onSignOut,
   );
 
   // Show splash screen until HostConfig is loaded and minimum time has passed

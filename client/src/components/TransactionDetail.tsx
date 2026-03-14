@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { useParams, useNavigate } from "react-router-dom";
+import { useNavigateBack } from "../hook/useNavigateBack";
 import {
   Container,
   Typography,
@@ -279,7 +280,7 @@ const getRoleInstructions = (
   isHolder: boolean,
   isRequestor: boolean,
   isReceiver: boolean,
-  isQuickExchange: boolean
+  isQuickExchange: boolean,
 ): {
   role: string;
   instruction: string;
@@ -293,7 +294,7 @@ const getRoleInstructions = (
           role: t("transactions.roleOwner", "Owner"),
           instruction: t(
             "transactions.ownerInstructionPending",
-            "You have received a request for this item. Please review the requestor's information and decide whether to approve or cancel this transaction."
+            "You have received a request for this item. Please review the requestor's information and decide whether to approve or cancel this transaction.",
           ),
           severity: "warning",
         };
@@ -302,7 +303,7 @@ const getRoleInstructions = (
           role: t("transactions.roleOwner", "Owner"),
           instruction: t(
             "transactions.ownerInstructionApproved",
-            "You have approved this transaction. Please arrange a meeting with the requestor at the exchange location shown below. Once you have handed over the item, click 'Mark as Transferred'."
+            "You have approved this transaction. Please arrange a meeting with the requestor at the exchange location shown below. Once you have handed over the item, click 'Mark as Transferred'.",
           ),
           severity: "info",
         };
@@ -311,7 +312,7 @@ const getRoleInstructions = (
           role: t("transactions.roleOwner", "Owner"),
           instruction: t(
             "transactions.ownerInstructionTransferred",
-            "You have marked the item as transferred. Waiting for the receiver to confirm receipt."
+            "You have marked the item as transferred. Waiting for the receiver to confirm receipt.",
           ),
           severity: "info",
         };
@@ -320,7 +321,7 @@ const getRoleInstructions = (
           role: t("transactions.roleOwner", "Owner"),
           instruction: t(
             "transactions.ownerInstructionCompleted",
-            "This transaction is complete. The item has been successfully transferred to the new holder."
+            "This transaction is complete. The item has been successfully transferred to the new holder.",
           ),
           severity: "success",
         };
@@ -329,7 +330,7 @@ const getRoleInstructions = (
           role: t("transactions.roleOwner", "Owner"),
           instruction: t(
             "transactions.ownerInstructionCancelled",
-            "This transaction has been cancelled. The item remains in your possession."
+            "This transaction has been cancelled. The item remains in your possession.",
           ),
           severity: "info",
         };
@@ -343,7 +344,7 @@ const getRoleInstructions = (
           role: t("transactions.roleHolder", "Holder"),
           instruction: t(
             "transactions.ownerInstructionApproved",
-            "You have approved this transaction. Please arrange a meeting with the requestor at the exchange location shown below. Once you have handed over the item, click 'Mark as Transferred'."
+            "You have approved this transaction. Please arrange a meeting with the requestor at the exchange location shown below. Once you have handed over the item, click 'Mark as Transferred'.",
           ),
           severity: "info",
         };
@@ -357,7 +358,7 @@ const getRoleInstructions = (
           role: t("transactions.roleRequestor", "Requestor"),
           instruction: t(
             "transactions.requestorInstructionPending",
-            "Your request has been submitted. Please wait for the owner to review and approve your request. You can cancel this request if needed."
+            "Your request has been submitted. Please wait for the owner to review and approve your request. You can cancel this request if needed.",
           ),
           severity: "warning",
         };
@@ -366,7 +367,7 @@ const getRoleInstructions = (
           role: t("transactions.roleRequestor", "Requestor"),
           instruction: t(
             "transactions.requestorInstructionApproved",
-            "Your request has been approved! Please coordinate with the owner to meet at the exchange location shown below. Wait for the owner to hand over the item."
+            "Your request has been approved! Please coordinate with the owner to meet at the exchange location shown below. Wait for the owner to hand over the item.",
           ),
           severity: "success",
         };
@@ -375,13 +376,13 @@ const getRoleInstructions = (
           role: t("transactions.roleRequestor", "Requestor"),
           instruction: isQuickExchange
             ? t(
-              "transactions.requestorInstructionTransferredQuick",
-              "The item has been marked as transferred to you. Please inspect the item and take photos if needed, then click 'Confirm Received' to complete the transaction."
-            )
+                "transactions.requestorInstructionTransferredQuick",
+                "The item has been marked as transferred to you. Please inspect the item and take photos if needed, then click 'Confirm Received' to complete the transaction.",
+              )
             : t(
-              "transactions.requestorInstructionTransferred",
-              "The item has been marked as transferred. Waiting for the designated receiver to confirm receipt."
-            ),
+                "transactions.requestorInstructionTransferred",
+                "The item has been marked as transferred. Waiting for the designated receiver to confirm receipt.",
+              ),
           severity: isQuickExchange ? "warning" : "info",
         };
       case TransactionStatus.Completed:
@@ -389,7 +390,7 @@ const getRoleInstructions = (
           role: t("transactions.roleRequestor", "Requestor"),
           instruction: t(
             "transactions.requestorInstructionCompleted",
-            "This transaction is complete. You are now the holder of this item and can manage it from your items page."
+            "This transaction is complete. You are now the holder of this item and can manage it from your items page.",
           ),
           severity: "success",
         };
@@ -398,7 +399,7 @@ const getRoleInstructions = (
           role: t("transactions.roleRequestor", "Requestor"),
           instruction: t(
             "transactions.requestorInstructionCancelled",
-            "This transaction has been cancelled. You may submit a new request if still interested."
+            "This transaction has been cancelled. You may submit a new request if still interested.",
           ),
           severity: "info",
         };
@@ -413,7 +414,7 @@ const getRoleInstructions = (
           role: t("transactions.roleReceiver", "Receiver"),
           instruction: t(
             "transactions.receiverInstructionTransferred",
-            "The item has been marked as transferred to you. Please inspect the item and take photos if needed, then click 'Confirm Received' to complete the transaction."
+            "The item has been marked as transferred to you. Please inspect the item and take photos if needed, then click 'Confirm Received' to complete the transaction.",
           ),
           severity: "warning",
         };
@@ -422,7 +423,7 @@ const getRoleInstructions = (
           role: t("transactions.roleReceiver", "Receiver"),
           instruction: t(
             "transactions.receiverInstructionCompleted",
-            "You have confirmed receipt of this item. You are now the holder and can manage it from your items page."
+            "You have confirmed receipt of this item. You are now the holder and can manage it from your items page.",
           ),
           severity: "success",
         };
@@ -436,34 +437,34 @@ const getRoleInstructions = (
 const getActionButtonDescription = (
   t: any,
   action: string,
-  status: TransactionStatus
+  status: TransactionStatus,
 ): string => {
   switch (action) {
     case "approve":
       return t(
         "transactions.actionApproveDescription",
-        "Click this after reviewing the requestor's information and deciding to proceed with the exchange."
+        "Click this after reviewing the requestor's information and deciding to proceed with the exchange.",
       );
     case "transfer":
       return t(
         "transactions.actionTransferDescription",
-        "Click this only AFTER you have physically handed over the item to the requestor at the exchange location."
+        "Click this only AFTER you have physically handed over the item to the requestor at the exchange location.",
       );
     case "receive":
       return t(
         "transactions.actionReceiveDescription",
-        "Click this after inspecting the item's condition. You can optionally take photos to document the item's state at receipt."
+        "Click this after inspecting the item's condition. You can optionally take photos to document the item's state at receipt.",
       );
     case "cancel":
       if (status === TransactionStatus.Pending) {
         return t(
           "transactions.actionCancelPendingDescription",
-          "Cancel this transaction request. The item will remain with the current holder."
+          "Cancel this transaction request. The item will remain with the current holder.",
         );
       }
       return t(
         "transactions.actionCancelApprovedDescription",
-        "Cancel this approved transaction. Use this if you can no longer proceed with the exchange."
+        "Cancel this approved transaction. Use this if you can no longer proceed with the exchange.",
       );
     default:
       return "";
@@ -500,9 +501,7 @@ const TransactionDetailPage: React.FC = () => {
   const [receiveTransaction] = useMutation(RECEIVE_TRANSACTION);
   const [cancelTransaction] = useMutation(CANCEL_TRANSACTION);
 
-  const handleBack = () => {
-    navigate(-1);
-  };
+  const handleBack = useNavigateBack("/transactions");
 
   const handleAction = async (action: string, mutation: any) => {
     if (!transactionId) return;
@@ -610,9 +609,9 @@ const TransactionDetailPage: React.FC = () => {
         <Alert severity="error">
           {error
             ? `${t(
-              "transactions.errorLoading",
-              "Error loading transaction"
-            )}: ${error.message}`
+                "transactions.errorLoading",
+                "Error loading transaction",
+              )}: ${error.message}`
             : t("transactions.notFound", "Transaction not found")}
         </Alert>
       </Container>
@@ -698,7 +697,7 @@ const TransactionDetailPage: React.FC = () => {
     isHolder || false,
     isRequestor || false,
     isReceiver || false,
-    isQuickExchange || false
+    isQuickExchange || false,
   );
 
   // Determine transaction type
@@ -750,7 +749,7 @@ const TransactionDetailPage: React.FC = () => {
           icon={getStatusIcon(transaction.status)}
           label={t(
             `transactions.status.${transaction.status.toLowerCase()}`,
-            transaction.status
+            transaction.status,
           )}
           color={getStatusColor(transaction.status) as any}
           size="medium"
@@ -1001,9 +1000,9 @@ const TransactionDetailPage: React.FC = () => {
                     secondary={
                       holder
                         ? t(
-                          "transactions.holderIsRequestor",
-                          "Requestor has the item"
-                        )
+                            "transactions.holderIsRequestor",
+                            "Requestor has the item",
+                          )
                         : t("transactions.ownerHasItem", "Owner has the item")
                     }
                   />
@@ -1211,17 +1210,17 @@ const TransactionDetailPage: React.FC = () => {
               {transactionType === "faceToFace" &&
                 t(
                   "transactions.flowDescriptionFaceToFace",
-                  "This is a Face-to-Face Quick Exchange. Review the flow diagram below to understand the steps involved."
+                  "This is a Face-to-Face Quick Exchange. Review the flow diagram below to understand the steps involved.",
                 )}
               {transactionType === "directExchange" &&
                 t(
                   "transactions.flowDescriptionDirectExchange",
-                  "This is a Direct Exchange at an agreed location. Review the flow diagram below to understand the steps involved."
+                  "This is a Direct Exchange at an agreed location. Review the flow diagram below to understand the steps involved.",
                 )}
               {transactionType === "exchangePoint" &&
                 t(
                   "transactions.flowDescriptionExchangePoint",
-                  "This is an Exchange via Public Exchange Point. This involves two separate phases. Review the flow diagram below to understand the steps involved."
+                  "This is an Exchange via Public Exchange Point. This involves two separate phases. Review the flow diagram below to understand the steps involved.",
                 )}
             </Typography>
           </Alert>
@@ -1243,7 +1242,7 @@ const TransactionDetailPage: React.FC = () => {
                 src={"/images/Face-to-Face.jpg"}
                 alt={t(
                   "transactions.faceToFaceDiagramAlt",
-                  "Face-to-Face Transaction Diagram"
+                  "Face-to-Face Transaction Diagram",
                 )}
                 style={{ width: "100%", height: "auto" }}
               />
@@ -1253,7 +1252,7 @@ const TransactionDetailPage: React.FC = () => {
                 src={"/images/Direct-exchange.jpg"}
                 alt={t(
                   "transactions.directExchangeDiagramAlt",
-                  "Direct Exchange Diagram"
+                  "Direct Exchange Diagram",
                 )}
                 style={{ width: "100%", height: "auto" }}
               />
@@ -1263,7 +1262,7 @@ const TransactionDetailPage: React.FC = () => {
                 src={"/images/Public-Exchange.jpg"}
                 alt={t(
                   "transactions.exchangePointDiagramAlt",
-                  "Exchange Point Diagram"
+                  "Exchange Point Diagram",
                 )}
                 style={{ width: "100%", height: "auto" }}
               />
@@ -1281,7 +1280,7 @@ const TransactionDetailPage: React.FC = () => {
               <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                 {t(
                   `transactions.status.${transaction.status.toLowerCase()}`,
-                  transaction.status
+                  transaction.status,
                 )}
               </Typography>
             </Box>
@@ -1310,7 +1309,7 @@ const TransactionDetailPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {t(
                 "transactions.receiptImagesDescription",
-                "Photos taken when the item was received, documenting its condition."
+                "Photos taken when the item was received, documenting its condition.",
               )}
             </Typography>
 
@@ -1339,7 +1338,7 @@ const TransactionDetailPage: React.FC = () => {
                       "Receipt Image {{number}}",
                       {
                         number: index + 1,
-                      }
+                      },
                     )}
                     subtitle={t("common.clickToEnlarge", "Click to enlarge")}
                   />
@@ -1385,7 +1384,7 @@ const TransactionDetailPage: React.FC = () => {
                     {getActionButtonDescription(
                       t,
                       "approve",
-                      transaction.status
+                      transaction.status,
                     )}
                   </Typography>
                 </Box>
@@ -1415,7 +1414,7 @@ const TransactionDetailPage: React.FC = () => {
                     {getActionButtonDescription(
                       t,
                       "cancel",
-                      transaction.status
+                      transaction.status,
                     )}
                   </Typography>
                 </Box>
@@ -1425,31 +1424,36 @@ const TransactionDetailPage: React.FC = () => {
           {/* Owner and Requestor Actions - Approved */}
           {transaction.status === TransactionStatus.Approved && (
             <>
-              {(isOwner || isRequestor) && (<Box>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={() => handleAction("cancel", cancelTransaction)}
-                  disabled={actionLoading === "cancel"}
-                  startIcon={
-                    actionLoading === "cancel" ? (
-                      <CircularProgress size={20} />
-                    ) : (
-                      <CancelIcon />
-                    )
-                  }
-                  fullWidth
-                >
-                  {t("transactions.cancel", "Cancel")}
-                </Button>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "block", mt: 0.5, px: 1 }}
-                >
-                  {getActionButtonDescription(t, "cancel", transaction.status)}
-                </Typography>
-              </Box>
+              {(isOwner || isRequestor) && (
+                <Box>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleAction("cancel", cancelTransaction)}
+                    disabled={actionLoading === "cancel"}
+                    startIcon={
+                      actionLoading === "cancel" ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <CancelIcon />
+                      )
+                    }
+                    fullWidth
+                  >
+                    {t("transactions.cancel", "Cancel")}
+                  </Button>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mt: 0.5, px: 1 }}
+                  >
+                    {getActionButtonDescription(
+                      t,
+                      "cancel",
+                      transaction.status,
+                    )}
+                  </Typography>
+                </Box>
               )}
 
               {isHolder && (
@@ -1480,7 +1484,7 @@ const TransactionDetailPage: React.FC = () => {
                     {getActionButtonDescription(
                       t,
                       "transfer",
-                      transaction.status
+                      transaction.status,
                     )}
                   </Typography>
                 </Box>
@@ -1517,7 +1521,7 @@ const TransactionDetailPage: React.FC = () => {
                     {getActionButtonDescription(
                       t,
                       "receive",
-                      transaction.status
+                      transaction.status,
                     )}
                   </Typography>
                 </Box>
@@ -1526,7 +1530,7 @@ const TransactionDetailPage: React.FC = () => {
                   <Alert severity="info">
                     {t(
                       "transactions.signInToConfirm",
-                      "Please sign in or create an account to confirm receipt of this item."
+                      "Please sign in or create an account to confirm receipt of this item.",
                     )}
                   </Alert>
                 )}
@@ -1547,13 +1551,13 @@ const TransactionDetailPage: React.FC = () => {
             ((isReceiver || isQuickExchange || isHolder) &&
               transaction.status === TransactionStatus.Transfered)
           ) && (
-              <Alert severity="info">
-                {t(
-                  "transactions.noActionsAvailable",
-                  "No actions available for this transaction."
-                )}
-              </Alert>
-            )}
+            <Alert severity="info">
+              {t(
+                "transactions.noActionsAvailable",
+                "No actions available for this transaction.",
+              )}
+            </Alert>
+          )}
 
           {/* Share Button - Always available */}
           <Divider sx={{ my: 1 }} />
@@ -1573,7 +1577,7 @@ const TransactionDetailPage: React.FC = () => {
             >
               {t(
                 "transactions.shareDescription",
-                "Share this transaction link with the other party for easy access and coordination."
+                "Share this transaction link with the other party for easy access and coordination.",
               )}
             </Typography>
           </Box>
@@ -1589,8 +1593,8 @@ const TransactionDetailPage: React.FC = () => {
           alert(
             t(
               "auth.resetPasswordInfo",
-              "Please contact support to reset your password."
-            )
+              "Please contact support to reset your password.",
+            ),
           );
         }}
         defaultIsSignUp={authDefaultSignUp}
