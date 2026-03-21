@@ -27,6 +27,7 @@ import {
   Item,
   User,
   BindInput,
+  Role,
 } from "../generated/graphql";
 import {
   FolderOpen as FolderIcon,
@@ -129,7 +130,7 @@ const BindItemDialog: React.FC<BindItemDialogProps> = ({
             : "binder.bindBinderError",
           sourceType === "item"
             ? "Failed to bind item"
-            : "Failed to bind binder"
+            : "Failed to bind binder",
         );
       setErrorMessage(errorMsg);
       if (onError) {
@@ -206,7 +207,10 @@ const BindItemDialog: React.FC<BindItemDialogProps> = ({
 
     if (bindMode === "new" && !newBinderName.trim()) {
       setErrorMessage(
-        t("binder.newBinderNameError", "Please enter a name for the new binder")
+        t(
+          "binder.newBinderNameError",
+          "Please enter a name for the new binder",
+        ),
       );
       return;
     }
@@ -215,8 +219,8 @@ const BindItemDialog: React.FC<BindItemDialogProps> = ({
       setErrorMessage(
         t(
           "binder.selectParentBinderError",
-          "Please select a parent binder to create the new binder in"
-        )
+          "Please select a parent binder to create the new binder in",
+        ),
       );
       return;
     }
@@ -347,11 +351,11 @@ const BindItemDialog: React.FC<BindItemDialogProps> = ({
             {sourceType === "item"
               ? t(
                   "binder.noBindersYet",
-                  "You don't have any binders yet. A root binder will be created automatically when you bind your first item."
+                  "You don't have any binders yet. A root binder will be created automatically when you bind your first item.",
                 )
               : t(
                   "binder.noOtherBindersYet",
-                  "You don't have any other binders. Create a binder first to organize this binder."
+                  "You don't have any other binders. Create a binder first to organize this binder.",
                 )}
           </Alert>
         ) : (
@@ -380,7 +384,7 @@ const BindItemDialog: React.FC<BindItemDialogProps> = ({
                       <NewFolderIcon fontSize="small" />
                       {t(
                         "binder.createNewAndBind",
-                        "Create new binder and bind"
+                        "Create new binder and bind",
                       )}
                     </Box>
                   }
@@ -442,14 +446,14 @@ const BindItemDialog: React.FC<BindItemDialogProps> = ({
                 label={t("binder.newBinderName", "New Binder Name")}
                 placeholder={t(
                   "binder.newBinderNamePlaceholder",
-                  "Enter name for new binder"
+                  "Enter name for new binder",
                 )}
                 value={newBinderName}
                 onChange={(e) => setNewBinderName(e.target.value)}
                 required
                 helperText={t(
                   "binder.newBinderHelp",
-                  "A new binder will be created inside the selected parent binder"
+                  "A new binder will be created inside the selected parent binder",
                 )}
                 sx={{ mt: 2 }}
               />
@@ -462,40 +466,43 @@ const BindItemDialog: React.FC<BindItemDialogProps> = ({
           <Alert severity="info" sx={{ mt: 2 }}>
             {t(
               "binder.nestedBinderInfo",
-              "This binder will become a sub-binder of the selected parent binder."
+              "This binder will become a sub-binder of the selected parent binder.",
             )}
           </Alert>
         )}
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={handleClose} disabled={addBindLoading}>
-          {t("common.cancel", "Cancel")}
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleConfirm}
-          disabled={
-            addBindLoading ||
-            binderPathsLoading ||
-            (!hasNoBinders &&
-              ((bindMode === "existing" && !selectedBinderId) ||
-                (bindMode === "new" &&
-                  (!selectedBinderId || !newBinderName.trim()))))
-          }
-        >
-          {addBindLoading ? (
-            <>
-              <CircularProgress size={20} sx={{ mr: 1 }} />
-              {t("common.binding", "Binding...")}
-            </>
-          ) : bindMode === "new" ? (
-            t("binder.createAndBind", "Create & Bind")
-          ) : (
-            t("common.bind", "Bind")
-          )}
-        </Button>
-      </DialogActions>
+      {/* Only show actions if user is verified and is an admin */}
+      {user && user.isVerified && user.role === Role.Admin && (
+        <DialogActions>
+          <Button onClick={handleClose} disabled={addBindLoading}>
+            {t("common.cancel", "Cancel")}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirm}
+            disabled={
+              addBindLoading ||
+              binderPathsLoading ||
+              (!hasNoBinders &&
+                ((bindMode === "existing" && !selectedBinderId) ||
+                  (bindMode === "new" &&
+                    (!selectedBinderId || !newBinderName.trim()))))
+            }
+          >
+            {addBindLoading ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                {t("common.binding", "Binding...")}
+              </>
+            ) : bindMode === "new" ? (
+              t("binder.createAndBind", "Create & Bind")
+            ) : (
+              t("common.bind", "Bind")
+            )}
+          </Button>
+        </DialogActions>
+      )}
     </Dialog>
   );
 };

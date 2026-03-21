@@ -243,6 +243,9 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
   // Add state for bind dialog
   const [bindDialogOpen, setBindDialogOpen] = useState(false);
 
+  // State for location prompt dialog
+  const [locationPromptOpen, setLocationPromptOpen] = useState(false);
+
   const { data, loading, error, refetch } = useQuery<{ item: Item }>(
     ITEM_DETAIL_QUERY,
     {
@@ -413,6 +416,11 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
       return;
     }
 
+    if (!user.location?.latitude || !user.location?.longitude) {
+      setLocationPromptOpen(true);
+      return;
+    }
+
     setRequestDialogOpen(true);
   };
 
@@ -424,6 +432,11 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
         setRequestDialogOpen(true);
       }
     }, 500);
+  };
+
+  const handleGoToProfile = () => {
+    setLocationPromptOpen(false);
+    navigate("/profile");
   };
 
   const handleCloseAuthDialog = () => {
@@ -454,8 +467,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
       setErrorMessage(
         t(
           "binder.verificationRequired",
-          "Please verify your email to use binders"
-        )
+          "Please verify your email to use binders",
+        ),
       );
       setErrorSnackbarOpen(true);
       return;
@@ -1227,7 +1240,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
             sx={{ mt: 4, display: "flex", gap: 2, justifyContent: "flex-end" }}
           >
             {/* Bind Button - Show for all verified users */}
-            {user && user.isVerified && (
+            {/* temp: only show for admins until we have binder capacity management */}
+            {user && user.isVerified && user.role === Role.Admin && (
               <Button
                 variant="outlined"
                 color="primary"
@@ -1322,7 +1336,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
                   "This item appears in {{count}} binder(s)",
                   {
                     count: bindersData.bindersFromItemId.length,
-                  }
+                  },
                 )}
               </Typography>
             </Box>
@@ -1358,6 +1372,54 @@ const ItemDetail: React.FC<ItemDetailProps> = ({ itemId, user, onBack }) => {
           onError={handleEditError}
         />
       )}
+      {/* Location Prompt Dialog */}
+      <Modal
+        open={locationPromptOpen}
+        onClose={() => setLocationPromptOpen(false)}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{ backdrop: { timeout: 500 } }}
+      >
+        <Fade in={locationPromptOpen}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              bgcolor: "background.paper",
+              borderRadius: 2,
+              boxShadow: 24,
+              p: 4,
+              maxWidth: 400,
+              width: "90%",
+            }}
+          >
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              {t("item.locationRequired", "Location Required")}
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              {t(
+                "item.locationRequiredDescription",
+                "Please set your location in your profile before requesting an item. This helps us match you with nearby items.",
+              )}
+            </Typography>
+            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+              <Button onClick={() => setLocationPromptOpen(false)}>
+                {t("common.cancel", "Cancel")}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleGoToProfile}
+                startIcon={<LocationOnIcon />}
+              >
+                {t("item.goToProfile", "Go to Profile")}
+              </Button>
+            </Box>
+          </Box>
+        </Fade>
+      </Modal>
+
       {/* Unified Authentication Dialog */}
       <AuthDialog
         open={authDialogOpen}

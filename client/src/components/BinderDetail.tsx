@@ -27,7 +27,7 @@ import {
 import { gql, useQuery } from "@apollo/client";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Binder, BindType, User } from "../generated/graphql";
+import { Binder, BindType, Role, User } from "../generated/graphql";
 import SafeImage from "./SafeImage";
 import BinderForm from "./BinderForm";
 import ReactMarkdown from "react-markdown";
@@ -81,7 +81,7 @@ const BinderDetail: React.FC<BinderDetailProps> = ({ currentUser }) => {
     {
       variables: { binderId: binderId! },
       skip: !binderId,
-    }
+    },
   );
 
   const handleBack = () => {
@@ -122,8 +122,8 @@ const BinderDetail: React.FC<BinderDetailProps> = ({ currentUser }) => {
       setErrorMessage(
         t(
           "binder.verificationRequired",
-          "Please verify your email to use binders"
-        )
+          "Please verify your email to use binders",
+        ),
       );
       setErrorSnackbarOpen(true);
       return;
@@ -341,7 +341,7 @@ const BinderDetail: React.FC<BinderDetailProps> = ({ currentUser }) => {
                         "Binded in {{count}} binder(s)",
                         {
                           count: data.binder.bindedCount,
-                        }
+                        },
                       )}
                       sx={{
                         bgcolor: "rgba(255, 255, 255, 0.9)",
@@ -616,25 +616,30 @@ const BinderDetail: React.FC<BinderDetailProps> = ({ currentUser }) => {
               </Grid>
 
               {/* Action Buttons */}
-              <Box
-                sx={{
-                  mt: 3,
-                  display: "flex",
-                  gap: 2,
-                  justifyContent: "flex-end",
-                }}
-              >
-                {/* Bind to Binder Button */}
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  size="large"
-                  onClick={handleBindToBinderClick}
-                  startIcon={<FolderIcon />}
-                >
-                  {t("binder.bindToBinder", "Bind to Another Binder")}
-                </Button>
-              </Box>
+              {/* Only show actions if user is verified and is an admin */}
+              {currentUser &&
+                currentUser.isVerified &&
+                currentUser.role === Role.Admin && (
+                  <Box
+                    sx={{
+                      mt: 3,
+                      display: "flex",
+                      gap: 2,
+                      justifyContent: "flex-end",
+                    }}
+                  >
+                    {/* Bind to Binder Button */}
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      size="large"
+                      onClick={handleBindToBinderClick}
+                      startIcon={<FolderIcon />}
+                    >
+                      {t("binder.bindToBinder", "Bind to Another Binder")}
+                    </Button>
+                  </Box>
+                )}
             </Box>
           </Paper>
 
@@ -790,8 +795,8 @@ const BinderDetail: React.FC<BinderDetailProps> = ({ currentUser }) => {
           alert(
             t(
               "auth.resetPasswordInfo",
-              "Please contact support to reset your password."
-            )
+              "Please contact support to reset your password.",
+            ),
           );
         }}
         defaultIsSignUp={authDefaultSignUp}
