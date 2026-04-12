@@ -1,6 +1,19 @@
 /// <reference types="jest" />
 import { ItemService } from "../itemService";
 
+import {
+  Item,
+  Location,
+  LocationInput,
+  ItemCondition,
+  ItemStatus,
+  Language,
+  User,
+  Role,
+} from "../generated/graphql";
+
+import { CONTENT_RATING_CENSOR_THRESHOLD } from "../contentRatingDefaults";
+
 describe("ItemService.tokenizeName", () => {
   let service : ItemService;
   const mockCategoryService = {} as any;
@@ -73,4 +86,66 @@ describe("ItemService.tokenizeName", () => {
       "test",
     ]);
   });
+});
+
+
+describe("ItemService.shouldCensorItem", () => {
+  let service : ItemService;
+  const mockCategoryService = {} as any;
+
+  // Test Defaults
+    let item = {
+      ownerId : "1",
+      contentRating: 2,
+    } as any;
+    let user = {
+      id : "2",
+      visibleContentRating : 3,
+    } as any;
+
+  beforeEach(() => {
+    service = new ItemService(mockCategoryService);
+  });
+
+  it("Show users items below or at visible content rating", () => {
+    item.contentRating = 2;
+    user.visibleContentRating = 2;
+
+    expect((service as any).shouldCensorItem(item, user)).toEqual(false);
+  });
+
+  it("Hide from users items above visible content rating", () => {
+    item.contentRating = 3;
+    user.visibleContentRating = 2;
+
+    expect((service as any).shouldCensorItem(item, user)).toEqual(true);
+  });
+
+  it ("Apply default content rating threshold for unauthenticated users", () => {
+      item.contentRating = CONTENT_RATING_CENSOR_THRESHOLD - 1;
+      expect((service as any).shouldCensorItem(item, null)).toEqual(false);
+
+      item.contentRating = CONTENT_RATING_CENSOR_THRESHOLD;
+      expect((service as any).shouldCensorItem(item, null)).toEqual(true);
+  });
+
+  it("Show users their own items regardless of content rating", () => {
+    item.ownerId = "1";
+    user.id = "1";
+    item.contentRating = 4;
+    user.visibleContentRating = 1;
+
+    expect((service as any).shouldCensorItem(item, user)).toEqual(false);
+  });
+
+  it("Show admin all items regardless of content rating", () => {
+    item.ownerId = "1";
+    user.id = "2";
+    user.role = Role.Admin;
+    item.contentRating = 4;
+    user.visibleContentRating = 1;
+
+    expect((service as any).shouldCensorItem(item, user)).toEqual(false);
+  });
+
 });

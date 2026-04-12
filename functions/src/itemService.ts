@@ -506,11 +506,55 @@ export class ItemService {
     return item;
   }
 
+
+  /*
+   * This funcction assumes censor info is already present in the item data.
+   *
+   * Visibility of items in order of precedence.
+   * - Allow users to always view their own books.
+   * - Allow admin to view all books so that they can change/verfiy content rating.
+   * - Hide items above or at censor threshold if content rating is not checked by admin.
+   * - Always hide items with content rating above user threshold.
+  */
+  shouldCensorItem(item: Item, user: User | null): boolean {
+
+    if (user != null && item.ownerId === user.id) {
+      return false;
+    }
+    if (user != null &&user.role === Role.Admin) {
+      return false;
+    }
+    if (item.contentRating >= CONTENT_RATING_CENSOR_THRESHOLD && !item.contentRatingChecked) {
+      return true;
+    }
+
+    let userContentRatingThreshold = user ? user.visibleContentRating : DEFAULT_CONTENT_RATING;
+
+    if (item.contentRating > userContentRatingThreshold) {
+      return true;
+    }
+
+    return false;
+  }
+
   async _itemModelToItem(
     docData: firebase.firestore.DocumentData,
   ): Promise<Item> {
     const itemId = docData.id;
     const data = docData as ItemModel;
+
+
+    /*
+     * Implement censor function here as failsafe since all DB data need to go through here
+     * before returning to GUI. Make sure we don't omit filtering for any API call.
+     */
+    if ( data.contentRating === undefined || data.contentRating === null) {
+      data.contentRating = DEFAULT_CONTENT_RATING; // default content rating if not set
+      data.contentRatingChecked = false;
+    }
+
+
+
 
     // validate thumbnail exist or not.
     // If there is images without thumbnails, we need to generate thumbnails.
