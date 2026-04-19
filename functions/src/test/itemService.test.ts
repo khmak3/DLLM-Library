@@ -138,6 +138,16 @@ describe("ItemService.shouldCensorItem", () => {
     expect((service as any).shouldCensorItem(item, user)).toEqual(false);
   });
 
+  it("Show holders items regardless of content rating", () => {
+    item.ownerId = "2";
+    item.holderId = "1";
+    user.id = "1";
+    item.contentRating = 4;
+    user.visibleContentRating = 1;
+
+    expect((service as any).shouldCensorItem(item, user)).toEqual(false);
+  });
+
   it("Show admin all items regardless of content rating", () => {
     item.ownerId = "1";
     user.id = "2";

@@ -225,10 +225,15 @@ export const resolvers: Resolvers = {
     itemsOnLoanByOwner: async (
       _: any,
       { userId, category, status, keyword, limit = 20, offset = 0 }: any,
-      __: any,
+      { loginUser }: Context,
     ): Promise<Item[]> => {
+      const user = loginUser ? await userService.userById(loginUser.uid) : null;
+      if ( !user ) {
+        throw new Error("Not authenticated");
+      }
+
       return itemService.itemsOnLoanByOwner(
-        userId,
+        user,
         category,
         status,
         keyword,
@@ -241,8 +246,13 @@ export const resolvers: Resolvers = {
       { userId, category, status, keyword, limit = 20, offset = 0 }: any,
       { loginUser }: Context,
     ): Promise<Item[]> => {
+      const user = loginUser ? await userService.userById(loginUser.uid) : null;
+      if ( !user ) {
+        throw new Error("Not authenticated");
+      }
+
       return itemService.itemsOnLoanByHolder(
-        userId,
+        user,
         category,
         status,
         keyword,

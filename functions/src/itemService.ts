@@ -236,8 +236,7 @@ export class ItemService {
   }
 
   async itemsOnLoanByOwner(
-    loggedInUser: User | UserModel | null,
-    userId: string,
+    loggedInUser: User | UserModel, // Using loggedInUser to ensure censor function works
     category: string[],
     status?: string,
     keyword?: string,
@@ -249,7 +248,7 @@ export class ItemService {
       (currentOffset) => {
         let query = this._itemsQuery([], category, status, keyword, false);
         return query
-          .where("ownerId", "==", userId)
+          .where("ownerId", "==", loggedInUser.id)
           .where("holderId", "!=", null)
           .orderBy("holderId")
           .orderBy("updated", "desc")
@@ -262,8 +261,7 @@ export class ItemService {
   }
 
   async itemsOnLoanByHolder(
-    loggedInUser: User | UserModel | null,
-    userId: string,
+    loggedInUser: User | UserModel, // Using loggedInUser to ensure censor function works
     category: string[],
     status?: string,
     keyword?: string,
@@ -275,7 +273,7 @@ export class ItemService {
       (currentOffset) => {
         let query = this._itemsQuery([], category, status, keyword, false);
         return query
-          .where("holderId", "==", userId)
+          .where("holderId", "==", loggedInUser.id)
           .orderBy("updated", "desc")
           .offset(currentOffset);
       },
@@ -545,6 +543,7 @@ export class ItemService {
    *
    * Visibility of items in order of precedence.
    * - Allow users to always view their own books.
+   * - Allow users to always view books that they hold.
    * - Allow admin to view all books so that they can change/verify content rating.
    * - Hide items above or at censor threshold if content rating is not checked by admin.
    * - Always hide items with content rating above user threshold.
@@ -555,7 +554,7 @@ export class ItemService {
   ): boolean {
     if (
       user != null &&
-      (item.ownerId === user.id || user.role === Role.Admin)
+      ( item.holderId === user.id || item.ownerId === user.id || user.role === Role.Admin)
     ) {
       return false;
     }
