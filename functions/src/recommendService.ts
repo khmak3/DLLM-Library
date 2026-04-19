@@ -57,7 +57,7 @@ export class RecommendService {
   ): Promise<Item[]> {
     if (recommendationType === RecommendationType.NewArrivals) {
       // 如果是新到貨推薦，直接從 ItemService 獲取最新的物品
-      return await this.itemService.latestItems(offset, limit);
+      return await this.itemService.latestItems(userModel, offset, limit);
     }
     let query = this.recommendCollection
       .where("recommendationType", "==", recommendationType)
