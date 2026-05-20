@@ -21,39 +21,47 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   const handleLanguageChange = (event: SelectChangeEvent<string>) => {
     i18n.changeLanguage(event.target.value);
   };
+  const handleClick = (_: React.MouseEvent<HTMLDivElement>) => {
+    setShow(false);
+  };
   const langList = ["zh-HK", "en", "zh-TW"];
+  const [show, setShow] = React.useState(false);
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1, color }}>
-      <Language />
-      <FormControl size="small" sx={{ minWidth: 120 }}>
-        <Select
-          value={i18n.language}
-          onChange={handleLanguageChange}
-          variant="outlined"
-          sx={{
-            color,
-            "& .MuiOutlinedInput-notchedOutline": {
-              borderColor: color,
-            },
-            "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: color,
-            },
-            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-              borderColor: color,
-            },
-            "& .MuiSvgIcon-root": {
+      <Language onClick={() => setShow(!show)} />
+      {show && (
+        <FormControl size="small" sx={{ minWidth: 20 }}>
+          <Select
+            value={i18n.language}
+            onChange={handleLanguageChange}
+            open={show}
+            onClick={handleClick}
+            variant="outlined"
+            sx={{
               color,
-            },
-          }}
-        >
-          {langList.map((lang) => (
-            <MenuItem key={lang} value={lang}>
-              {t(`languages.${lang}`)}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: color,
+              },
+              "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: color,
+              },
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: color,
+              },
+              "& .MuiSvgIcon-root": {
+                color,
+              },
+            }}
+          >
+            {langList.map((lang) => (
+              <MenuItem key={lang} value={lang}>
+                {t(`languages.${lang}`)}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
     </Box>
   );
 };

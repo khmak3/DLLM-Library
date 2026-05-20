@@ -24,6 +24,7 @@ import {
   Article as ArticleIcon,
   SwapHoriz as LoanIcon,
   Label as ClassificationIcon,
+  Chat as ChatIcon,
 } from "@mui/icons-material";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -89,7 +90,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       variables: { userId: user?.id! },
       skip: !user?.id,
       pollInterval: 30000, // Poll every 30 seconds
-    }
+    },
   );
 
   const notificationCount =
@@ -116,7 +117,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   // Handlers
   const handleBottomNavigation = (
     _: React.SyntheticEvent,
-    newValue: number
+    newValue: number,
   ) => {
     setBottomNavValue(newValue);
 
@@ -182,6 +183,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     navigate("/transactions");
   };
 
+  const handleChatClick = () => {
+    if (hostConfig?.chatLink) {
+      window.open(hostConfig.chatLink, "_blank", "noopener,noreferrer");
+    }
+  };
+
   const handleNewsCreated = () => {
     setShowNewsForm(false);
     if (window.location.pathname === "/") {
@@ -216,6 +223,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               <Badge badgeContent={notificationCount} color="error">
                 <NotificationsIcon />
               </Badge>
+            </IconButton>
+          )}
+
+          {hostConfig?.chatLink && (
+            <IconButton
+              color="inherit"
+              onClick={handleChatClick}
+              title={t("home.joinCommunityChat", "Join Community Chat")}
+            >
+              <ChatIcon />
             </IconButton>
           )}
 
@@ -257,7 +274,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   <ListItemText>
                     {t(
                       "classification.assignClassifications",
-                      "Assign Classifications"
+                      "Assign Classifications",
                     )}
                   </ListItemText>
                 </MenuItem>
@@ -269,7 +286,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   <ListItemText>
                     {t(
                       "contentRating.approvalDialog",
-                      "Content Rating Approval"
+                      "Content Rating Approval",
                     )}
                   </ListItemText>
                 </MenuItem>

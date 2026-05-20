@@ -42,7 +42,7 @@
     "viewAllNews": "View All News",
     "loanItems": "Loans",
     "allNews": "All News",
-    "viewAllItems": "View Nearby Items"
+    "viewNearbyItems": "View Nearby Items"
   },
   "home": {
     "welcome": "Welcome, {{nickname}}",

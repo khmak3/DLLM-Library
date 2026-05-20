@@ -8,15 +8,21 @@ import {
   ListItem,
   CircularProgress,
   Alert,
-  Fab,
-  Tooltip,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
 } from "@mui/material";
-import { Chat as ChatIcon } from "@mui/icons-material";
+import {
+  ViewList as ViewListIcon,
+  Add as AddIcon,
+  Search as SearchIcon,
+  AutoStories as AutoStoriesIcon,
+} from "@mui/icons-material";
 import {
   User,
   Item,
@@ -79,6 +85,7 @@ const HomePage: React.FC = () => {
 
   const [showCreateUser, setShowCreateUser] = useState(false);
   const [showAddressReminder, setShowAddressReminder] = useState(false);
+  const [speedDialOpen, setSpeedDialOpen] = useState(false);
 
   const handleItemCreated = () => {
     setShowItemForm(false);
@@ -147,7 +154,7 @@ const HomePage: React.FC = () => {
     window.location.reload();
   };
 
-  const handleViewAllItems = () => {
+  const handleViewNearbyItems = () => {
     navigate("/item/all");
   };
 
@@ -224,31 +231,6 @@ const HomePage: React.FC = () => {
               )
             )}
           </Box>
-        </ListItem>
-
-        {/* View All Items Button */}
-        <ListItem>
-          <Button
-            variant="contained"
-            onClick={handleViewAllItems}
-            size="large"
-            fullWidth
-            data-tour="view-all-items"
-          >
-            {t("navigation.viewAllItems")}
-          </Button>
-          {user?.isVerified && (
-            <Button
-              variant="contained"
-              onClick={handleAddItem}
-              size="large"
-              fullWidth
-              sx={{ ml: 2 }}
-              data-tour="add-item"
-            >
-              {t("item.create", "Add Item")}
-            </Button>
-          )}
         </ListItem>
 
         {/* User Picked Recommendations Section - Only for active users */}
@@ -415,27 +397,37 @@ const HomePage: React.FC = () => {
         )}
       </List>
 
-      {/* Floating Chat Button */}
-      {hostConfig?.chatLink && (
-        <Tooltip
-          title={t("home.joinCommunityChat", "Join Community Chat")}
-          placement="left"
-        >
-          <Fab
-            color="primary"
-            aria-label="chat"
-            onClick={handleChatClick}
-            sx={{
-              position: "fixed",
-              bottom: 80, // Increased from 64 to 80 to avoid overlap with bottom navigation bar
-              right: 16,
-              zIndex: 1000,
+      {/* Floating Speed Dial */}
+      <SpeedDial
+        ariaLabel={t("navigation.quickActions", "Quick Actions")}
+        sx={{ position: "fixed", bottom: 70, right: 16 }}
+        icon={<AutoStoriesIcon />}
+        open={speedDialOpen}
+        onOpen={() => setSpeedDialOpen(true)}
+        onClose={() => setSpeedDialOpen(false)}
+        data-tour="quick-actions"
+      >
+        <SpeedDialAction
+          icon={<ViewListIcon />}
+          tooltipTitle={t("navigation.viewNearbyItems")}
+          tooltipOpen
+          onClick={() => {
+            setSpeedDialOpen(false);
+            handleViewNearbyItems();
+          }}
+        />
+        {user?.isVerified && (
+          <SpeedDialAction
+            icon={<AddIcon />}
+            tooltipTitle={t("item.create", "Add Item")}
+            tooltipOpen
+            onClick={() => {
+              setSpeedDialOpen(false);
+              handleAddItem();
             }}
-          >
-            <ChatIcon />
-          </Fab>
-        </Tooltip>
-      )}
+          />
+        )}
+      </SpeedDial>
     </>
   );
 };
