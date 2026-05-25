@@ -29,6 +29,7 @@ const RECENT_ITEMS_QUERY = gql`
       description
       condition
       category
+      clssfctns
       status
       images
       publishedYear
@@ -46,6 +47,7 @@ const RECOMMENDED_ITEMS_QUERY = gql`
       description
       condition
       category
+      clssfctns
       status
       images
       publishedYear
@@ -140,7 +142,9 @@ const RecentItemBanner: React.FC<RecentItemBannerProps> = ({
     if (titleOverride) return titleOverride;
     if (category && category !== "") {
       return isRecent
-        ? t("item.recent.recentInCategory", "Recent in {{category}}", { category })
+        ? t("item.recent.recentInCategory", "Recent in {{category}}", {
+            category,
+          })
         : t("item.recent.hotInCategory", "Hot in {{category}}", { category });
     }
     if (recommendationType === RecommendationType.UserPicked) {

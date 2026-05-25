@@ -37,6 +37,7 @@ const ALL_RECENT_ITEMS_QUERY = gql`
       description
       condition
       category
+      clssfctns
       status
       images
       publishedYear
@@ -72,7 +73,7 @@ const ItemRecentPage: React.FC = () => {
   };
 
   const handleCategoryChange = (
-    event: React.ChangeEvent<{ value: unknown }>
+    event: React.ChangeEvent<{ value: unknown }>,
   ) => {
     setSelectedCategory(event.target.value as string);
     setPage(1); // Reset to page 1 when category changes
@@ -95,7 +96,7 @@ const ItemRecentPage: React.FC = () => {
 
   const filteredItems =
     data?.recentAddedItems.filter((item) =>
-      statusFilter ? item.status === statusFilter : true
+      statusFilter ? item.status === statusFilter : true,
     ) || [];
 
   return (
@@ -233,7 +234,10 @@ const ItemRecentPage: React.FC = () => {
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {statusFilter || selectedCategory
-                ? t("itemsAll.tryDifferentFilters", "Try adjusting your filters")
+                ? t(
+                    "itemsAll.tryDifferentFilters",
+                    "Try adjusting your filters",
+                  )
                 : t("itemsAll.noItemsYet", "No items available yet")}
             </Typography>
           </Box>

@@ -49,6 +49,7 @@ const RecommendedItemsQuery = gql`
       id
       name
       category
+      clssfctns
       status
       images
       thumbnails
