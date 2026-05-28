@@ -13,7 +13,7 @@ import {
   Container,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { gql, useQuery } from "@apollo/client";
 import {
   RecentAddedItemsQuery,
@@ -46,15 +46,29 @@ const ALL_RECENT_ITEMS_QUERY = gql`
   }
 `;
 
+const TOTAL_ITEMS_COUNT_QUERY = gql`
+  query TotalItemsCount($classifications: [String!]) {
+    totalItemsCount(classifications: $classifications)
+  }
+`;
+
 const ITEMS_PER_PAGE = 12; // Changed to 12 for better grid layout (3 columns x 4 rows)
 
 const ItemRecentPage: React.FC = () => {
   const { user } = useOutletContext<OutletContext>();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [page, setPage] = useState<number>(1);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [statusFilter, setStatusFilter] = useState<string>(
+    searchParams.get("status") || ""
+  );
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    searchParams.get("category") || ""
+  );
+  const [page, setPage] = useState<number>(
+    parseInt(searchParams.get("page") || "1", 10)
+  );
 
   const { data, loading, error, refetch } = useQuery<
     RecentAddedItemsQuery,
@@ -67,6 +81,15 @@ const ItemRecentPage: React.FC = () => {
     },
   });
 
+  const { data: totalCountData } = useQuery<
+    { totalItemsCount: number },
+    { classifications?: string[] }
+  >(TOTAL_ITEMS_COUNT_QUERY, {
+    variables: {
+      classifications: selectedCategory ? [selectedCategory] : undefined,
+    },
+  });
+
   const handleItemClick = (itemId: string) => {
     navigate(`/item/${itemId}`);
   };
@@ -74,13 +97,24 @@ const ItemRecentPage: React.FC = () => {
   const handleCategoryChange = (
     event: React.ChangeEvent<{ value: unknown }>
   ) => {
-    setSelectedCategory(event.target.value as string);
-    setPage(1); // Reset to page 1 when category changes
+    const cat = event.target.value as string;
+    setSelectedCategory(cat);
+    setPage(1);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (cat) next.set("category", cat); else next.delete("category");
+      next.set("page", "1");
+      return next;
+    });
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    // Scroll to top when page changes
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("page", String(newPage));
+      return next;
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -118,7 +152,9 @@ const ItemRecentPage: React.FC = () => {
               <ArrowBack />
             </IconButton>
             <Typography variant="h5" sx={{ flexGrow: 1, fontWeight: "bold" }}>
-              {t("item.allItems", "All Items")}
+              {selectedCategory
+                ? t("item.categoryItems", "{{category}} Items", { category: selectedCategory })
+                : t("item.recentItems", "Recent Items")}
             </Typography>
           </Box>
         </Container>
@@ -138,11 +174,19 @@ const ItemRecentPage: React.FC = () => {
               }}
             >
               <FormControl size="small" sx={{ minWidth: 120 }}>
-                <InputLabel>{t("item.status")}</InputLabel>
+                <InputLabel shrink>{t("item.status")}</InputLabel>
                 <Select
                   value={statusFilter}
                   label={t("item.status")}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  displayEmpty
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setSearchParams((prev) => {
+                      const next = new URLSearchParams(prev);
+                      if (e.target.value) next.set("status", e.target.value); else next.delete("status");
+                      return next;
+                    });
+                  }}
                 >
                   <MenuItem value="">{t("common.all", "All")}</MenuItem>
                   <MenuItem value="AVAILABLE">{t("item.available")}</MenuItem>
@@ -210,6 +254,7 @@ const ItemRecentPage: React.FC = () => {
                 hasPrevPage={page > 1}
                 isLoading={loading}
                 itemsPerPage={ITEMS_PER_PAGE}
+                totalItems={totalCountData?.totalItemsCount}
                 showPageInfo={true}
               />
             </Box>
