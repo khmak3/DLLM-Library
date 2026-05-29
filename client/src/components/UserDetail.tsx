@@ -161,43 +161,37 @@ const UserDetail: React.FC<UserDetailProps> = ({
     : null;
   const totalUserItemCount = userData?.user?.itemCategory?.reduce((sum, c) => sum + c.count, 0) ?? 0;
 
-  // Mode A — no category: paginated backend (limit=page size, offset=page)
-  // Mode B — category selected: fetch all in that category at once (count known), paginate client-side
-  // Both modes use cache-first so visited pages are instant on revisit.
+  // Both modes: backend-paginated with cache-first. Category count from metadata = total known, no count query.
   const {
     data: itemsData,
     loading: itemsLoading,
   } = useQuery<{
     itemsByUser: Item[];
   }>(USER_ITEMS_QUERY, {
-    variables: selectedCategory
-      ? {
-        userId: userId!,
-        limit: selectedCategoryCount,
-        offset: 0,
-        category: [selectedCategory],
-        isExchangePointItem: isExchangePointAdmin && includeExchangePointItems,
-      }
-      : {
-        userId: userId!,
-        limit: ITEMS_PER_PAGE,
-        offset: (itemsPage - 1) * ITEMS_PER_PAGE,
-        category: undefined,
-        isExchangePointItem: isExchangePointAdmin && includeExchangePointItems,
-      },
+    variables: {
+      userId: userId!,
+      limit: ITEMS_PER_PAGE,
+      offset: (itemsPage - 1) * ITEMS_PER_PAGE,
+      category: selectedCategory ? [selectedCategory] : undefined,
+      isExchangePointItem: isExchangePointAdmin && includeExchangePointItems,
+    },
     fetchPolicy: "cache-first",
     skip: !userId,
   });
 
-  // Prefetch next page (Mode A only) — runs silently in background, result stored in Apollo cache.
-  // When user hits Next, cache-first serves it instantly.
-  const hasNextPageEstimate = !selectedCategory && totalUserItemCount > itemsPage * ITEMS_PER_PAGE;
+  // Count from itemCategory metadata — no extra query needed
+  const totalFilteredCount = selectedCategory
+    ? (selectedCategoryCount ?? 0)
+    : totalUserItemCount;
+
+  // Prefetch next page — silently warms cache so Next is instant.
+  const hasNextPageEstimate = totalFilteredCount > itemsPage * ITEMS_PER_PAGE;
   useQuery<{ itemsByUser: Item[] }>(USER_ITEMS_QUERY, {
     variables: {
       userId: userId!,
       limit: ITEMS_PER_PAGE,
       offset: itemsPage * ITEMS_PER_PAGE,
-      category: undefined,
+      category: selectedCategory ? [selectedCategory] : undefined,
       isExchangePointItem: isExchangePointAdmin && includeExchangePointItems,
     },
     fetchPolicy: "cache-first",
@@ -247,6 +241,17 @@ const UserDetail: React.FC<UserDetailProps> = ({
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       if (next) params.set("category", next); else params.delete("category");
+      params.set("page", "1");
+      return params;
+    });
+  };
+
+  const clearCategory = () => {
+    setSelectedCategory(null);
+    setItemsPage(1);
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      params.delete("category");
       params.set("page", "1");
       return params;
     });
@@ -373,17 +378,7 @@ const UserDetail: React.FC<UserDetailProps> = ({
           : 0,
     })) || [];
 
-  // Mode B (category): backend already filtered — paginate client-side
-  // Mode A (no category): backend already paginated — use as-is
-  const totalFilteredCount = selectedCategory
-    ? (selectedCategoryCount ?? 0)
-    : totalUserItemCount;
-  const itemsWithDistance = selectedCategory
-    ? allItemsWithDistance.slice(
-      (itemsPage - 1) * ITEMS_PER_PAGE,
-      itemsPage * ITEMS_PER_PAGE,
-    )
-    : allItemsWithDistance; // already the right page from backend
+  const itemsWithDistance = allItemsWithDistance; // backend already paged
 
   // Calculate distances for pinned items
   const pinnedItemsWithDistance =
@@ -803,26 +798,8 @@ const UserDetail: React.FC<UserDetailProps> = ({
                     <Chip
                       label={t("common.clearFilter", "Clear Filter")}
                       size="small"
-                      onClick={() => {
-                        setSelectedCategory(null);
-                        setItemsPage(1);
-                        setSearchParams((prev) => {
-                          const params = new URLSearchParams(prev);
-                          params.delete("category");
-                          params.set("page", "1");
-                          return params;
-                        });
-                      }}
-                      onDelete={() => {
-                        setSelectedCategory(null);
-                        setItemsPage(1);
-                        setSearchParams((prev) => {
-                          const params = new URLSearchParams(prev);
-                          params.delete("category");
-                          params.set("page", "1");
-                          return params;
-                        });
-                      }}
+                      onClick={clearCategory}
+                      onDelete={clearCategory}
                       sx={{ ml: 1 }}
                     />
                   </Alert>

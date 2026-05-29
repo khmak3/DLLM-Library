@@ -25,7 +25,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  if ((!hasPrevPage && !hasNextPage) || isLoading) return null;
+  if (!hasPrevPage && !hasNextPage) return null;
 
   return (
     <Box

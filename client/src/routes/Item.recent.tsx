@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -60,17 +60,11 @@ const ItemRecentPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [statusFilter, setStatusFilter] = useState<string>(
-    searchParams.get("status") || ""
-  );
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    searchParams.get("category") || ""
-  );
-  const [page, setPage] = useState<number>(
-    parseInt(searchParams.get("page") || "1", 10)
-  );
+  const statusFilter = searchParams.get("status") || "";
+  const selectedCategory = searchParams.get("category") || "";
+  const page = parseInt(searchParams.get("page") || "1", 10);
 
-  const { data, loading, error, refetch } = useQuery<
+  const { data, loading, error } = useQuery<
     RecentAddedItemsQuery,
     RecentAddedItemsQueryVariables
   >(ALL_RECENT_ITEMS_QUERY, {
@@ -94,22 +88,7 @@ const ItemRecentPage: React.FC = () => {
     navigate(`/item/${itemId}`);
   };
 
-  const handleCategoryChange = (
-    event: React.ChangeEvent<{ value: unknown }>
-  ) => {
-    const cat = event.target.value as string;
-    setSelectedCategory(cat);
-    setPage(1);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (cat) next.set("category", cat); else next.delete("category");
-      next.set("page", "1");
-      return next;
-    });
-  };
-
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set("page", String(newPage));
@@ -117,15 +96,6 @@ const ItemRecentPage: React.FC = () => {
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  // Refetch when category, page, or status changes
-  React.useEffect(() => {
-    refetch({
-      category: selectedCategory ? [selectedCategory] : [],
-      limit: ITEMS_PER_PAGE,
-      offset: (page - 1) * ITEMS_PER_PAGE,
-    });
-  }, [selectedCategory, page, refetch]);
 
   const filteredItems =
     data?.recentAddedItems.filter((item) =>
@@ -180,7 +150,6 @@ const ItemRecentPage: React.FC = () => {
                   label={t("item.status")}
                   displayEmpty
                   onChange={(e) => {
-                    setStatusFilter(e.target.value);
                     setSearchParams((prev) => {
                       const next = new URLSearchParams(prev);
                       if (e.target.value) next.set("status", e.target.value); else next.delete("status");
