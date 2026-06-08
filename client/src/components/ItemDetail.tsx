@@ -212,9 +212,6 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
   // Add state for news form dialog
   const [newsFormOpen, setNewsFormOpen] = useState(false);
 
-  // Add state for bind dialog
-  const [bindDialogOpen, setBindDialogOpen] = useState(false);
-
   // State for location prompt dialog
   const [locationPromptOpen, setLocationPromptOpen] = useState(false);
 
@@ -344,7 +341,8 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
       holder.user.location.longitude,
     );
 
-    return formatDistance(distance);
+    const formattedDistance = formatDistance(distance);
+    return distance <= 2 ? t("item.here", "In the neighborhood") : distance > 100 ? t("item.moreThanDistance", "More than 100km away") : t("item.awayDistance", { distance: formattedDistance });
   };
 
   const handleUserClick = (userId: string) => {
@@ -395,47 +393,12 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
     setPendingRequestAction(false);
   };
 
-  const handleSwitchAuthMode = () => {
-    setAuthDefaultSignUp(!authDefaultSignUp);
-  };
-
   const handleFaceToFaceClick = () => {
     setFaceToFaceDialogOpen(true);
   };
 
   const handleCreateNewsClick = () => {
     setNewsFormOpen(true);
-  };
-
-  const handleBindClick = () => {
-    if (!user) {
-      setAuthDefaultSignUp(false);
-      setAuthDialogOpen(true);
-      return;
-    }
-
-    if (!user.isVerified) {
-      setErrorMessage(
-        t(
-          "binder.verificationRequired",
-          "Please verify your email to use binders",
-        ),
-      );
-      setErrorSnackbarOpen(true);
-      return;
-    }
-
-    setBindDialogOpen(true);
-  };
-
-  const handleBindSuccess = () => {
-    setSuccessSnackbarOpen(true);
-    setBindDialogOpen(false);
-  };
-
-  const handleBindError = (message: string) => {
-    setErrorMessage(message);
-    setErrorSnackbarOpen(true);
   };
 
   const handleConfirmRequest = async (
@@ -750,10 +713,6 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
     );
   };
 
-  const handleBinderClick = (binderId: string) => {
-    navigate(`/binder/${binderId}`);
-  };
-
   // Redirect to not-found when item query resolved but returned null (censored or missing)
   useEffect(() => {
     if (!loading && !error && data && !data.item) {
@@ -831,7 +790,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
                 {ownerData?.user && (
                   <Chip
                     label={`${t("item.owner", "Owner")}: ${ownerData.user.nickname || ownerData.user.email
-                      }`}
+                      } `}
                     color="primary"
                     size="small"
                     sx={{ ml: 2, cursor: "pointer" }}
@@ -852,7 +811,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
                   data.item.holderId !== data.item.ownerId && (
                     <Chip
                       label={`${t("item.holder", "Holder")}: ${holderData.user.nickname || holderData.user.email
-                        }`}
+                        } `}
                       color="secondary"
                       size="small"
                       sx={{ ml: 2, cursor: "pointer" }}
@@ -861,7 +820,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
                   )}
                 <Chip
                   label={`${t("item.deposit", "deposit")}: ${data.item.deposit
-                    }`}
+                    } `}
                   color="secondary"
                   size="small"
                   sx={{ ml: 2, cursor: "pointer" }}
@@ -973,7 +932,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
                       >
                         <img
                           src={image}
-                          alt={`${data.item.name} - Thumbnail ${index + 1}`}
+                          alt={`${data.item.name} - Thumbnail ${index + 1} `}
                           style={{ width: "100%", height: "120px", objectFit: "cover" }}
                         />
                       </Paper>
@@ -991,7 +950,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
                   <Typography variant="body1" color="text.secondary">
                     <strong>{t("item.status", "Status")}:</strong>{" "}
                     <Chip
-                      label={t(`shortStatus.${data.item.status}`, data.item.status)}
+                      label={t(`shortStatus.${data.item.status} `, data.item.status)}
                       color={
                         data.item.status === "AVAILABLE" ? "success"
                           : data.item.status === "EXCHANGEABLE" ? "info"
@@ -1008,7 +967,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
                     <Typography variant="body1" color="text.secondary">
                       <strong>{t("item.distance")}:</strong>{" "}
                       <Chip
-                        label={`${getDistanceToOwner()} ${t("item.away", "away")}`}
+                        label={getDistanceToOwner()}
                         color="info"
                         size="small"
                         sx={{ ml: 1 }}
