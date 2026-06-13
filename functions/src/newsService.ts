@@ -145,8 +145,7 @@ export class NewsService {
     if (!content) content = "";
     if (!relatedItemIds) relatedItemIds = [];
     // check if content has item id in format :item{id="abc"} or :itemWithComment{id="abc", comment="..."} and extract item id, if item id exist, add it to relatedItemIds, otherwise, ignore it
-    const regex =
-      /:item(?:WithComment)?\{id="([^"]+)"(?: comment="[^"]*")?\}/g;
+    const regex = /:item(?:WithComment)?\{id="([^"]+)"(?: comment="[^"]*")?\}/g;
     let match;
     const foundItemIds = new Set<string>();
     while ((match = regex.exec(content)) !== null) {
@@ -355,8 +354,11 @@ export class NewsService {
       `:itemWithComment\\{id="${itemId}" comment="[^"]*"\\}`,
       "g",
     );
+    console.log("content before adding item:", content);
     const itemRegex = new RegExp(`:item\\{id="${itemId}"\\}`, "g");
     if (comment) {
+      // replace all new line in comment with \n to avoid breaking the content format
+      comment = comment.replace(/\n/g, "\\n");
       if (content.match(itemWithCommentRegex)) {
         // append user.nickname: comment at the end of comment in itemWithComment
         content = content.replace(itemWithCommentRegex, (match) => {
@@ -378,6 +380,7 @@ export class NewsService {
         content += `\n:itemWithComment{id="${itemId}" comment="${user.nickname}: ${comment}"}`;
       }
     }
+    console.log("content after adding item:", content);
     const rv = await this._updateNews(
       id,
       newsModel,

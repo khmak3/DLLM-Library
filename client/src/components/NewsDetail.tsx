@@ -395,6 +395,10 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ newsId, onBack }) => {
                       if (!id) return null;
                       const matchedItem = relatedItemsMap.get(id);
                       if (!matchedItem) return null;
+                      // replace \n in comment with new line
+                      if (comment) {
+                        comment = comment.replace(/\\n/g, "\n");
+                      }
 
                       return (
                         <Grid
@@ -440,7 +444,12 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ newsId, onBack }) => {
                               <Typography
                                 variant="body2"
                                 color="text.secondary"
-                                sx={{ flex: 1, minWidth: 240, mt: 0.5 }}
+                                sx={{
+                                  flex: 1,
+                                  minWidth: 240,
+                                  mt: 0.5,
+                                  whiteSpace: "pre-line",
+                                }}
                               >
                                 {comment}
                               </Typography>

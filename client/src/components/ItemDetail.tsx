@@ -440,12 +440,7 @@ const ItemDetail: React.FC<ItemDetailProps> = ({
       return [];
     }
 
-    return newsRecent.data.newsRecentPosts.filter(
-      (newsPost) =>
-        !newsPost.relatedItems?.some(
-          (relatedItem) => relatedItem.id === itemId,
-        ),
-    );
+    return newsRecent.data.newsRecentPosts;
   }, [itemId, newsRecent.data?.newsRecentPosts]);
 
   const isOwner = user && data?.item?.ownerId === user.id;
