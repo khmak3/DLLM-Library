@@ -456,7 +456,6 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ newsId, onBack }) => {
                                 color="text.secondary"
                                 sx={{
                                   flex: 1,
-                                  minWidth: 240,
                                   mt: 0.5,
                                   whiteSpace: "pre-line",
                                   wordBreak: "break-word",
