@@ -322,7 +322,7 @@
     "loginToView": "This item may require you to sign in. Please log in to continue.",
     "contentRatingRestricted": "This item is not available. Its content rating may exceed your current preference settings, or it may be pending admin review.",
     "errorLoading": "Error loading item details",
-    "myLentItems": "Items I've lent",
+    "myLentItems": "Items Available for Lending",
     "loadingLentItems": "Loading your lent items...",
     "errorLoadingLentItems": "Error loading your lent items",
     "noLentItems": "You currently have no lent items",

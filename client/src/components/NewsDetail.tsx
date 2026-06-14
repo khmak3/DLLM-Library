@@ -35,6 +35,7 @@ import { useTranslation } from "react-i18next";
 import { convertLinksToClickable, hasMarkdownSyntax } from "../utils/helpers";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import ItemPreview from "./ItemPreview";
+import BookSpinePreview from "./BookSpinePreview";
 import NewsForm from "./NewsForm";
 
 interface OutletContext {
@@ -410,13 +411,13 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ newsId, onBack }) => {
                         >
                           <Grid
                             key={matchedItem.id}
-                            size={{
-                              xs: 4, // 3 items per row on mobile (vertical)
-                              sm: 4, // 3 items per row on small screens
-                              md: 2, // 6 items per row on desktop (horizontal)
+                            size={{ xs: 2.5, sm: 2, md: 1.5 }}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
                             }}
                           >
-                            <ItemPreview
+                            <BookSpinePreview
                               item={{
                                 id: matchedItem.id,
                                 name: matchedItem.name,
@@ -436,9 +437,18 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ newsId, onBack }) => {
                             <Grid
                               key={matchedItem.id}
                               size={{
-                                xs: 4, // 3 items per row on mobile (vertical)
-                                sm: 4, // 3 items per row on small screens
-                                md: 2, // 6 items per row on desktop (horizontal)
+                                // For any screen size, comment located on the right side of the item preview, and take the remaining space
+                                xs: 9.5,
+                                sm: 10,
+                                md: 10.5,
+                              }}
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                border: "1px solid #0d0d0d",
+                                borderRadius: 1,
+                                p: 2,
+                                my: 2,
                               }}
                             >
                               <Typography
@@ -449,6 +459,7 @@ const NewsDetail: React.FC<NewsDetailProps> = ({ newsId, onBack }) => {
                                   minWidth: 240,
                                   mt: 0.5,
                                   whiteSpace: "pre-line",
+                                  wordBreak: "break-word",
                                 }}
                               >
                                 {comment}
